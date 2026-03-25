@@ -560,6 +560,25 @@
                     <h1 id="boardMainTitle" style="font-size: 28px; font-weight: 800; margin-bottom: 24px;">게시판</h1>
                     <div class="category-filter" id="boardFilterContainer"></div>
                     <div class="form-grid" id="boardGridContainer"></div>
+                    <!-- 인라인 문서 뷰어 -->
+                    <div id="inlineViewer" style="display:none; margin-top: 24px;">
+                        <div id="inlineViewerHeader" style="display:flex; align-items:center; justify-content:space-between; padding: 16px 20px; background: var(--brand-gray); color: white; border-radius: 12px 12px 0 0;">
+                            <div style="display:flex; align-items:center; gap: 12px;">
+                                <span id="inlineViewerIcon" style="font-size: 24px;">📄</span>
+                                <div>
+                                    <div id="inlineViewerTitle" style="font-size: 16px; font-weight: 700;"></div>
+                                    <div id="inlineViewerMeta" style="font-size: 12px; opacity: 0.8;"></div>
+                                </div>
+                            </div>
+                            <div style="display:flex; gap: 8px;">
+                                <button type="button" onclick="openInNewTab()" style="background:rgba(255,255,255,0.2); border:none; color:white; padding:8px 14px; border-radius:6px; cursor:pointer; font-size:13px;">↗ 새창</button>
+                                <button type="button" onclick="closeInlineViewer()" style="background:rgba(255,255,255,0.2); border:none; color:white; padding:8px 14px; border-radius:6px; cursor:pointer; font-size:13px;">✕ 닫기</button>
+                            </div>
+                        </div>
+                        <div id="inlineViewerBody" style="background: var(--card-bg); border: 1px solid var(--border-color); border-top: none; border-radius: 0 0 12px 12px; overflow: hidden;">
+                            <iframe id="inlineViewerFrame" style="width:100%; height:80vh; border:none;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+                        </div>
+                    </div>
                 </section>
                 
                 <section class="page-section" id="hr">
@@ -1159,12 +1178,15 @@ document.getElementById('globalSearch').addEventListener('keypress', async funct
 /* ==========================================
    문서 열기 및 조회수 처리
 ========================================== */
+let currentViewerPost = null;
+
 window.openPost = async function(id) {
     try {
         addRecentViewed(id);
         await api.post(`/api/posts/${id}/view`);
         invalidate('/api/posts');
         const post = await api.get(`/api/posts/${id}`);
+        currentViewerPost = post;
 
         const categories = await cachedGet('/api/categories');
         let catName = '기타';
@@ -1173,31 +1195,83 @@ window.openPost = async function(id) {
             if(cat) catName = cat.name;
         }
 
-        if(post.type === 'pdf' && post.fileName) {
-            // PDF.js 뷰어로 열기 (다운로드 방지)
-            const viewerUrl = `/api/files/${post.fileName}`;
-            const pdfWindow = window.open('', '_blank');
-            pdfWindow.document.write(`
-                <!DOCTYPE html><html><head><title>${post.title}</title>
-                <style>*{margin:0;padding:0}body{overflow:hidden}iframe{width:100%;height:100vh;border:none}</style>
-                </head><body oncontextmenu="return false">
-                <iframe src="${viewerUrl}#toolbar=0&navpanes=0"></iframe>
-                </body></html>
-            `);
-            pdfWindow.document.close();
+        // 인라인 뷰어로 표시할 수 있는 유형 판별
+        let viewerUrl = null;
+        let viewerIcon = '📄';
+
+        if (post.type === 'pdf' && post.fileName) {
+            viewerUrl = `/api/files/${post.fileName}#toolbar=0&navpanes=0`;
+            viewerIcon = '📕';
+        } else if (post.url) {
+            const url = post.url.trim();
+            // Google Drive 링크를 임베드 가능한 형태로 변환
+            const driveMatch = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+            if (driveMatch) {
+                viewerUrl = `https://drive.google.com/file/d/${driveMatch[1]}/preview`;
+                viewerIcon = '📁';
+            } else if (url.match(/docs\.google\.com\/(document|spreadsheets|presentation)/)) {
+                // Google Docs/Sheets/Slides
+                viewerUrl = url.replace(/\/edit.*$/, '/preview').replace(/\/view.*$/, '/preview');
+                if (!viewerUrl.includes('/preview')) viewerUrl += (viewerUrl.includes('?') ? '&' : '/') + 'preview';
+                viewerIcon = post.type === 'xlsx' ? '📊' : post.type === 'pptx' ? '📑' : '📄';
+            } else {
+                // 일반 URL: 새 창으로 열기
+                let finalUrl = url;
+                if (!finalUrl.startsWith('http://') && !finalUrl.startsWith('https://')) finalUrl = 'https://' + finalUrl;
+                window.open(finalUrl, '_blank');
+                loadDashboardWidgets();
+                return;
+            }
         } else if (post.fileName && isOfficeFile(post.fileName)) {
-            // Office 파일: 임시 토큰 발급 후 Office Online Viewer로 열기
             await openOfficeFile(post.fileName, post.title);
-        } else if ((post.type === 'url' || post.type === 'docx' || post.type === 'xlsx' || post.type === 'pptx') && post.url) {
-            let finalUrl = post.url.trim();
-            if (!finalUrl.startsWith('http://') && !finalUrl.startsWith('https://')) finalUrl = 'https://' + finalUrl;
-            window.open(finalUrl, '_blank');
-        } else {
+            loadDashboardWidgets();
+            return;
+        } else if (post.type === 'text' || (!post.fileName && !post.url)) {
             showPostModal(post, catName);
+            loadDashboardWidgets();
+            return;
         }
+
+        if (viewerUrl) {
+            showInlineViewer(post, catName, viewerUrl, viewerIcon);
+        }
+
         loadDashboardWidgets();
     } catch(err) { console.error('문서 열기 오류:', err); }
 };
+
+function showInlineViewer(post, catName, viewerUrl, icon) {
+    const viewer = document.getElementById('inlineViewer');
+    const frame = document.getElementById('inlineViewerFrame');
+
+    document.getElementById('inlineViewerTitle').textContent = post.title;
+    document.getElementById('inlineViewerMeta').textContent = `${catName} | ${post.date || ''} | 조회 ${post.views || 0}`;
+    document.getElementById('inlineViewerIcon').textContent = icon;
+
+    frame.src = viewerUrl;
+    viewer.style.display = 'block';
+
+    // 뷰어로 스크롤
+    setTimeout(() => {
+        viewer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+}
+
+function closeInlineViewer() {
+    const viewer = document.getElementById('inlineViewer');
+    const frame = document.getElementById('inlineViewerFrame');
+    frame.src = '';
+    viewer.style.display = 'none';
+    currentViewerPost = null;
+}
+
+function openInNewTab() {
+    if (!currentViewerPost) return;
+    const frame = document.getElementById('inlineViewerFrame');
+    if (frame.src) {
+        window.open(frame.src, '_blank');
+    }
+}
 
 /* ==========================================
    동적 게시판 렌더링
