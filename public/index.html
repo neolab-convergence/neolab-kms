@@ -256,6 +256,69 @@
         ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
         
+        /* 다크모드 */
+        body.dark-mode {
+            --main-bg: #1a1b1e;
+            --card-bg: #2a2b2e;
+            --border-color: #3a3b3e;
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --text-light: #64748b;
+            --shadow: 0 1px 3px rgba(0,0,0,0.3);
+            --shadow-lg: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        body.dark-mode .topbar { background: #2a2b2e; border-color: #3a3b3e; }
+        body.dark-mode .search-input { background: #1a1b1e; border-color: #3a3b3e; color: #e2e8f0; }
+        body.dark-mode .board-table thead th { background: #1a1b1e; border-color: #3a3b3e; }
+        body.dark-mode .board-table tbody tr { border-color: #3a3b3e; }
+        body.dark-mode .board-table tbody tr:hover { background: rgba(255,103,32,0.08); }
+        body.dark-mode .filter-btn { background: #2a2b2e; border-color: #3a3b3e; color: #94a3b8; }
+        body.dark-mode .stat-card, body.dark-mode .card { background: #2a2b2e; }
+        body.dark-mode .notice-card { background: #2a2b2e; border-color: #3a3b3e; }
+        body.dark-mode .modal-content { background: #2a2b2e; }
+        body.dark-mode .modal-header { border-color: #3a3b3e; }
+        body.dark-mode .update-item { background: #1a1b1e; }
+        body.dark-mode .update-item:hover { background: #3a3b3e; }
+        body.dark-mode .board-row-badge { background: #1a1b1e; color: #94a3b8; }
+        body.dark-mode .contact-card { background: #2a2b2e !important; }
+        .dark-toggle { cursor: pointer; font-size: 18px; }
+
+        /* 즐겨찾기 별 */
+        .fav-star { cursor: pointer; font-size: 16px; transition: transform 0.2s; user-select: none; }
+        .fav-star:hover { transform: scale(1.3); }
+        .fav-star.active { color: #f59e0b; }
+
+        /* NEW 배지 */
+        .new-badge { display: inline-block; background: #ef4444; color: white; font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 4px; margin-left: 6px; vertical-align: middle; animation: newPulse 2s infinite; }
+        @keyframes newPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+
+        /* 빵가루 네비게이션 개선 */
+        .breadcrumb-item { color: var(--text-secondary); font-size: 14px; }
+        .breadcrumb-item a { color: var(--text-secondary); text-decoration: none; cursor: pointer; }
+        .breadcrumb-item a:hover { color: var(--primary); }
+        .breadcrumb-sep { color: var(--text-light); margin: 0 6px; font-size: 12px; }
+        .breadcrumb-current { color: var(--text-primary); font-weight: 600; }
+
+        /* 인쇄 버튼 */
+        .print-btn { background: none; border: 1px solid var(--border-color); border-radius: 8px; padding: 6px 14px; font-size: 13px; color: var(--text-secondary); cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+        .print-btn:hover { border-color: var(--primary); color: var(--primary); }
+        @media print {
+            .sidebar, .topbar, .scroll-top, .admin-login-modal, .admin-overlay, .print-btn, .fav-star { display: none !important; }
+            .main-content { margin-left: 0 !important; }
+            .content { padding: 0 !important; }
+            body.dark-mode { --main-bg: #fff; --card-bg: #fff; --text-primary: #000; --text-secondary: #333; }
+        }
+
+        /* 최근 본 문서 / 즐겨찾기 섹션 */
+        .quick-section { margin-bottom: 32px; }
+        .quick-section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+        .quick-section-title { font-size: 16px; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px; }
+        .quick-list { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px; }
+        .quick-item { flex-shrink: 0; background: var(--card-bg); border-radius: 10px; padding: 14px 18px; box-shadow: var(--shadow); cursor: pointer; transition: all 0.2s; min-width: 200px; max-width: 280px; border-left: 3px solid var(--primary); }
+        .quick-item:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+        .quick-item-title { font-size: 13px; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; }
+        .quick-item-meta { font-size: 11px; color: var(--text-light); }
+
         /* 관리자 모드 스타일 */
         .admin-login-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(83, 86, 90, 0.85); backdrop-filter: blur(10px); z-index: 10000; align-items: center; justify-content: center; animation: fadeIn 0.3s ease; }
         .admin-login-modal.show { display: flex; }
@@ -415,6 +478,7 @@
                     <svg class="search-icon" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                     <input type="text" class="search-input" id="globalSearch" placeholder="문서, 규정, 양식 검색 후 Enter를 누르세요...">
                 </div>
+                <button type="button" class="icon-btn dark-toggle" id="darkModeToggle" title="다크모드 전환">🌙</button>
             </header>
             
             <div class="content">
@@ -426,6 +490,19 @@
                         </div>
                     </div>
                     
+                    <div class="quick-section" id="favoritesSection" style="display:none;">
+                        <div class="quick-section-header">
+                            <div class="quick-section-title">⭐ 즐겨찾기</div>
+                        </div>
+                        <div class="quick-list" id="favoritesList"></div>
+                    </div>
+                    <div class="quick-section" id="recentSection" style="display:none;">
+                        <div class="quick-section-header">
+                            <div class="quick-section-title">🕐 최근 본 문서</div>
+                        </div>
+                        <div class="quick-list" id="recentList"></div>
+                    </div>
+
                     <div class="stats-grid">
                         <div class="stat-card" style="--stat-color: var(--primary)">
                             <div class="stat-header">
@@ -962,7 +1039,23 @@ async function navigateTo(pageId, pushToHistory = true, targetCatId = null) {
         if (targetSection) targetSection.classList.add('active');
     }
 
-    document.getElementById('breadcrumb').textContent = pageNames[pageId];
+    // 빵가루 네비게이션 업데이트
+    const breadcrumb = document.getElementById('breadcrumb');
+    if (pageId === 'dashboard') {
+        breadcrumb.innerHTML = `<span class="breadcrumb-current">🏠 홈</span>`;
+    } else {
+        let crumbHtml = `<span class="breadcrumb-item"><a onclick="navigateTo('dashboard')">🏠 홈</a></span><span class="breadcrumb-sep">›</span>`;
+        if (targetCatId && targetCatId !== 'all') {
+            const cats = await cachedGet('/api/categories');
+            const boardCats = cats[pageId] || [];
+            const cat = boardCats.find(c => c.id === targetCatId);
+            crumbHtml += `<span class="breadcrumb-item"><a onclick="navigateTo('${pageId}')">${pageNames[pageId]?.replace(/^[^\s]+\s/, '') || pageId}</a></span>`;
+            if (cat) crumbHtml += `<span class="breadcrumb-sep">›</span><span class="breadcrumb-current">${cat.name}</span>`;
+        } else {
+            crumbHtml += `<span class="breadcrumb-current">${pageNames[pageId] || pageId}</span>`;
+        }
+        breadcrumb.innerHTML = crumbHtml;
+    }
     backBtn.style.display = pageId === 'dashboard' ? 'none' : 'flex';
 
     if (pushToHistory) history.pushState({ page: pageId, cat: targetCatId }, '', `#${pageId}`);
@@ -987,15 +1080,27 @@ document.getElementById('sidebar').addEventListener('click', function(e) {
     if (menuItem) {
         if (menuItem.id === 'adminMenuBtn') return;
         const submenu = menuItem.nextElementSibling;
-        if (submenu && submenu.classList.contains('submenu')) {
-            menuItem.classList.toggle('expanded');
-            submenu.classList.toggle('show');
+        const hasSubmenu = submenu && submenu.classList.contains('submenu');
+
+        if (hasSubmenu) {
+            // 서브메뉴가 있는 경우: 접기/펼치기 토글
+            const isExpanded = menuItem.classList.contains('expanded');
+            if (isExpanded) {
+                // 이미 펼쳐져 있으면 접기
+                menuItem.classList.remove('expanded');
+                submenu.classList.remove('show');
+            } else {
+                // 접혀있으면 펼치고 해당 게시판으로 이동
+                menuItem.classList.add('expanded');
+                submenu.classList.add('show');
+                const page = menuItem.getAttribute('data-page');
+                if (page) navigateTo(page);
+            }
         } else {
+            // 서브메뉴가 없는 경우: 바로 이동
             const page = menuItem.getAttribute('data-page');
-            if (page) { e.preventDefault(); navigateTo(page); }
+            if (page) navigateTo(page);
         }
-        const page = menuItem.getAttribute('data-page');
-        if (page && page !== 'hr' && page !== 'notices') { navigateTo(page); }
     }
 });
 
@@ -1056,6 +1161,7 @@ document.getElementById('globalSearch').addEventListener('keypress', async funct
 ========================================== */
 window.openPost = async function(id) {
     try {
+        addRecentViewed(id);
         await api.post(`/api/posts/${id}/view`);
         invalidate('/api/posts');
         const post = await api.get(`/api/posts/${id}`);
@@ -1151,8 +1257,15 @@ async function renderPostGrid(boardId, categoryId = 'all') {
 
     const typeLabels = { pdf: 'PDF', docx: 'DOCX', xlsx: 'XLSX', pptx: 'PPTX', url: 'LINK', text: 'TEXT' };
 
-    let html = `<table class="board-table">
+    const favs = getFavorites();
+    const now = new Date();
+
+    let html = `<div style="display:flex; justify-content:flex-end; margin-bottom:12px;">
+        <button type="button" class="print-btn" onclick="window.print()">🖨️ 인쇄</button>
+    </div>
+    <table class="board-table">
         <thead><tr>
+            <th style="width:30px;">★</th>
             <th style="width:50px;"></th>
             <th>제목</th>
             <th style="width:100px;">카테고리</th>
@@ -1171,15 +1284,21 @@ async function renderPostGrid(boardId, categoryId = 'all') {
         else if(post.type === 'pptx') icon = '📑';
         if(post.icon && post.icon.trim() !== '') icon = post.icon;
         const catName = catMap[post.categoryId] || '기타';
+        const isFav = favs.includes(post.id);
+        // NEW 배지: 7일 이내 등록된 게시물
+        const postDate = new Date(post.date);
+        const diffDays = (now - postDate) / (1000 * 60 * 60 * 24);
+        const newBadge = diffDays <= 7 ? '<span class="new-badge">NEW</span>' : '';
 
-        html += `<tr onclick="openPost('${post.id}')">
-            <td class="td-icon"><span class="board-row-icon ${typeClass}">${icon}</span></td>
-            <td class="td-title"><span class="board-row-title">${post.title}</span></td>
-            <td class="td-cat"><span class="board-row-badge">${catName}</span></td>
-            <td class="td-type"><span class="board-row-type ${typeClass}">${typeLabels[post.type] || 'TEXT'}</span></td>
-            <td style="font-size:13px; color:var(--text-secondary);">${post.subInfo || '-'}</td>
-            <td class="td-date"><span class="board-row-date">${post.date || '-'}</span></td>
-            <td class="td-views"><span class="board-row-views">👁 ${post.views || 0}</span></td>
+        html += `<tr>
+            <td onclick="event.stopPropagation(); toggleFavorite('${post.id}', this)"><span class="fav-star ${isFav ? 'active' : ''}">${isFav ? '⭐' : '☆'}</span></td>
+            <td class="td-icon" onclick="openPost('${post.id}')"><span class="board-row-icon ${typeClass}">${icon}</span></td>
+            <td class="td-title" onclick="openPost('${post.id}')"><span class="board-row-title">${post.title}</span>${newBadge}</td>
+            <td class="td-cat" onclick="openPost('${post.id}')"><span class="board-row-badge">${catName}</span></td>
+            <td class="td-type" onclick="openPost('${post.id}')"><span class="board-row-type ${typeClass}">${typeLabels[post.type] || 'TEXT'}</span></td>
+            <td onclick="openPost('${post.id}')" style="font-size:13px; color:var(--text-secondary);">${post.subInfo || '-'}</td>
+            <td class="td-date" onclick="openPost('${post.id}')"><span class="board-row-date">${post.date || '-'}</span></td>
+            <td class="td-views" onclick="openPost('${post.id}')"><span class="board-row-views">👁 ${post.views || 0}</span></td>
         </tr>`;
     });
 
@@ -1259,6 +1378,123 @@ window.addEventListener('popstate', function(e) {
 /* ==========================================
    앱 초기화
 ========================================== */
+/* ==========================================
+   다크모드
+========================================== */
+function initDarkMode() {
+    const saved = localStorage.getItem('kms-dark-mode');
+    if (saved === 'true') {
+        document.body.classList.add('dark-mode');
+        document.getElementById('darkModeToggle').textContent = '☀️';
+    }
+}
+document.getElementById('darkModeToggle').addEventListener('click', function() {
+    const isDark = document.body.classList.toggle('dark-mode');
+    localStorage.setItem('kms-dark-mode', isDark);
+    this.textContent = isDark ? '☀️' : '🌙';
+});
+
+/* ==========================================
+   즐겨찾기 (localStorage 기반)
+========================================== */
+function getFavorites() {
+    try { return JSON.parse(localStorage.getItem('kms-favorites') || '[]'); } catch { return []; }
+}
+function saveFavorites(favs) {
+    localStorage.setItem('kms-favorites', JSON.stringify(favs));
+}
+function toggleFavorite(postId, el) {
+    let favs = getFavorites();
+    const idx = favs.indexOf(postId);
+    if (idx > -1) {
+        favs.splice(idx, 1);
+        el.querySelector('.fav-star').className = 'fav-star';
+        el.querySelector('.fav-star').textContent = '☆';
+    } else {
+        favs.push(postId);
+        el.querySelector('.fav-star').className = 'fav-star active';
+        el.querySelector('.fav-star').textContent = '⭐';
+    }
+    saveFavorites(favs);
+    renderFavorites();
+}
+
+async function renderFavorites() {
+    const favs = getFavorites();
+    const section = document.getElementById('favoritesSection');
+    const list = document.getElementById('favoritesList');
+    if (!favs.length) { section.style.display = 'none'; return; }
+
+    const posts = await cachedGet('/api/posts');
+    const favPosts = posts.filter(p => favs.includes(p.id));
+    if (!favPosts.length) { section.style.display = 'none'; return; }
+
+    section.style.display = 'block';
+    list.innerHTML = favPosts.map(p => `
+        <div class="quick-item" onclick="openPost('${p.id}')">
+            <div class="quick-item-title">⭐ ${p.title}</div>
+            <div class="quick-item-meta">${p.date || ''}</div>
+        </div>
+    `).join('');
+}
+
+/* ==========================================
+   최근 본 문서 (localStorage 기반)
+========================================== */
+function getRecentViewed() {
+    try { return JSON.parse(localStorage.getItem('kms-recent') || '[]'); } catch { return []; }
+}
+function addRecentViewed(postId) {
+    let recent = getRecentViewed();
+    recent = recent.filter(id => id !== postId);
+    recent.unshift(postId);
+    if (recent.length > 10) recent = recent.slice(0, 10);
+    localStorage.setItem('kms-recent', JSON.stringify(recent));
+}
+
+async function renderRecentViewed() {
+    const recent = getRecentViewed();
+    const section = document.getElementById('recentSection');
+    const list = document.getElementById('recentList');
+    if (!recent.length) { section.style.display = 'none'; return; }
+
+    const posts = await cachedGet('/api/posts');
+    const recentPosts = recent.map(id => posts.find(p => p.id === id)).filter(Boolean).slice(0, 5);
+    if (!recentPosts.length) { section.style.display = 'none'; return; }
+
+    section.style.display = 'block';
+    list.innerHTML = recentPosts.map(p => `
+        <div class="quick-item" onclick="openPost('${p.id}')" style="border-left-color: var(--brand-gray);">
+            <div class="quick-item-title">🕐 ${p.title}</div>
+            <div class="quick-item-meta">${p.date || ''}</div>
+        </div>
+    `).join('');
+}
+
+/* ==========================================
+   NEW 배지: 사이드바 메뉴에 표시
+========================================== */
+async function updateNewBadges() {
+    try {
+        const posts = await cachedGet('/api/posts');
+        const boards = await cachedGet('/api/boards');
+        const now = new Date();
+        boards.forEach(board => {
+            const boardPosts = posts.filter(p => p.boardId === board.id);
+            const hasNew = boardPosts.some(p => {
+                const d = new Date(p.date);
+                return (now - d) / (1000*60*60*24) <= 7;
+            });
+            const menuItem = document.querySelector(`.menu-item[data-page="${board.id}"] .menu-text`);
+            if (menuItem) {
+                const existing = menuItem.querySelector('.new-badge');
+                if (existing) existing.remove();
+                if (hasNew) menuItem.insertAdjacentHTML('beforeend', '<span class="new-badge">NEW</span>');
+            }
+        });
+    } catch(e) { /* ignore */ }
+}
+
 window.addEventListener('DOMContentLoaded', async () => {
     try {
         currentUser = await api.get('/api/me');
@@ -1271,7 +1507,11 @@ window.addEventListener('DOMContentLoaded', async () => {
     const adminBtn = document.getElementById('adminMenuBtn');
     if (!currentUser.isAdmin) adminBtn.style.display = 'none';
 
+    initDarkMode();
     await renderSidebarMenus();
+    await updateNewBadges();
+    await renderFavorites();
+    await renderRecentViewed();
     await updateDashboardStats();
     await loadDashboardWidgets();
     await loadNoticeCards();
