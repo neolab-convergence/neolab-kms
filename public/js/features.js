@@ -327,6 +327,27 @@ document.querySelectorAll('th[data-sort]').forEach(th => {
     });
 });
 
+/* ==========================================
+   개선요청 (무기명)
+========================================== */
+window.submitSuggestion = async function() {
+    const input = document.getElementById('suggestionInput');
+    const content = (input.value || '').trim();
+    if (!content) return alert('내용을 입력해주세요.');
+    if (content.length < 5) return alert('5자 이상 입력해주세요.');
+    try {
+        await api.post('/api/suggestions', { content });
+        input.value = '';
+        const successEl = document.getElementById('suggestionSuccess');
+        if (successEl) {
+            successEl.style.display = 'block';
+            setTimeout(() => { successEl.style.display = 'none'; }, 4000);
+        }
+    } catch(e) {
+        alert('제출 실패: ' + (e.message || '오류가 발생했습니다.'));
+    }
+};
+
 const scrollTop = document.getElementById('scrollTop');
 window.addEventListener('scroll', () => { scrollTop.classList.toggle('show', window.scrollY > 300); });
 if (scrollTop) scrollTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));

@@ -341,6 +341,7 @@ document.querySelectorAll('.admin-nav-item').forEach(nav => {
         // 탭별 데이터 새로고침
         if (tab === 'contacts') loadAdminContacts();
         if (tab === 'postAdmin') loadAdminPostTable();
+        if (tab === 'suggestionsAdmin') loadAdminSuggestions();
     });
 });
 // 기존 admin-tab 호환 (숨겨진 상태)
@@ -353,7 +354,7 @@ document.querySelectorAll('.admin-tab').forEach(tab => {
 
 async function loadAdminPanelData() {
     invalidateAll();
-    const fns = [loadAdminMenuManager, loadAdminPosts, loadAdminPostTable, loadAdminNotices, loadAdminContacts, loadAdminOrgChart, loadAdminSettings];
+    const fns = [loadAdminMenuManager, loadAdminPosts, loadAdminPostTable, loadAdminNotices, loadAdminContacts, loadAdminOrgChart, loadAdminSettings, loadAdminSuggestions];
     if (currentUser && currentUser.isSuperAdmin) fns.push(loadAdminList);
     await Promise.all(fns.map(fn => fn().catch(err => console.error('[Admin]', fn.name, '오류:', err))));
 }
@@ -1301,6 +1302,45 @@ document.getElementById('resetBtn').addEventListener('click', async function() {
 });
 
 function showAdminSuccess(id, msg) { const e = document.getElementById(id); if (e) { e.textContent = msg; e.classList.add('show'); setTimeout(() => e.classList.remove('show'), 3000); } }
+
+/* ── 개선요청 관리 (관리자 전용) ── */
+async function loadAdminSuggestions() {
+    try {
+        const suggestions = await api.get('/api/suggestions');
+        const countEl = document.getElementById('adminSuggestionCount');
+        if (countEl) countEl.textContent = '총 ' + suggestions.length + '건';
+
+        const listEl = document.getElementById('adminSuggestionsList');
+        if (!listEl) return;
+
+        if (suggestions.length === 0) {
+            listEl.innerHTML = '<div style="text-align:center; padding:60px 20px; color:var(--text-light);"><div style="font-size:48px; margin-bottom:12px;">📭</div><p>접수된 개선요청이 없습니다.</p></div>';
+            return;
+        }
+
+        // 최신순 정렬
+        suggestions.sort((a, b) => b.id.localeCompare(a.id));
+
+        listEl.innerHTML = suggestions.map(s => `
+            <div class="suggestion-card">
+                <div class="suggestion-card-header">
+                    <span style="font-size:12px; color:var(--text-light);">📅 ${s.date} · ID: ${s.id}</span>
+                    <button type="button" onclick="deleteSuggestion('${s.id}')" style="background:none; border:1px solid #ef4444; color:#ef4444; padding:4px 10px; border-radius:4px; cursor:pointer; font-size:12px;">삭제</button>
+                </div>
+                <div class="suggestion-card-body">${(s.content || '').replace(/</g, '&lt;').replace(/\n/g, '<br>')}</div>
+            </div>
+        `).join('');
+    } catch(e) { console.error('개선요청 로드 실패:', e); }
+}
+
+window.deleteSuggestion = async function(id) {
+    if (!confirm('이 개선요청을 삭제하시겠습니까?')) return;
+    try {
+        await api.del('/api/suggestions/' + id);
+        invalidateAll();
+        await loadAdminSuggestions();
+    } catch(e) { alert('삭제 실패: ' + e.message); }
+};
 
 // 문서 보호: 우클릭 방지
 document.addEventListener('contextmenu', function(e) {

@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=3">
+    <link rel="stylesheet" href="css/style.css?v=4">
     <!-- CSS is loaded from css/style.css -->
 </head>
 <body>
@@ -51,9 +51,18 @@
                         <div class="submenu-item" data-action="goto-hr-contacts">연락처</div>
                         <div class="submenu-item" data-action="goto-hr-org">조직도</div>
                     </div>
-                    
+
                 </div>
-                
+
+                <div class="menu-section">
+                    <div class="menu-item" data-page="suggestions">
+                        <svg class="menu-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                        </svg>
+                        <span class="menu-text">개선요청</span>
+                    </div>
+                </div>
+
                 <div class="menu-section">
                     <div class="menu-item" id="adminMenuBtn">
                         <svg class="menu-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -238,6 +247,21 @@
                     </div>
                 </section>
                 
+                <section class="page-section" id="suggestions">
+                    <h1 style="font-size: 28px; font-weight: 800; margin-bottom: 8px;">💡 개선요청</h1>
+                    <p style="color: var(--text-secondary); margin-bottom: 24px; font-size: 14px;">회사 업무환경, 제도, 시스템 등에 대한 개선 의견을 자유롭게 남겨주세요.<br>작성자 정보는 <strong>일절 저장되지 않으며</strong>, 관리자만 내용을 확인합니다.</p>
+                    <div class="suggestion-form-card">
+                        <textarea id="suggestionInput" class="suggestion-textarea" placeholder="개선이 필요한 사항을 자유롭게 작성해주세요...&#10;&#10;예) 회의실 예약 시스템 개선, 복리후생 제도 건의, 업무 프로세스 개선 등" rows="6"></textarea>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px;">
+                            <span style="font-size: 12px; color: var(--text-light);">🔒 완전 익명 · 작성자 정보 미저장</span>
+                            <button type="button" class="suggestion-submit-btn" onclick="submitSuggestion()">익명으로 제출</button>
+                        </div>
+                        <div id="suggestionSuccess" class="suggestion-success" style="display:none;">
+                            ✅ 소중한 의견이 전달되었습니다. 감사합니다!
+                        </div>
+                    </div>
+                </section>
+
                 <section class="page-section" id="notices">
                     <h1 style="font-size: 28px; font-weight: 800; margin-bottom: 24px;">📢 공지사항</h1>
                     <div class="notice-list" id="noticeListContainer"></div>
@@ -326,6 +350,7 @@
                     <div class="admin-sidebar-label">관리</div>
                     <div class="admin-nav-item" data-tab="contacts"><span class="nav-icon">👥</span> 인사정보</div>
                     <div class="admin-nav-item" data-tab="orgchartAdmin"><span class="nav-icon">🏢</span> 조직도</div>
+                    <div class="admin-nav-item" data-tab="suggestionsAdmin"><span class="nav-icon">💡</span> 개선요청</div>
                     <div class="admin-sidebar-label">시스템</div>
                     <div class="admin-nav-item" data-tab="settings"><span class="nav-icon">⚙️</span> 설정</div>
                     <div class="admin-nav-item" data-tab="backup"><span class="nav-icon">💾</span> 백업/복원</div>
@@ -594,6 +619,13 @@
                     <div class="admin-data-list" id="orgchartList"></div>
                 </div>
                 
+                <div class="admin-tab-content" id="suggestionsAdminTab">
+                    <h2>💡 개선요청 관리</h2>
+                    <p style="color:var(--text-secondary); margin-bottom:16px; font-size:14px;">직원들이 익명으로 제출한 개선요청 목록입니다. 작성자 정보는 저장되지 않습니다.</p>
+                    <div id="adminSuggestionCount" style="font-size:14px; color:var(--text-secondary); margin-bottom:12px;">총 0건</div>
+                    <div id="adminSuggestionsList"></div>
+                </div>
+
                 <div class="admin-tab-content" id="settingsTab">
                     <h2>⚙️ 설정</h2>
                     <div class="admin-form-group"><label>회사명</label><input type="text" id="companyName"></div>
@@ -807,13 +839,13 @@
         </div>
     </div>
 
-<script src="js/core.js?v=3"></script>
-<script src="js/navigation.js?v=3"></script>
-<script src="js/search.js?v=3"></script>
-<script src="js/viewer.js?v=3"></script>
-<script src="js/board.js?v=3"></script>
-<script src="js/features.js?v=3"></script>
-<script src="js/app.js?v=3"></script>
-<script src="js/admin.js?v=3"></script>
+<script src="js/core.js?v=4"></script>
+<script src="js/navigation.js?v=4"></script>
+<script src="js/search.js?v=4"></script>
+<script src="js/viewer.js?v=4"></script>
+<script src="js/board.js?v=4"></script>
+<script src="js/features.js?v=4"></script>
+<script src="js/app.js?v=4"></script>
+<script src="js/admin.js?v=4"></script>
 </body>
 </html>

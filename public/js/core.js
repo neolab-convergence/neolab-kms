@@ -52,5 +52,5 @@ function invalidateAll() { Object.keys(dataCache).forEach(k => delete dataCache[
    전역 상태
 ========================================== */
 let currentUser = null;
-const pageNames = { 'dashboard': '🏠 홈', 'hr': '👥 인사정보', 'notices': '📢 공지사항', 'search-results': '🔍 검색 결과' };
+const pageNames = { 'dashboard': '🏠 홈', 'hr': '👥 인사정보', 'notices': '📢 공지사항', 'suggestions': '💡 개선요청', 'search-results': '🔍 검색 결과' };
 const backBtn = document.getElementById('backBtn');

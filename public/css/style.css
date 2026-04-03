@@ -521,4 +521,19 @@
         /* 인라인 입력 */
         .tree-inline-input { padding: 4px 10px; border: 1px solid #ff6720; border-radius: 4px; font-size: 13px; outline: none; width: 200px; }
 
+        /* 개선요청 폼 */
+        .suggestion-form-card { background: var(--card-bg); border-radius: 12px; padding: 24px; box-shadow: var(--shadow); }
+        .suggestion-textarea { width: 100%; padding: 16px; border: 2px solid var(--border-color); border-radius: 10px; font-size: 14px; font-family: inherit; resize: vertical; min-height: 120px; background: var(--main-bg); color: var(--text-primary); transition: border-color 0.2s; box-sizing: border-box; }
+        .suggestion-textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(255,103,32,0.1); }
+        .suggestion-submit-btn { background: var(--primary); color: white; border: none; padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+        .suggestion-submit-btn:hover { background: var(--primary-hover); }
+        .suggestion-success { margin-top: 16px; padding: 16px; background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; color: #166534; font-weight: 500; text-align: center; animation: fadeIn 0.3s; }
+        .dark-mode .suggestion-success { background: #052e16; border-color: #166534; color: #86efac; }
+
+        /* 관리자 개선요청 카드 */
+        .suggestion-card { background: var(--main-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 16px; margin-bottom: 12px; transition: box-shadow 0.2s; }
+        .suggestion-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .suggestion-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .suggestion-card-body { font-size: 14px; line-height: 1.7; color: var(--text-primary); white-space: pre-wrap; }
+
         @media (max-width: 768px) { .admin-row { grid-template-columns: 1fr; } .admin-tabs { flex-wrap: wrap; } .admin-sidebar { width: 60px; min-width: 60px; } .admin-sidebar-logo h2, .admin-sidebar-logo small, .admin-nav-item span:not(.nav-icon), .admin-sidebar-label, .admin-sidebar-user-info { display: none; } .admin-sidebar-logo { padding: 16px 12px; } .admin-nav-item { justify-content: center; padding: 14px 0; } .admin-panel { padding: 16px; } }

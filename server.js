@@ -71,6 +71,7 @@ app.use(require('./routes/settings'));
 app.use(require('./routes/files'));
 app.use(require('./routes/chat'));
 app.use(require('./routes/backup'));
+app.use(require('./routes/suggestions'));
 
 // ─── 정적 파일 서빙 ───
 app.get('/login.html', (req, res) => {
