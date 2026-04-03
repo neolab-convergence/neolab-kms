@@ -961,25 +961,7 @@ if (addPostBtnEl) addPostBtnEl.addEventListener('click', async function() {
     } catch(err) { alert('저장 실패: ' + err.message); }
 });
 
-window.editPost = async function(id) {
-    const post = await api.get(`/api/posts/${id}`);
-    if(post) {
-        document.getElementById('postBoardSel').value = post.boardId;
-        await updatePostCategoryDropdown();
-        setTimeout(() => document.getElementById('postCatSel').value = post.categoryId, 50);
-        document.getElementById('postType').value = post.type; togglePostFields();
-        document.getElementById('postTitle').value = post.title;
-        document.getElementById('postIcon').value = post.icon || '';
-        document.getElementById('postSubInfo').value = post.subInfo || '';
-        document.getElementById('postContent').value = post.content || '';
-        document.getElementById('postUrl').value = post.url || '';
-        if(post.fileName) document.getElementById('postFileName').value = post.fileName;
-
-        editPostId = id;
-        const btn = document.getElementById('addPostBtn'); btn.textContent = '저장'; btn.classList.replace('admin-btn-success', 'admin-btn-primary');
-        document.querySelector('.admin-container').scrollTo({ top: 0, behavior: 'smooth' });
-    }
-};
+// editPost는 openWriteModal로 통합 (라인 162에서 정의됨)
 window.deletePost = async function(id) {
     if (!confirm('삭제하시겠습니까?')) return;
     await api.del(`/api/posts/${id}`);
