@@ -7,395 +7,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            /* 네오랩 브랜드 컬러 */
-            --primary: #ff6720; /* Pantone 165 C */
-            --primary-hover: #e55c1c;
-            --brand-gray: #53565A; /* Pantone Cool Gray 11 */
-            --brand-gray-dark: #3b3d40;
-            --primary-light: #ff884d; 
-            
-            /* 다크 사이드바 색상 */
-            --sidebar-bg: var(--brand-gray);
-            --sidebar-text: #e2e8f0;
-            --sidebar-active: #ff6720;
-            --sidebar-active-bg: rgba(255, 103, 32, 0.15);
-            --sidebar-hover: rgba(255, 255, 255, 0.1);
-            
-            /* 메인 색상 */
-            --main-bg: #f4f5f7;
-            --card-bg: #ffffff;
-            --border-color: #e2e8f0;
-            
-            /* 시스템 강조 색상 */
-            --cyan: var(--primary-light); 
-            --emerald: #10b981;
-            --amber: #f59e0b;
-            --red: #ef4444;
-            
-            /* 텍스트 색상 */
-            --text-primary: #1e293b;
-            --text-secondary: var(--brand-gray);
-            --text-light: #94a3b8;
-            
-            /* 기타 */
-            --shadow: 0 1px 3px rgba(0,0,0,0.1);
-            --shadow-lg: 0 10px 30px rgba(0,0,0,0.1);
-        }
-        
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Noto Sans KR', sans-serif; background: var(--main-bg); color: var(--text-primary); transition: background 0.3s, color 0.3s; }
-        
-        /* 레이아웃 & 사이드바 */
-        .layout { display: flex; min-height: 100vh; }
-        .sidebar { width: 260px; background: var(--sidebar-bg); color: var(--sidebar-text); position: fixed; height: 100vh; overflow-y: auto; transition: width 0.3s; z-index: 1000; border-right: 1px solid rgba(0,0,0,0.1); }
-        .sidebar.collapsed { width: 70px; }
-        .sidebar-logo { padding: 24px 20px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); }
-        .logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, var(--primary), var(--primary-light)); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-        .logo-text { font-size: 20px; font-weight: 800; color: white; white-space: nowrap; }
-        .sidebar.collapsed .logo-text, .sidebar.collapsed .menu-text, .sidebar.collapsed .submenu { display: none; }
-        .sidebar-menu { padding: 20px 0; }
-        .menu-section { margin-bottom: 8px; }
-        .menu-title { padding: 8px 20px; font-size: 11px; font-weight: 600; text-transform: uppercase; color: rgba(255,255,255,0.5); letter-spacing: 1px; }
-        .menu-item { padding: 12px 20px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: all 0.2s; position: relative; color: var(--sidebar-text); text-decoration: none; }
-        .menu-item:hover { background: var(--sidebar-hover); color: white; }
-        .menu-item.active { background: var(--sidebar-active-bg); color: #ffffff; }
-        .menu-item.active::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--sidebar-active); }
-        .menu-icon { width: 20px; height: 20px; flex-shrink: 0; color: inherit; pointer-events: none; }
-        .menu-item.active .menu-icon { color: var(--sidebar-active); }
-        .menu-text { font-size: 14px; font-weight: 500; pointer-events: none; }
-        .menu-arrow { margin-left: auto; transition: transform 0.3s; pointer-events: none; }
-        .menu-item.expanded .menu-arrow { transform: rotate(90deg); }
-        .submenu { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
-        .submenu.show { max-height: 2000px; }
-        .submenu-item { padding: 8px 20px 8px 52px; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s; color: rgba(255,255,255,0.7); font-size: 13px; }
-        .submenu-item:hover { background: var(--sidebar-hover); color: white; }
-        .submenu-item::before { content: ''; width: 4px; height: 4px; border-radius: 50%; background: rgba(255,255,255,0.5); }
-        
-        /* 메인 콘텐츠 & 상단바 */
-        .main-content { flex: 1; margin-left: 260px; transition: margin-left 0.3s; }
-        .sidebar.collapsed + .main-content { margin-left: 70px; }
-        .topbar { background: var(--card-bg); border-bottom: 1px solid var(--border-color); padding: 16px 32px; display: flex; align-items: center; gap: 24px; position: sticky; top: 0; z-index: 100; transition: background 0.3s; }
-        .breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--text-secondary); }
-        .search-box { flex: 1; max-width: 500px; position: relative; }
-        .search-input { width: 100%; padding: 10px 40px 10px 40px; border: 1px solid var(--border-color); border-radius: 24px; background: var(--main-bg); font-size: 14px; transition: all 0.3s; color: var(--text-primary); }
-        .search-input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(255,103,32,0.1); }
-        .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-secondary); }
-        .icon-btn { width: 36px; height: 36px; border-radius: 50%; border: none; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-secondary); transition: all 0.2s; position: relative; }
-        .icon-btn:hover { background: var(--main-bg); color: var(--primary); }
-        
-        /* 콘텐츠 영역 */
-        .content { padding: 32px; animation: fadeIn 0.3s; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .page-section { display: none; }
-        .page-section.active { display: block; }
-        
-        .welcome-banner { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%); color: white; padding: 48px; border-radius: 16px; margin-bottom: 32px; display: flex; align-items: center; justify-content: space-between; position: relative; overflow: hidden; box-shadow: 0 10px 20px rgba(255, 103, 32, 0.2); }
-        .welcome-content { position: relative; z-index: 1; }
-        .welcome-title { font-size: 32px; font-weight: 800; margin-bottom: 8px; }
-        .welcome-subtitle { font-size: 16px; opacity: 0.9; }
-        
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 24px; margin-bottom: 32px; }
-        .stat-card { background: var(--card-bg); border-radius: 12px; padding: 24px; box-shadow: var(--shadow); position: relative; overflow: hidden; transition: all 0.3s; }
-        .stat-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
-        .stat-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
-        .stat-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
-        .stat-value { font-size: 32px; font-weight: 800; color: var(--text-primary); margin-bottom: 4px; }
-        .stat-label { font-size: 14px; color: var(--text-secondary); }
-        
-        .grid-2-1 { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 32px; }
-        .card { background: var(--card-bg); border-radius: 12px; padding: 24px; box-shadow: var(--shadow); }
-        .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
-        .card-title { font-size: 18px; font-weight: 700; color: var(--text-primary); }
-        .card-link { font-size: 13px; color: var(--primary); text-decoration: none; font-weight: 600; }
-        
-        /* 공통 폼 카드 그리드 (양식 & 규정 및 동적 게시판) */
-        /* 게시판 테이블 리스트 */
-        .form-grid { display: flex; flex-direction: column; gap: 0; }
-        .board-table { width: 100%; border-collapse: separate; border-spacing: 0; background: var(--card-bg); border-radius: 12px; overflow: hidden; box-shadow: var(--shadow); }
-        .board-table thead th { padding: 14px 16px; font-size: 12px; font-weight: 700; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; background: var(--main-bg); border-bottom: 2px solid var(--border-color); text-align: left; white-space: nowrap; }
-        .board-table thead th:first-child { padding-left: 20px; }
-        .board-table tbody tr { transition: all 0.15s; cursor: pointer; border-bottom: 1px solid var(--border-color); }
-        .board-table tbody tr:last-child { border-bottom: none; }
-        .board-table tbody tr:hover { background: rgba(255,103,32,0.04); }
-        .board-table td { padding: 14px 16px; font-size: 14px; color: var(--text-primary); vertical-align: middle; }
-        .board-table td:first-child { padding-left: 20px; }
-        .board-row-icon { width: 36px; height: 36px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
-        .board-row-icon.docx { background: rgba(37,99,235,0.12); }
-        .board-row-icon.xlsx { background: rgba(16,185,129,0.12); }
-        .board-row-icon.pdf { background: rgba(239,68,68,0.12); }
-        .board-row-icon.pptx { background: rgba(245,158,11,0.12); }
-        .board-row-icon.general { background: rgba(107,114,128,0.12); }
-        .board-row-title { font-weight: 600; color: var(--text-primary); }
-        .board-row-title:hover { color: var(--primary); }
-        .board-row-badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; background: var(--main-bg); color: var(--text-secondary); }
-        .board-row-date { font-size: 13px; color: var(--text-light); white-space: nowrap; }
-        .board-row-views { font-size: 13px; color: var(--text-light); white-space: nowrap; }
-        .board-row-type { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 6px; white-space: nowrap; }
-        .board-row-type.pdf { background: rgba(239,68,68,0.1); color: #ef4444; }
-        .board-row-type.docx { background: rgba(37,99,235,0.1); color: #2563eb; }
-        .board-row-type.xlsx { background: rgba(16,185,129,0.1); color: #10b981; }
-        .board-row-type.pptx { background: rgba(245,158,11,0.1); color: #f59e0b; }
-        .board-row-type.url { background: rgba(99,102,241,0.1); color: #6366f1; }
-        .board-row-type.text { background: rgba(107,114,128,0.1); color: #6b7280; }
-        @media (max-width: 768px) {
-            .board-table thead { display: none; }
-            .board-table tbody tr { display: flex; flex-wrap: wrap; padding: 12px 16px; gap: 8px; align-items: center; }
-            .board-table td { padding: 0; border: none; }
-            .board-table td.td-icon { flex: 0 0 36px; }
-            .board-table td.td-title { flex: 1; min-width: 150px; }
-            .board-table td.td-cat, .board-table td.td-date, .board-table td.td-views, .board-table td.td-type { font-size: 12px; }
-        }
-        /* 기존 카드형 호환 (숨김) */
-        .form-card { display: none; }
-        .download-btn { display: none; }
-        
-        /* 카테고리 필터 (공통) */
-        .category-filter { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
-        .filter-btn { padding: 8px 20px; border: 2px solid var(--border-color); border-radius: 20px; background: var(--card-bg); color: var(--text-secondary); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
-        .filter-btn:hover { border-color: var(--primary); color: var(--primary); }
-        .filter-btn.active { border-color: var(--primary); background: var(--primary); color: white; }
-
-        /* 기타 스타일 */
-        .update-list { display: flex; flex-direction: column; gap: 12px; }
-        .update-item { padding: 16px; border-radius: 8px; background: var(--main-bg); display: flex; align-items: center; gap: 16px; cursor: pointer; transition: all 0.2s; }
-        .update-item:hover { transform: translateX(4px); background: var(--border-color); border-left: 3px solid var(--primary); }
-        .update-icon { width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
-        .update-content { flex: 1; }
-        .update-title { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
-        .update-meta { font-size: 12px; color: var(--text-secondary); display: flex; align-items: center; gap: 8px; }
-        .dept-badge { padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; background: rgba(255,103,32,0.1); color: var(--primary); }
-        
-        .popular-list { display: flex; flex-direction: column; gap: 12px; }
-        .popular-item { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 8px; background: var(--main-bg); cursor: pointer; transition: all 0.2s; }
-        .popular-item:hover { background: var(--border-color); }
-        .popular-rank { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; flex-shrink: 0; }
-        .popular-rank.gold { background: linear-gradient(135deg, #FFD700, #FFA500); color: white; }
-        .popular-rank.silver { background: linear-gradient(135deg, #C0C0C0, #808080); color: white; }
-        .popular-rank.bronze { background: linear-gradient(135deg, #CD7F32, #8B4513); color: white; }
-        .popular-rank.normal { background: var(--border-color); color: var(--text-secondary); }
-        .popular-title { font-size: 13px; font-weight: 500; color: var(--text-primary); }
-        
-        .notice-banner { background: linear-gradient(135deg, #fff0e6, #ffe0d1); border-left: 4px solid var(--primary); padding: 16px 20px; border-radius: 8px; margin-bottom: 16px; display: flex; align-items: center; gap: 12px; cursor: pointer;}
-        .notice-banner.info { background: linear-gradient(135deg, #f8f9fa, #e2e8f0); border-left-color: var(--brand-gray); }
-        .notice-icon { font-size: 20px; }
-        .notice-text { font-size: 14px; font-weight: 600; color: var(--text-primary); }
-        
-        /* 탭 */
-        .tabs { display: flex; gap: 32px; border-bottom: 2px solid var(--border-color); margin-bottom: 24px; }
-        .tab { padding: 12px 0; font-size: 15px; font-weight: 600; color: var(--text-secondary); cursor: pointer; position: relative; transition: color 0.2s; border: none; background: none; }
-        .tab.active { color: var(--primary); }
-        .tab.active::after { content: ''; position: absolute; bottom: -2px; left: 0; right: 0; height: 2px; background: var(--primary); }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; animation: fadeIn 0.3s; }
-        
-        /* 테이블 */
-        .table-container { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; }
-        thead { background: var(--main-bg); }
-        th { padding: 12px 16px; text-align: left; font-size: 13px; font-weight: 700; color: var(--text-primary); border-bottom: 2px solid var(--border-color); cursor: pointer; user-select: none; }
-        th:hover { background: var(--border-color); }
-        td { padding: 16px; font-size: 14px; color: var(--text-secondary); border-bottom: 1px solid var(--border-color); }
-        tbody tr { transition: background 0.2s; }
-        tbody tr:hover { background: var(--main-bg); }
-        
-        .contact-header { display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
-        .contact-search { flex: 1; min-width: 250px; padding: 10px 16px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 14px; background: var(--card-bg); color: var(--text-primary); }
-        .contact-search:focus { outline: none; border-color: var(--primary); }
-        .dept-select { padding: 10px 16px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 14px; background: var(--card-bg); color: var(--text-primary); cursor: pointer; }
-        .avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 14px; }
-        .status-badge { padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
-        .status-badge.active { background: rgba(16,185,129,0.1); color: var(--emerald); }
-        .status-badge.dispatch { background: rgba(245,158,11,0.1); color: var(--amber); }
-        .status-badge.leave { background: rgba(239,68,68,0.1); color: var(--red); }
-        
-        .org-chart { display: flex; flex-direction: column; align-items: center; gap: 40px; padding: 40px 20px; overflow-x: auto; white-space: nowrap; }
-        .org-level { display: flex; justify-content: center; gap: 30px; position: relative; }
-        .org-box { background: var(--card-bg); border: 2px solid var(--border-color); border-radius: 12px; padding: 20px 32px; text-align: center; position: relative; transition: all 0.3s; min-width: 140px; }
-        .org-box:hover { transform: scale(1.05); box-shadow: var(--shadow-lg); border-color: var(--primary); z-index: 10; }
-        .org-box.ceo { background: linear-gradient(135deg, var(--brand-gray), var(--brand-gray-dark)); color: white; border-color: var(--brand-gray); }
-        .org-box.director { border-color: var(--primary); background: rgba(255,103,32,0.05); }
-        .org-name { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
-        .org-title { font-size: 13px; opacity: 0.8; }
-        .org-connector { width: 2px; height: 40px; background: var(--border-color); margin: 0 auto; position: relative; }
-        .org-connector::before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 12px; height: 12px; border-radius: 50%; background: var(--border-color); }
-        .org-connector::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 12px; height: 12px; border-radius: 50%; background: var(--border-color); }
-        
-        .notice-list { display: flex; flex-direction: column; gap: 16px; }
-        .notice-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 24px; cursor: pointer; transition: all 0.2s; border-left: 4px solid var(--brand-gray); }
-        .notice-card:hover { transform: translateX(4px); border-color: var(--primary); border-left-color: var(--primary); box-shadow: var(--shadow-lg); }
-        .notice-card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
-        .notice-type { padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 700; }
-        .notice-type.urgent { background: rgba(239,68,68,0.1); color: var(--red); }
-        .notice-type.info { background: rgba(83,86,90,0.1); color: var(--brand-gray); }
-        .notice-type.important { background: rgba(255,103,32,0.1); color: var(--primary); }
-        .notice-card-title { font-size: 16px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; }
-        .notice-card-meta { font-size: 13px; color: var(--text-secondary); }
-        
-        .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 2000; align-items: center; justify-content: center; padding: 20px; }
-        .modal.show { display: flex; }
-        .modal-content { background: var(--card-bg); border-radius: 16px; max-width: 800px; width: 100%; max-height: 85vh; overflow-y: auto; position: relative; animation: modalSlideUp 0.3s; }
-        @keyframes modalSlideUp { from { opacity: 0; transform: translateY(50px); } to { opacity: 1; transform: translateY(0); } }
-        .modal-header { padding: 24px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; }
-        .modal-title { font-size: 20px; font-weight: 700; color: var(--text-primary); }
-        .modal-close { width: 32px; height: 32px; border-radius: 50%; border: none; background: transparent; cursor: pointer; font-size: 20px; color: var(--text-secondary); transition: all 0.2s; }
-        .modal-close:hover { background: var(--main-bg); color: var(--primary); }
-        .modal-body { padding: 24px; }
-        
-        .scroll-top { position: fixed; bottom: 32px; right: 32px; width: 50px; height: 50px; border-radius: 50%; background: var(--primary); color: white; border: none; cursor: pointer; display: none; align-items: center; justify-content: center; font-size: 20px; box-shadow: var(--shadow-lg); transition: all 0.3s; z-index: 1000; }
-        .scroll-top.show { display: flex; }
-        .scroll-top:hover { transform: translateY(-4px); background: var(--primary-hover); }
-        
-        .footer { text-align: center; padding: 32px; color: var(--text-secondary); font-size: 13px; border-top: 1px solid var(--border-color); margin-top: 48px; }
-        
-        @media (max-width: 1280px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } .grid-2-1 { grid-template-columns: 1fr; } }
-        @media (max-width: 768px) { .sidebar { transform: translateX(-100%); } .sidebar.mobile-show { transform: translateX(0); } .main-content { margin-left: 0; } .topbar { padding: 12px 16px; } .search-box { display: none; } .content { padding: 16px; } .welcome-banner { padding: 32px 24px; } .welcome-title { font-size: 24px; } .stats-grid { grid-template-columns: 1fr; } .tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; } .form-grid { grid-template-columns: 1fr; } }
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: var(--main-bg); }
-        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
-        
-        /* 다크모드 */
-        body.dark-mode {
-            --main-bg: #1a1b1e;
-            --card-bg: #2a2b2e;
-            --border-color: #3a3b3e;
-            --text-primary: #e2e8f0;
-            --text-secondary: #94a3b8;
-            --text-light: #64748b;
-            --shadow: 0 1px 3px rgba(0,0,0,0.3);
-            --shadow-lg: 0 10px 30px rgba(0,0,0,0.3);
-        }
-        body.dark-mode .topbar { background: #2a2b2e; border-color: #3a3b3e; }
-        body.dark-mode .search-input { background: #1a1b1e; border-color: #3a3b3e; color: #e2e8f0; }
-        body.dark-mode .board-table thead th { background: #1a1b1e; border-color: #3a3b3e; }
-        body.dark-mode .board-table tbody tr { border-color: #3a3b3e; }
-        body.dark-mode .board-table tbody tr:hover { background: rgba(255,103,32,0.08); }
-        body.dark-mode .filter-btn { background: #2a2b2e; border-color: #3a3b3e; color: #94a3b8; }
-        body.dark-mode .stat-card, body.dark-mode .card { background: #2a2b2e; }
-        body.dark-mode .notice-card { background: #2a2b2e; border-color: #3a3b3e; }
-        body.dark-mode .modal-content { background: #2a2b2e; }
-        body.dark-mode .modal-header { border-color: #3a3b3e; }
-        body.dark-mode .update-item { background: #1a1b1e; }
-        body.dark-mode .update-item:hover { background: #3a3b3e; }
-        body.dark-mode .board-row-badge { background: #1a1b1e; color: #94a3b8; }
-        body.dark-mode .contact-card { background: #2a2b2e !important; }
-        .dark-toggle { cursor: pointer; font-size: 18px; }
-
-        /* 즐겨찾기 별 */
-        .fav-star { cursor: pointer; font-size: 16px; transition: transform 0.2s; user-select: none; }
-        .fav-star:hover { transform: scale(1.3); }
-        .fav-star.active { color: #f59e0b; }
-
-        /* NEW 배지 */
-        .new-badge { display: inline-block; background: #ef4444; color: white; font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 4px; margin-left: 6px; vertical-align: middle; animation: newPulse 2s infinite; }
-        @keyframes newPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
-
-        /* 빵가루 네비게이션 개선 */
-        .breadcrumb-item { color: var(--text-secondary); font-size: 14px; }
-        .breadcrumb-item a { color: var(--text-secondary); text-decoration: none; cursor: pointer; }
-        .breadcrumb-item a:hover { color: var(--primary); }
-        .breadcrumb-sep { color: var(--text-light); margin: 0 6px; font-size: 12px; }
-        .breadcrumb-current { color: var(--text-primary); font-weight: 600; }
-
-        /* 인쇄 버튼 */
-        .print-btn { background: none; border: 1px solid var(--border-color); border-radius: 8px; padding: 6px 14px; font-size: 13px; color: var(--text-secondary); cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; }
-        .print-btn:hover { border-color: var(--primary); color: var(--primary); }
-        @media print {
-            .sidebar, .topbar, .scroll-top, .admin-login-modal, .admin-overlay, .print-btn, .fav-star { display: none !important; }
-            .main-content { margin-left: 0 !important; }
-            .content { padding: 0 !important; }
-            body.dark-mode { --main-bg: #fff; --card-bg: #fff; --text-primary: #000; --text-secondary: #333; }
-        }
-
-        /* 최근 본 문서 / 즐겨찾기 섹션 */
-        .quick-section { margin-bottom: 32px; }
-        .quick-section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-        .quick-section-title { font-size: 16px; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px; }
-        .quick-list { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px; }
-        .quick-item { flex-shrink: 0; background: var(--card-bg); border-radius: 10px; padding: 14px 18px; box-shadow: var(--shadow); cursor: pointer; transition: all 0.2s; min-width: 200px; max-width: 280px; border-left: 3px solid var(--primary); }
-        .quick-item:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
-        .quick-item-title { font-size: 13px; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; }
-        .quick-item-meta { font-size: 11px; color: var(--text-light); }
-
-        /* 관리자 모드 스타일 */
-        .admin-login-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(83, 86, 90, 0.85); backdrop-filter: blur(10px); z-index: 10000; align-items: center; justify-content: center; animation: fadeIn 0.3s ease; }
-        .admin-login-modal.show { display: flex; }
-        .admin-login-box { background: linear-gradient(135deg, var(--brand-gray) 0%, var(--brand-gray-dark) 100%); border-radius: 24px; padding: 50px; box-shadow: 0 25px 70px rgba(0,0,0,0.4); max-width: 450px; width: 90%; animation: slideUp 0.4s ease; }
-        .admin-login-box h2 { text-align: center; color: white; margin-bottom: 35px; font-size: 28px; font-weight: 700; text-shadow: 0 2px 10px rgba(0,0,0,0.2); }
-        .admin-login-form .form-group { margin-bottom: 20px; }
-        .admin-login-form label { display: block; margin-bottom: 8px; color: #ddd; font-weight: 600; }
-        .admin-login-form input[type="password"] { width: 100%; padding: 12px; border: 2px solid transparent; border-radius: 8px; font-size: 16px; transition: border-color 0.3s; }
-        .admin-login-form input[type="password"]:focus { outline: none; border-color: var(--primary); }
-        .admin-login-error { color: #ff6b6b; font-size: 14px; margin-top: 10px; display: none; }
-        .admin-login-error.show { display: block; }
-        .admin-login-buttons { display: flex; gap: 10px; margin-top: 20px; }
-        .admin-login-buttons .btn { flex: 1; padding: 12px; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
-        .admin-login-buttons .btn-primary { background: var(--primary); color: white; }
-        .admin-login-buttons .btn-primary:hover { transform: translateY(-2px); background: var(--primary-hover); box-shadow: 0 8px 25px rgba(255,103,32,0.4); }
-        .admin-login-buttons .btn-secondary { background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); }
-        .admin-login-buttons .btn-secondary:hover { background: rgba(255,255,255,0.2); }
-        
-        .admin-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, var(--brand-gray) 0%, var(--brand-gray-dark) 100%); z-index: 9999; overflow: hidden; animation: overlayFadeIn 0.5s ease; }
-        .admin-overlay.show { display: block; }
-        .admin-container { width: 100%; height: 100%; overflow-y: auto; position: relative; }
-        .admin-top-header { position: sticky; top: 0; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(20px); padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid rgba(255, 255, 255, 0.1); z-index: 100; }
-        .admin-top-header h1 { color: white; font-size: 28px; font-weight: 700; text-shadow: 0 2px 10px rgba(0,0,0,0.2); }
-        .admin-panel { padding: 40px; max-width: 1400px; margin: 0 auto; }
-        .admin-header { margin-bottom: 40px; text-align: center; }
-        .admin-welcome { color: rgba(255,255,255,0.9); font-size: 18px; font-weight: 500; margin-bottom: 8px; }
-        .admin-title { color: white; font-size: 36px; font-weight: 800; margin-bottom: 8px; text-shadow: 0 3px 15px rgba(0,0,0,0.3); }
-        .admin-subtitle { color: rgba(255,255,255,0.8); font-size: 16px; font-weight: 400; }
-        .admin-logout-btn { padding: 12px 24px; background: rgba(255, 255, 255, 0.1); color: white; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 12px; font-weight: 700; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; gap: 8px; }
-        .admin-logout-btn:hover { background: rgba(255, 255, 255, 0.2); transform: translateY(-2px); }
-        
-        .admin-tabs { display: flex; gap: 10px; margin-bottom: 30px; overflow-x: auto; padding-bottom: 10px; }
-        .admin-tab { padding: 12px 24px; background: var(--card-bg); border: 2px solid var(--border-color); border-radius: 10px; cursor: pointer; font-weight: 600; color: var(--text-secondary); transition: all 0.3s; white-space: nowrap; }
-        .admin-tab:hover { border-color: var(--primary); color: var(--primary); }
-        .admin-tab.active { background: var(--primary); color: white; border-color: var(--primary); }
-        .admin-tab-content { display: none; background: var(--card-bg); border-radius: 16px; padding: 30px; box-shadow: var(--shadow-lg); }
-        .admin-tab-content.active { display: block; }
-        .admin-tab-content h2 { font-size: 24px; color: var(--text-primary); margin-bottom: 20px; }
-        
-        .admin-form-group { margin-bottom: 20px; }
-        .admin-form-group label { display: block; margin-bottom: 8px; color: var(--text-primary); font-weight: 600; }
-        .admin-form-group input[type="text"], .admin-form-group input[type="url"], .admin-form-group input[type="email"], .admin-form-group input[type="password"], .admin-form-group input[type="number"], .admin-form-group select, .admin-form-group textarea { width: 100%; padding: 12px; border: 2px solid var(--border-color); border-radius: 8px; font-size: 16px; font-family: 'Noto Sans KR', sans-serif; background: var(--card-bg); color: var(--text-primary); }
-        .admin-form-group input:focus, .admin-form-group select:focus, .admin-form-group textarea:focus { outline: none; border-color: var(--primary); }
-        .admin-form-group textarea { min-height: 100px; resize: vertical; }
-        
-        .admin-btn { padding: 14px 28px; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; transition: all 0.3s; margin-right: 10px; }
-        .admin-btn-primary { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%); color: white; box-shadow: 0 4px 15px rgba(255, 103, 32, 0.4); }
-        .admin-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(255, 103, 32, 0.5); }
-        .admin-btn-success { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4); }
-        .admin-btn-success:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(16, 185, 129, 0.5); }
-        .admin-btn-danger { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4); }
-        .admin-btn-danger:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(239, 68, 68, 0.5); }
-        .admin-btn-small { padding: 8px 16px; font-size: 14px; }
-        
-        .admin-data-list { max-height: 500px; overflow-y: auto; border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(0, 0, 0, 0.05); border-radius: 12px; padding: 15px; margin-top: 25px; display: flex; flex-direction: column; gap: 12px; }
-        .admin-data-item { padding: 16px 20px; background: var(--card-bg); border-radius: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); border: 1px solid var(--border-color); transition: all 0.2s ease; }
-        .admin-data-item:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1); border-color: var(--primary); }
-        .admin-data-item-title { font-size: 16px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px; }
-        .admin-data-item-meta { font-size: 13px; color: var(--text-secondary); }
-        .admin-item-actions { display: flex; gap: 8px; }
-        .admin-btn-outline { background: transparent; border: 1px solid var(--border-color); color: var(--text-primary); }
-        .admin-btn-outline:hover { background: var(--main-bg); border-color: var(--primary); color: var(--primary); }
-        
-        .admin-success-message { padding: 12px 20px; background: #fff0e6; color: #d94a0d; border: 1px solid #ffd1b8; border-radius: 8px; margin-top: 20px; display: none; }
-        .admin-success-message.show { display: block; }
-        
-        .admin-backup-section { background: var(--main-bg); padding: 20px; border-radius: 12px; margin-top: 20px; }
-        .admin-backup-section h3 { color: var(--text-primary); margin-bottom: 15px; }
-        .admin-backup-section p { color: var(--text-secondary); margin-bottom: 15px; }
-        .admin-file-input-wrapper { position: relative; overflow: hidden; display: inline-block; width: 100%; }
-        .admin-file-input-wrapper input[type=file] { position: absolute; left: -9999px; }
-        .admin-file-input-label { display: block; padding: 12px; background: var(--brand-gray); color: white; text-align: center; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.2s; }
-        .admin-file-input-label:hover { background: var(--brand-gray-dark); transform: translateY(-2px); }
-        .admin-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        
-        @media (max-width: 768px) { .admin-row { grid-template-columns: 1fr; } .admin-tabs { flex-wrap: wrap; } }
-    </style>
+    <link rel="stylesheet" href="css/style.css?v=3">
+    <!-- CSS is loaded from css/style.css -->
 </head>
 <body>
     <div class="layout">
@@ -439,12 +52,6 @@
                         <div class="submenu-item" data-action="goto-hr-org">조직도</div>
                     </div>
                     
-                    <div class="menu-item" data-page="notices">
-                        <svg class="menu-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/>
-                        </svg>
-                        <span class="menu-text">공지사항</span>
-                    </div>
                 </div>
                 
                 <div class="menu-section">
@@ -504,28 +111,21 @@
                     </div>
 
                     <div class="stats-grid">
-                        <div class="stat-card" style="--stat-color: var(--primary)">
+                        <div class="stat-card" style="--stat-color: var(--primary); cursor:pointer;" onclick="navigateTo(Object.keys(pageNames).find(k => k !== 'dashboard' && k !== 'hr' && k !== 'notices' && k !== 'search-results') || 'dashboard')">
                             <div class="stat-header">
                                 <div class="stat-icon" style="background: rgba(255,103,32,0.1); color: var(--primary)">📄</div>
                             </div>
                             <div class="stat-value" id="count-total">0</div>
                             <div class="stat-label">총 문서</div>
                         </div>
-                        <div class="stat-card" style="--stat-color: var(--cyan)">
+                        <div class="stat-card" style="--stat-color: var(--cyan); cursor:pointer;" onclick="navigateTo('rule')">
                             <div class="stat-header">
                                 <div class="stat-icon" style="background: rgba(255,133,71,0.1); color: var(--cyan)">📋</div>
                             </div>
                             <div class="stat-value" id="count-reg">0</div>
                             <div class="stat-label">사내규정</div>
                         </div>
-                        <div class="stat-card" style="--stat-color: var(--emerald)">
-                            <div class="stat-header">
-                                <div class="stat-icon" style="background: rgba(16,185,129,0.1); color: var(--emerald)">📝</div>
-                            </div>
-                            <div class="stat-value" id="count-form">0</div>
-                            <div class="stat-label">등록 양식</div>
-                        </div>
-                        <div class="stat-card" style="--stat-color: var(--amber)">
+                        <div class="stat-card" style="--stat-color: var(--amber); cursor:pointer;" onclick="navigateTo('hr')">
                             <div class="stat-header">
                                 <div class="stat-icon" style="background: rgba(245,158,11,0.1); color: var(--amber)">👥</div>
                             </div>
@@ -558,8 +158,26 @@
 
                 <section class="page-section" id="dynamicBoardSection">
                     <h1 id="boardMainTitle" style="font-size: 28px; font-weight: 800; margin-bottom: 24px;">게시판</h1>
-                    <div class="category-filter" id="boardFilterContainer"></div>
+                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:24px; flex-wrap:wrap;">
+                    <div class="category-filter" id="boardFilterContainer" style="margin-bottom:0; flex:1;"></div>
+                    <div class="view-toggle" id="viewToggle">
+                        <button type="button" class="view-toggle-btn active" data-view="list" onclick="switchView('list')">📋 리스트</button>
+                        <button type="button" class="view-toggle-btn" data-view="gallery" onclick="switchView('gallery')">🖼️ 갤러리</button>
+                    </div>
+                </div>
                     <div class="form-grid" id="boardGridContainer"></div>
+                    <div class="gallery-grid" id="boardGalleryContainer" style="display:none;"></div>
+                    <!-- 제품 상세 페이지 -->
+                    <div id="productDetailView" style="display:none;">
+                        <div style="margin-bottom:20px;">
+                            <button type="button" onclick="closeProductDetail()" style="background:var(--main-bg); border:1px solid var(--border-color); padding:8px 20px; border-radius:8px; cursor:pointer; font-size:14px; color:var(--text-secondary); display:flex; align-items:center; gap:6px;">
+                                ← 목록으로
+                            </button>
+                        </div>
+                        <div id="productDetailTitle" style="font-size:24px; font-weight:800; margin-bottom:8px; color:var(--text-primary);"></div>
+                        <div id="productDetailSub" style="font-size:14px; color:var(--text-light); margin-bottom:24px;"></div>
+                        <div id="productDetailImages" style="display:flex; flex-direction:column; align-items:center; gap:16px;"></div>
+                    </div>
                     <!-- 인라인 문서 뷰어 -->
                     <div id="inlineViewer" style="display:none; margin-top: 24px;">
                         <div id="inlineViewerHeader" style="display:flex; align-items:center; justify-content:space-between; padding: 16px 20px; background: var(--brand-gray); color: white; border-radius: 12px 12px 0 0;">
@@ -576,7 +194,7 @@
                             </div>
                         </div>
                         <div id="inlineViewerBody" style="background: var(--card-bg); border: 1px solid var(--border-color); border-top: none; border-radius: 0 0 12px 12px; overflow: hidden;">
-                            <iframe id="inlineViewerFrame" style="width:100%; height:80vh; border:none;" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>
+                            <iframe id="inlineViewerFrame" style="width:100%; height:80vh; border:none;" allow="fullscreen"></iframe>
                         </div>
                     </div>
                 </section>
@@ -592,11 +210,11 @@
                             <input type="text" class="contact-search" id="contactSearch" placeholder="이름 또는 부서로 검색...">
                             <select class="dept-select" id="deptFilter">
                                 <option value="all">전체 부서</option>
-                                <option value="대표이사실">대표이사실</option>
+                                <option value="CEO">CEO/CSO/COO</option>
+                                <option value="사업본부">사업본부</option>
+                                <option value="기술연구소">기술연구소</option>
+                                <option value="생산본부">생산본부</option>
                                 <option value="경영지원본부">경영지원본부</option>
-                                <option value="인사팀">인사팀</option>
-                                <option value="영업본부">영업본부</option>
-                                <option value="IT팀">IT팀</option>
                             </select>
                         </div>
                         <div class="table-container">
@@ -609,7 +227,14 @@
                         </div>
                     </div>
                     <div class="tab-content" id="orgchart">
-                        <div class="org-chart" id="orgChartContainer"></div>
+                        <div id="orgChartContainer" style="text-align:center; padding:20px;">
+                            <div id="orgChartImage" style="display:none;"><img id="orgChartImg" src="" alt="조직도" style="max-width:100%; height:auto; border-radius:8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"></div>
+                            <div id="orgChartEmpty" style="padding:60px 20px; color:var(--text-light);">
+                                <div style="font-size:48px; margin-bottom:16px;">🏢</div>
+                                <p style="font-size:16px;">조직도 이미지가 등록되지 않았습니다.</p>
+                                <p style="font-size:13px;">관리자 모드에서 조직도 이미지를 업로드해주세요.</p>
+                            </div>
+                        </div>
                     </div>
                 </section>
                 
@@ -623,6 +248,35 @@
         </main>
     </div>
     
+    <!-- AI 챗봇 위젯 -->
+    <div id="chatbotToggle" onclick="toggleChatbot()" style="position:fixed; bottom:24px; right:24px; width:56px; height:56px; border-radius:50%; background:var(--primary); color:white; display:flex; align-items:center; justify-content:center; font-size:24px; cursor:pointer; box-shadow:0 4px 16px rgba(255,103,32,0.4); z-index:9999; transition:all 0.3s;" title="AI 도우미">💬</div>
+
+    <div id="chatbotPanel" style="display:none; position:fixed; bottom:90px; right:24px; width:400px; max-height:560px; background:var(--card-bg); border-radius:16px; box-shadow:0 8px 32px rgba(0,0,0,0.2); z-index:9999; overflow:hidden; flex-direction:column;">
+        <div style="padding:16px 20px; background:var(--primary); color:white; display:flex; align-items:center; justify-content:space-between;">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <span style="font-size:20px;">🤖</span>
+                <div>
+                    <div style="font-weight:700; font-size:15px;">NeoLab AI 도우미</div>
+                    <div style="font-size:11px; opacity:0.8;">등록된 문서를 기반으로 답변합니다</div>
+                </div>
+            </div>
+            <button onclick="toggleChatbot()" style="background:none; border:none; color:white; font-size:20px; cursor:pointer;">✕</button>
+        </div>
+        <div id="chatMessages" style="flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:12px; max-height:380px; min-height:200px;">
+            <div style="background:rgba(255,103,32,0.08); padding:12px 16px; border-radius:12px; border-top-left-radius:4px; font-size:13px; color:var(--text-primary); max-width:85%;">
+                안녕하세요! NeoLab KMS AI 도우미입니다. 😊<br>등록된 문서를 기반으로 질문에 답변해드립니다.<br><br>
+                <b>예시 질문:</b><br>
+                • "출장비 정산은 어떻게 하나요?"<br>
+                • "취업규칙에서 휴가 관련 내용 알려줘"<br>
+                • "김철수 연락처 알려줘"
+            </div>
+        </div>
+        <div style="padding:12px 16px; border-top:1px solid var(--border-color); display:flex; gap:8px;">
+            <input id="chatInput" type="text" placeholder="질문을 입력하세요..." style="flex:1; padding:10px 14px; border:1px solid var(--border-color); border-radius:24px; font-size:13px; outline:none; background:var(--main-bg); color:var(--text-primary);" onkeydown="if(event.key==='Enter')sendChat()">
+            <button onclick="sendChat()" style="width:40px; height:40px; border-radius:50%; background:var(--primary); color:white; border:none; cursor:pointer; font-size:16px; display:flex; align-items:center; justify-content:center;">➤</button>
+        </div>
+    </div>
+
     <div class="modal" id="noticeModal" onclick="if(event.target === this) this.classList.remove('show')">
         <div class="modal-content">
             <div class="modal-header">
@@ -659,72 +313,125 @@
 
     <div class="admin-overlay" id="adminOverlay">
         <div class="admin-container">
-            <div class="admin-top-header">
-                <h1>🔧 관리자 모드</h1>
-                <button type="button" class="admin-logout-btn" id="adminLogoutBtn"><span>←</span><span>로그아웃</span></button>
+            <!-- 관리자 사이드바 -->
+            <div class="admin-sidebar">
+                <div class="admin-sidebar-logo">
+                    <h2>NeoLab KMS</h2>
+                    <small>관리자 패널</small>
+                </div>
+                <nav class="admin-sidebar-nav">
+                    <div class="admin-sidebar-label">게시판</div>
+                    <div class="admin-nav-item active" data-tab="menuAdmin"><span class="nav-icon">📁</span> 메뉴/카테고리</div>
+                    <div class="admin-nav-item" data-tab="postAdmin"><span class="nav-icon">📝</span> 게시물 관리</div>
+                    <div class="admin-sidebar-label">관리</div>
+                    <div class="admin-nav-item" data-tab="contacts"><span class="nav-icon">👥</span> 인사정보</div>
+                    <div class="admin-nav-item" data-tab="orgchartAdmin"><span class="nav-icon">🏢</span> 조직도</div>
+                    <div class="admin-sidebar-label">시스템</div>
+                    <div class="admin-nav-item" data-tab="settings"><span class="nav-icon">⚙️</span> 설정</div>
+                    <div class="admin-nav-item" data-tab="backup"><span class="nav-icon">💾</span> 백업/복원</div>
+                    <div class="admin-nav-item" data-tab="adminManage" id="adminManageNavBtn" style="display:none;"><span class="nav-icon">👑</span> 관리자 관리</div>
+                </nav>
+                <div class="admin-sidebar-footer">
+                    <div class="admin-sidebar-user">
+                        <div style="width:32px; height:32px; border-radius:50%; background:#ff6720; display:flex; align-items:center; justify-content:center; color:white; font-weight:700; font-size:14px;" id="adminUserAvatar">A</div>
+                        <div class="admin-sidebar-user-info">
+                            <div class="admin-sidebar-user-name" id="adminUserName">관리자</div>
+                            <div class="admin-sidebar-user-role" id="adminUserRole">최고관리자</div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            
-            <div class="admin-panel">
-                <div class="admin-header">
-                    <div class="admin-welcome">환영합니다!</div>
-                    <div class="admin-title">NeoLab KMS 통합 관리자</div>
-                    <div class="admin-subtitle">메뉴(대분류)부터 카테고리, 게시물까지 모두 직접 관리하세요.</div>
+
+            <!-- 관리자 메인 -->
+            <div class="admin-main">
+                <div class="admin-top-header">
+                    <h1 id="adminPageTitle">📁 메뉴/카테고리</h1>
+                    <button type="button" class="admin-logout-btn" id="adminLogoutBtn"><span>←</span><span>나가기</span></button>
                 </div>
-                
-                <div class="admin-tabs">
-                    <button type="button" class="admin-tab active" data-tab="menuAdmin">📁 메뉴/카테고리 관리</button>
-                    <button type="button" class="admin-tab" data-tab="postAdmin">📝 게시물(문서) 관리</button>
-                    <button type="button" class="admin-tab" data-tab="notices">📢 공지사항</button>
-                    <button type="button" class="admin-tab" data-tab="contacts">👥 인사정보</button>
-                    <button type="button" class="admin-tab" data-tab="orgchartAdmin">🏢 조직도</button>
-                    <button type="button" class="admin-tab" data-tab="settings">⚙️ 설정</button>
-                    <button type="button" class="admin-tab" data-tab="backup">💾 백업/복원</button>
-                    <button type="button" class="admin-tab" data-tab="adminManage" id="adminManageTabBtn" style="display:none;">👑 관리자 관리</button>
-                </div>
+
+                <div class="admin-panel">
+                    <div class="admin-header"></div>
+                    <div class="admin-tabs" style="display:none;"></div>
                 
                 <div class="admin-tab-content active" id="menuAdminTab">
-                    <h2>📁 대분류(메뉴) 및 중분류(카테고리) 관리</h2>
-                    <p style="color:var(--text-secondary); margin-bottom:20px; line-height:1.6;">왼쪽 사이드바에 표시될 큰 메뉴(대분류)를 만들고, 그 안에 들어갈 세부 탭(중분류)을 자유롭게 구성하세요. ↑↓ 버튼으로 순서를 변경할 수 있습니다.</p>
-
-                    <div style="background: rgba(0,0,0,0.1); padding: 20px; border-radius: 12px; margin-bottom: 20px;">
-                        <h3 style="margin-bottom: 15px; color: var(--primary);">1. 대분류 (메인 게시판) 관리</h3>
-                        <div class="admin-row">
-                            <div class="admin-form-group">
-                                <label for="boardIdInput">메뉴 ID (영문소문자 필수, 띄어쓰기 금지)</label>
-                                <input type="text" id="boardIdInput" placeholder="예: sales, rules, design">
-                            </div>
-                            <div class="admin-form-group">
-                                <label for="boardNameInput">메뉴 이름 (사이드바에 표시될 이름)</label>
-                                <input type="text" id="boardNameInput" placeholder="예: 영업자료실, 디자인 에셋">
-                            </div>
-                        </div>
-                        <button type="button" class="admin-btn admin-btn-success" id="addBoardBtn">대분류 추가</button>
-                        <div class="admin-data-list" id="boardListContainer" style="max-height: 300px;"></div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                        <h2 style="margin-bottom:0;">📁 메뉴/카테고리 관리</h2>
+                        <button type="button" class="admin-write-btn" onclick="showAddBoardDialog()">+ 메뉴 추가</button>
                     </div>
+                    <p style="color:var(--text-light); margin-bottom:20px; font-size:13px;">메뉴(대분류) 아래에 카테고리(중분류)를 자유롭게 구성하세요. ▲▼로 순서 변경, 이름 클릭으로 수정 가능합니다.</p>
 
-                    <div style="background: rgba(0,0,0,0.1); padding: 20px; border-radius: 12px;">
-                        <h3 style="margin-bottom: 15px; color: var(--emerald);">2. 중분류 (필터 탭) 관리</h3>
-                        <div class="admin-row">
-                            <div class="admin-form-group">
-                                <label for="catTargetBoard">소속될 대분류 선택</label>
-                                <select id="catTargetBoard"></select>
-                            </div>
-                            <div class="admin-form-group">
-                                <label for="catIdInput">카테고리 ID (영문소문자)</label>
-                                <input type="text" id="catIdInput" placeholder="예: proposal, manual">
-                            </div>
-                        </div>
-                        <div class="admin-form-group">
-                            <label for="catNameInput">카테고리 이름 (화면 탭에 표시될 이름)</label>
-                            <input type="text" id="catNameInput" placeholder="예: 제안서 양식, 업무 매뉴얼">
-                        </div>
-                        <button type="button" class="admin-btn admin-btn-success" id="addCatBtn">중분류 추가</button>
-                        <div class="admin-data-list" id="catListContainer" style="max-height: 300px;"></div>
+                    <div id="menuTreeContainer" style="display:flex; flex-direction:column; gap:0;"></div>
+
+                    <!-- 기존 폼 요소 (숨김, JS 호환용) -->
+                    <div style="display:none;">
+                        <input type="text" id="boardIdInput"><input type="text" id="boardNameInput">
+                        <select id="boardViewTypeInput"><option value="list">리스트</option><option value="gallery">갤러리</option></select>
+                        <button id="addBoardBtn"></button>
+                        <select id="catTargetBoard"></select><input type="text" id="catIdInput"><input type="text" id="catNameInput">
+                        <button id="addCatBtn"></button>
+                        <div id="boardListContainer"></div><div id="catListContainer"></div>
                     </div>
                 </div>
 
                 <div class="admin-tab-content" id="postAdminTab">
-                    <h2>📝 통합 문서/게시물 등록</h2>
+                    <h2>&#128221; &#44172;&#49884;&#47932; &#44288;&#47532;</h2>
+
+                    <!-- &#44172;&#49884;&#54032;/&#52852;&#53580;&#44256;&#47532; &#54596;&#53552; -->
+                    <div style="display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; align-items:center;">
+                        <select id="adminPostBoardFilter" onchange="loadAdminPostTable()" style="padding:10px 14px; border:1px solid var(--border-color); border-radius:8px; font-size:14px; min-width:150px;">
+                            <option value="all">&#51204;&#52404; &#44172;&#49884;&#54032;</option>
+                        </select>
+                        <select id="adminPostCatFilter" onchange="loadAdminPostTable()" style="padding:10px 14px; border:1px solid var(--border-color); border-radius:8px; font-size:14px; min-width:150px;">
+                            <option value="all">&#51204;&#52404; &#52852;&#53580;&#44256;&#47532;</option>
+                        </select>
+                    </div>
+
+                    <!-- &#44160;&#49353; -->
+                    <div class="admin-search-box">
+                        <select class="admin-search-select" id="adminPostSearchField">
+                            <option value="title">&#51228;&#47785;</option>
+                            <option value="content">&#45236;&#50857;</option>
+                        </select>
+                        <input type="text" class="admin-search-input" id="adminPostSearchInput" placeholder="&#44160;&#49353;&#50612;&#47484; &#51077;&#47141;&#54616;&#49464;&#50836;..." onkeypress="if(event.key==='Enter') loadAdminPostTable()">
+                        <button type="button" class="admin-search-btn" onclick="loadAdminPostTable()">&#44160;&#49353;</button>
+                    </div>
+
+                    <!-- &#53812;&#48148; -->
+                    <div class="admin-toolbar">
+                        <div class="admin-toolbar-left">
+                            <span id="adminPostCount">&#52509; 0&#44060;</span>
+                        </div>
+                        <div class="admin-toolbar-right">
+                            <button type="button" class="admin-delete-btn" onclick="deleteSelectedPosts()">&#49325;&#51228;</button>
+                            <button type="button" class="admin-write-btn" onclick="openWriteModal()">&#44544;&#50416;&#44592;</button>
+                        </div>
+                    </div>
+
+                    <!-- &#44172;&#49884;&#47932; &#53580;&#51060;&#48660; -->
+                    <div style="overflow-x:auto;">
+                        <table class="admin-table" id="adminPostTable">
+                            <thead>
+                                <tr>
+                                    <th class="td-check"><input type="checkbox" id="adminCheckAll" onchange="toggleAllPostChecks(this.checked)"></th>
+                                    <th style="width:50px">&#48264;&#54840;</th>
+                                    <th style="width:80px">&#44172;&#49884;&#54032;</th>
+                                    <th style="width:80px">&#52852;&#53580;&#44256;&#47532;</th>
+                                    <th>&#51228;&#47785;</th>
+                                    <th style="width:70px">&#50976;&#54805;</th>
+                                    <th style="width:90px">&#45216;&#51676;</th>
+                                    <th style="width:60px">&#51312;&#54924;</th>
+                                    <th style="width:100px">&#44288;&#47532;</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminPostTableBody"></tbody>
+                        </table>
+                    </div>
+
+                    <!-- &#54168;&#51060;&#51648;&#45348;&#51060;&#49496; -->
+                    <div class="admin-pagination" id="adminPostPagination"></div>
+
+                    <hr style="margin: 24px 0; border: none; border-top: 1px solid var(--border-color);">
+                    <h3 style="margin-bottom: 12px;">📝 통합 문서/게시물 등록</h3>
 
                     <div class="admin-row">
                         <div class="admin-form-group">
@@ -736,7 +443,6 @@
                             <select id="postCatSel"></select>
                         </div>
                     </div>
-
                     <div class="admin-row">
                         <div class="admin-form-group" id="postTypeGroup">
                             <label for="postType">입력 및 표시 방식</label>
@@ -754,7 +460,6 @@
                             <input type="text" id="postTitle" placeholder="예: 2026년 상반기 제안서">
                         </div>
                     </div>
-                    
                     <div class="admin-row">
                         <div class="admin-form-group">
                             <label for="postIcon">카드 아이콘 (선택, 이모지)</label>
@@ -765,12 +470,10 @@
                             <input type="text" id="postSubInfo" placeholder="예: v1.0, 50만원, 인사팀 등">
                         </div>
                     </div>
-                    
                     <div class="admin-form-group" id="postUrlGroup" style="display: none;">
                         <label for="postUrl">🔗 외부 URL / 다운로드 링크</label>
                         <input type="url" id="postUrl" placeholder="예: https://docs.google.com/...">
                     </div>
-                    
                     <div class="admin-form-group" id="postPdfGroup" style="display: none; background: rgba(255,103,32,0.05); padding: 15px; border-radius: 8px; border: 1px dashed var(--primary);">
                         <label style="color: var(--primary);">📄 PDF 파일 업로드 (최대 50MB)</label>
                         <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 10px;">파일은 서버에 저장됩니다.</p>
@@ -781,12 +484,10 @@
                         <div id="postPdfFileName" style="font-size: 13px; font-weight: bold; color: var(--text-primary); margin-top: 10px;"></div>
                         <input type="hidden" id="postFileName">
                     </div>
-
                     <div class="admin-form-group" id="postContentGroup">
                         <label for="postContent">상세 내용 (모달창 텍스트)</label>
                         <textarea id="postContent" placeholder="상세 내용을 입력하세요 (줄바꿈은 <br> 태그, 표는 HTML 태그 사용)"></textarea>
                     </div>
-                    
                     <button type="button" class="admin-btn admin-btn-success" id="addPostBtn">게시물 등록</button>
 
                     <hr style="margin: 24px 0; border: none; border-top: 1px solid var(--border-color);">
@@ -816,28 +517,63 @@
                 
                 <div class="admin-tab-content" id="contactsTab">
                     <h2>👥 인사정보 관리</h2>
-                    <div class="admin-row">
-                        <div class="admin-form-group"><label>이름</label><input type="text" id="contactName"></div>
-                        <div class="admin-form-group"><label>직급</label><input type="text" id="contactPosition"></div>
+
+                    <!-- 검색 및 추가 버튼 -->
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+                        <input type="text" id="contactSearchInput" placeholder="이름, 부서, 직급 검색..." oninput="filterAdminContacts()" style="padding:10px 14px; width:100%; max-width:300px; border-radius:8px; border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-primary); font-size:14px;">
+                        <button type="button" class="admin-write-btn" onclick="openContactModal()">+ 직원 추가</button>
                     </div>
-                    <div class="admin-row">
-                        <div class="admin-form-group"><label>부서</label><input type="text" id="contactDept"></div>
-                        <div class="admin-form-group"><label>전화번호</label><input type="text" id="contactPhone"></div>
+
+                    <div id="adminContactCount" style="font-size:14px; color:var(--text-secondary); margin-bottom:12px;">총 0명</div>
+
+                    <!-- 연락처 테이블 -->
+                    <div style="overflow-x:auto;">
+                        <table class="admin-table" id="adminContactTable">
+                            <thead>
+                                <tr>
+                                    <th>이름</th>
+                                    <th>직급</th>
+                                    <th>부서</th>
+                                    <th>전화번호</th>
+                                    <th>이메일</th>
+                                    <th>상태</th>
+                                    <th style="width:100px;">관리</th>
+                                </tr>
+                            </thead>
+                            <tbody id="contactsList"></tbody>
+                        </table>
                     </div>
-                    <div class="admin-row">
-                        <div class="admin-form-group"><label>이메일</label><input type="email" id="contactEmail"></div>
-                        <div class="admin-form-group"><label>상태</label><select id="contactStatus"><option value="🟢 재직중">🟢 재직중</option><option value="🟡 파견중">🟡 파견중</option><option value="🔴 휴직중">🔴 휴직중</option></select></div>
+
+                    <!-- 기존 폼 (숨김, 호환용) -->
+                    <div style="display:none;">
+                        <input type="text" id="contactName"><input type="text" id="contactPosition">
+                        <input type="text" id="contactDept"><input type="text" id="contactPhone">
+                        <input type="email" id="contactEmail">
+                        <select id="contactStatus"><option value="active">재직중</option><option value="dispatch">파견중</option><option value="leave">휴직중</option></select>
+                        <button id="addContactBtn">추가</button>
+                        <span id="editContactIndicator" style="display:none;"></span>
                     </div>
-                    <button type="button" class="admin-btn admin-btn-success" id="addContactBtn">추가</button>
-                    <span id="editContactIndicator" style="display:none; margin-left:12px; color:var(--primary); font-weight:bold;">수정 중... <a href="#" onclick="cancelEditContact(); return false;" style="color:#ef4444;">취소</a></span>
-                    <div style="margin-top: 12px;">
-                        <input type="text" id="contactSearchInput" placeholder="이름, 부서, 직급 검색..." oninput="filterAdminContacts()" style="padding:8px 12px; width:100%; max-width:300px; border-radius:8px; border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-primary);">
-                    </div>
-                    <div class="admin-data-list" id="contactsList" style="max-height: 500px;"></div>
                 </div>
 
                 <div class="admin-tab-content" id="orgchartAdminTab">
                     <h2>🏢 조직도 관리</h2>
+                    <p style="color:var(--text-secondary); margin-bottom:20px;">조직도 이미지를 업로드하면 인사정보 > 조직도 탭에 표시됩니다.<br>PNG, JPG, PDF 파일을 지원합니다. 권장 크기: 1200px 이상 가로 해상도</p>
+
+                    <div style="margin-bottom:20px;">
+                        <div id="orgChartPreview" style="margin-bottom:16px; text-align:center; padding:20px; background:var(--main-bg); border-radius:12px; border:2px dashed var(--border-color);">
+                            <div id="orgPreviewImg" style="display:none;"><img id="orgAdminPreview" src="" style="max-width:100%; max-height:400px; border-radius:8px;"><br><span style="font-size:12px; color:var(--text-light); margin-top:8px; display:inline-block;">현재 등록된 조직도</span></div>
+                            <div id="orgPreviewEmpty" style="padding:40px; color:var(--text-light);">등록된 조직도가 없습니다.</div>
+                        </div>
+                        <div class="admin-form-group">
+                            <label>조직도 이미지 파일</label>
+                            <input type="file" id="orgChartFileInput" accept=".png,.jpg,.jpeg,.pdf" style="padding:10px; border:1px solid var(--border-color); border-radius:8px; width:100%; box-sizing:border-box;">
+                        </div>
+                        <button type="button" class="admin-btn admin-btn-primary" onclick="uploadOrgChartImage()">조직도 업로드</button>
+                        <button type="button" class="admin-btn admin-btn-danger" onclick="deleteOrgChartImage()" style="margin-left:8px;">삭제</button>
+                    </div>
+
+                    <hr style="margin: 24px 0; border: none; border-top: 1px solid var(--border-color);">
+                    <h3 style="margin-bottom: 12px;">📋 조직도 데이터 관리</h3>
                     <div class="admin-row">
                         <div class="admin-form-group"><label>이름</label><input type="text" id="orgName"></div>
                         <div class="admin-form-group"><label>직책</label><input type="text" id="orgTitle"></div>
@@ -935,1565 +671,149 @@
         </div>
     </div>
 
-<script>
-/* ==========================================
-   API 클라이언트 레이어
-========================================== */
-const api = {
-    async get(path) {
-        const res = await fetch(path);
-        if (res.status === 401) { window.location.href = '/login.html'; throw new Error('Unauthorized'); }
-        if (!res.ok) throw new Error(await res.text());
-        return res.json();
-    },
-    async post(path, data) {
-        const res = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-        if (res.status === 401) { window.location.href = '/login.html'; throw new Error('Unauthorized'); }
-        if (!res.ok) throw new Error(await res.text());
-        return res.json();
-    },
-    async put(path, data) {
-        const res = await fetch(path, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-        if (res.status === 401) { window.location.href = '/login.html'; throw new Error('Unauthorized'); }
-        if (!res.ok) throw new Error(await res.text());
-        return res.json();
-    },
-    async del(path) {
-        const res = await fetch(path, { method: 'DELETE' });
-        if (res.status === 401) { window.location.href = '/login.html'; throw new Error('Unauthorized'); }
-        if (!res.ok) throw new Error(await res.text());
-        return res.json();
-    },
-    async upload(file) {
-        const fd = new FormData();
-        fd.append('file', file);
-        const res = await fetch('/api/upload', { method: 'POST', body: fd });
-        if (res.status === 401) { window.location.href = '/login.html'; throw new Error('Unauthorized'); }
-        if (!res.ok) throw new Error(await res.text());
-        return res.json();
-    }
-};
-
-// 인메모리 캐시 (API 호출 최소화)
-const dataCache = {};
-async function cachedGet(path, ttl = 15000) {
-    const now = Date.now();
-    if (dataCache[path] && (now - dataCache[path].time < ttl)) return dataCache[path].data;
-    const data = await api.get(path);
-    dataCache[path] = { data, time: now };
-    return data;
-}
-function invalidate(path) { delete dataCache[path]; }
-function invalidateAll() { Object.keys(dataCache).forEach(k => delete dataCache[k]); }
-
-/* ==========================================
-   전역 상태
-========================================== */
-let currentUser = null;
-const pageNames = { 'dashboard': '🏠 홈', 'hr': '👥 인사정보', 'notices': '📢 공지사항', 'search-results': '🔍 검색 결과' };
-const backBtn = document.getElementById('backBtn');
-
-/* ==========================================
-   사이드바 메뉴 렌더링
-========================================== */
-async function renderSidebarMenus() {
-    const boards = await cachedGet('/api/boards');
-    const categories = await cachedGet('/api/categories');
-    const dynamicArea = document.getElementById('dynamicSidebarArea');
-
-    let html = '';
-
-    boards.forEach(board => {
-        pageNames[board.id] = `📋 ${board.name}`;
-        let subHtml = '';
-        if (categories[board.id] && categories[board.id].length > 0) {
-            subHtml += `<div class="submenu">`;
-            categories[board.id].forEach(cat => {
-                subHtml += `<div class="submenu-item" data-action="goto-board" data-board="${board.id}" data-cat="${cat.id}">${cat.name}</div>`;
-            });
-            subHtml += `</div>`;
-        }
-        html += `
-            <div class="menu-item" data-page="${board.id}">
-                <svg class="menu-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${board.icon || 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'}"/>
-                </svg>
-                <span class="menu-text">${board.name}</span>
-                ${subHtml ? `<svg class="menu-arrow" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>` : ''}
-            </div>
-            ${subHtml}
-        `;
-    });
-
-    dynamicArea.innerHTML = html;
-}
-
-/* ==========================================
-   페이지 네비게이션
-========================================== */
-async function navigateTo(pageId, pushToHistory = true, targetCatId = null) {
-    if (!pageNames[pageId]) return;
-
-    document.querySelectorAll('.menu-item').forEach(mi => mi.classList.remove('active'));
-    const targetMenu = document.querySelector(`.menu-item[data-page="${pageId}"]`);
-    if (targetMenu) {
-        targetMenu.classList.add('active');
-        const submenu = targetMenu.nextElementSibling;
-        if (submenu && submenu.classList.contains('submenu')) {
-            targetMenu.classList.add('expanded');
-            submenu.classList.add('show');
-        }
-    }
-
-    document.querySelectorAll('.page-section').forEach(ps => ps.classList.remove('active'));
-
-    const boards = await cachedGet('/api/boards');
-    const isDynamicBoard = boards.some(b => b.id === pageId);
-
-    if (isDynamicBoard) {
-        document.getElementById('dynamicBoardSection').classList.add('active');
-        await renderDynamicBoardContent(pageId, targetCatId);
-    } else {
-        const targetSection = document.getElementById(pageId);
-        if (targetSection) targetSection.classList.add('active');
-    }
-
-    // 빵가루 네비게이션 업데이트
-    const breadcrumb = document.getElementById('breadcrumb');
-    if (pageId === 'dashboard') {
-        breadcrumb.innerHTML = `<span class="breadcrumb-current">🏠 홈</span>`;
-    } else {
-        let crumbHtml = `<span class="breadcrumb-item"><a onclick="navigateTo('dashboard')">🏠 홈</a></span><span class="breadcrumb-sep">›</span>`;
-        if (targetCatId && targetCatId !== 'all') {
-            const cats = await cachedGet('/api/categories');
-            const boardCats = cats[pageId] || [];
-            const cat = boardCats.find(c => c.id === targetCatId);
-            crumbHtml += `<span class="breadcrumb-item"><a onclick="navigateTo('${pageId}')">${pageNames[pageId]?.replace(/^[^\s]+\s/, '') || pageId}</a></span>`;
-            if (cat) crumbHtml += `<span class="breadcrumb-sep">›</span><span class="breadcrumb-current">${cat.name}</span>`;
-        } else {
-            crumbHtml += `<span class="breadcrumb-current">${pageNames[pageId] || pageId}</span>`;
-        }
-        breadcrumb.innerHTML = crumbHtml;
-    }
-    backBtn.style.display = pageId === 'dashboard' ? 'none' : 'flex';
-
-    if (pushToHistory) history.pushState({ page: pageId, cat: targetCatId }, '', `#${pageId}`);
-    if (window.innerWidth <= 768) document.getElementById('sidebar').classList.remove('mobile-show');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-document.getElementById('sidebar').addEventListener('click', function(e) {
-    const submenuItem = e.target.closest('.submenu-item');
-    if (submenuItem) {
-        const action = submenuItem.getAttribute('data-action');
-        if (action === 'goto-board') {
-            navigateTo(submenuItem.getAttribute('data-board'), true, submenuItem.getAttribute('data-cat'));
-        } else if (action === 'goto-hr-contacts') {
-            navigateTo('hr'); document.querySelector('#hr .tab[data-tab="contacts"]').click();
-        } else if (action === 'goto-hr-org') {
-            navigateTo('hr'); document.querySelector('#hr .tab[data-tab="orgchart"]').click();
-        }
-        return;
-    }
-    const menuItem = e.target.closest('.menu-item');
-    if (menuItem) {
-        if (menuItem.id === 'adminMenuBtn') return;
-        const submenu = menuItem.nextElementSibling;
-        const hasSubmenu = submenu && submenu.classList.contains('submenu');
-
-        if (hasSubmenu) {
-            // 서브메뉴가 있는 경우: 접기/펼치기 토글
-            const isExpanded = menuItem.classList.contains('expanded');
-            if (isExpanded) {
-                // 이미 펼쳐져 있으면 접기
-                menuItem.classList.remove('expanded');
-                submenu.classList.remove('show');
-            } else {
-                // 접혀있으면 펼치고 해당 게시판으로 이동
-                menuItem.classList.add('expanded');
-                submenu.classList.add('show');
-                const page = menuItem.getAttribute('data-page');
-                if (page) navigateTo(page);
-            }
-        } else {
-            // 서브메뉴가 없는 경우: 바로 이동
-            const page = menuItem.getAttribute('data-page');
-            if (page) navigateTo(page);
-        }
-    }
-});
-
-/* ==========================================
-   글로벌 검색
-========================================== */
-document.getElementById('globalSearch').addEventListener('keypress', async function(e) {
-    if(e.key === 'Enter') {
-        const query = this.value.trim().toLowerCase();
-        if(!query) return;
-
-        navigateTo('search-results');
-        document.getElementById('searchKeywordDisplay').innerHTML = `<strong>"${query}"</strong>에 대한 통합 검색 결과입니다.`;
-
-        const posts = await api.get(`/api/posts?search=${encodeURIComponent(query)}`);
-        const grid = document.getElementById('searchGridContainer');
-        grid.innerHTML = '';
-        if(posts.length === 0) {
-            grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #999;">검색 결과가 없습니다.</div>`;
-            return;
-        }
-
-        const categories = await cachedGet('/api/categories');
-        const boardsMap = {};
-        (await cachedGet('/api/boards')).forEach(b => boardsMap[b.id] = b.name);
-
-        posts.forEach(post => {
-            let catName = '기타';
-            if(categories[post.boardId]) {
-                const cat = categories[post.boardId].find(c => c.id === post.categoryId);
-                if(cat) catName = cat.name;
-            }
-            let icon = '📋', headerClass = 'general', btnText = '📖 내용 보기';
-            if(post.type === 'pdf') { icon = '📕'; headerClass = 'pdf'; btnText = '📄 PDF 열기'; }
-            if(post.type === 'url') { icon = '🔗'; headerClass = 'xlsx'; btnText = '🔗 링크 열기'; }
-            if(post.type === 'docx') { icon = '📄'; headerClass = 'docx'; btnText = '📄 열기'; }
-            if(post.type === 'xlsx') { icon = '📊'; headerClass = 'xlsx'; btnText = '📄 열기'; }
-            if(post.type === 'pptx') { icon = '📑'; headerClass = 'pptx'; btnText = '📄 열기'; }
-            if(post.icon && post.icon.trim() !== '') icon = post.icon;
-
-            const card = document.createElement('div');
-            card.className = 'form-card';
-            card.innerHTML = `
-                <div class="form-card-header ${headerClass}">${icon}</div>
-                <div class="form-card-body">
-                    <div class="form-title" title="${post.title}">[${boardsMap[post.boardId] || '문서'}] ${post.title}</div>
-                    <div class="form-meta"><span class="dept-badge">${catName}</span><span>${post.subInfo || '-'}</span></div>
-                    <button type="button" class="download-btn" onclick="openPost('${post.id}')">${btnText}</button>
+    <!-- 글쓰기/수정 모달 -->
+    <div class="write-modal-overlay" id="writeModalOverlay">
+        <div class="write-modal">
+            <h2 id="writeModalTitle">&#44544;&#50416;&#44592;</h2>
+            <div class="write-form-row">
+                <div class="write-form-group">
+                    <label>&#44172;&#49884;&#54032; (&#45824;&#48516;&#47448;)</label>
+                    <select id="writeBoard" onchange="updateWriteCategories()"></select>
                 </div>
-            `;
-            grid.appendChild(card);
-        });
-    }
-});
-
-/* ==========================================
-   문서 열기 및 조회수 처리
-========================================== */
-let currentViewerPost = null;
-
-window.openPost = async function(id) {
-    try {
-        addRecentViewed(id);
-        await api.post(`/api/posts/${id}/view`);
-        invalidate('/api/posts');
-        const post = await api.get(`/api/posts/${id}`);
-        currentViewerPost = post;
-
-        const categories = await cachedGet('/api/categories');
-        let catName = '기타';
-        if(categories[post.boardId]) {
-            const cat = categories[post.boardId].find(c => c.id === post.categoryId);
-            if(cat) catName = cat.name;
-        }
-
-        // 인라인 뷰어로 표시할 수 있는 유형 판별
-        let viewerUrl = null;
-        let viewerIcon = '📄';
-
-        if (post.type === 'pdf' && post.fileName) {
-            viewerUrl = `/api/files/${post.fileName}#toolbar=0&navpanes=0`;
-            viewerIcon = '📕';
-        } else if (post.url) {
-            const url = post.url.trim();
-            // Google Drive 링크를 임베드 가능한 형태로 변환
-            const driveMatch = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
-            if (driveMatch) {
-                viewerUrl = `https://drive.google.com/file/d/${driveMatch[1]}/preview`;
-                viewerIcon = '📁';
-            } else if (url.match(/docs\.google\.com\/(document|spreadsheets|presentation)/)) {
-                // Google Docs/Sheets/Slides
-                viewerUrl = url.replace(/\/edit.*$/, '/preview').replace(/\/view.*$/, '/preview');
-                if (!viewerUrl.includes('/preview')) viewerUrl += (viewerUrl.includes('?') ? '&' : '/') + 'preview';
-                viewerIcon = post.type === 'xlsx' ? '📊' : post.type === 'pptx' ? '📑' : '📄';
-            } else {
-                // 일반 URL: 새 창으로 열기
-                let finalUrl = url;
-                if (!finalUrl.startsWith('http://') && !finalUrl.startsWith('https://')) finalUrl = 'https://' + finalUrl;
-                window.open(finalUrl, '_blank');
-                loadDashboardWidgets();
-                return;
-            }
-        } else if (post.fileName && isOfficeFile(post.fileName)) {
-            await openOfficeFile(post.fileName, post.title);
-            loadDashboardWidgets();
-            return;
-        } else if (post.type === 'text' || (!post.fileName && !post.url)) {
-            showPostModal(post, catName);
-            loadDashboardWidgets();
-            return;
-        }
-
-        if (viewerUrl) {
-            showInlineViewer(post, catName, viewerUrl, viewerIcon);
-        }
-
-        loadDashboardWidgets();
-    } catch(err) { console.error('문서 열기 오류:', err); }
-};
-
-function showInlineViewer(post, catName, viewerUrl, icon) {
-    const viewer = document.getElementById('inlineViewer');
-    const frame = document.getElementById('inlineViewerFrame');
-
-    document.getElementById('inlineViewerTitle').textContent = post.title;
-    document.getElementById('inlineViewerMeta').textContent = `${catName} | ${post.date || ''} | 조회 ${post.views || 0}`;
-    document.getElementById('inlineViewerIcon').textContent = icon;
-
-    frame.src = viewerUrl;
-    viewer.style.display = 'block';
-
-    // 뷰어로 스크롤
-    setTimeout(() => {
-        viewer.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 100);
-}
-
-function closeInlineViewer() {
-    const viewer = document.getElementById('inlineViewer');
-    const frame = document.getElementById('inlineViewerFrame');
-    frame.src = '';
-    viewer.style.display = 'none';
-    currentViewerPost = null;
-}
-
-function openInNewTab() {
-    if (!currentViewerPost) return;
-    const frame = document.getElementById('inlineViewerFrame');
-    if (frame.src) {
-        window.open(frame.src, '_blank');
-    }
-}
-
-/* ==========================================
-   동적 게시판 렌더링
-========================================== */
-async function renderDynamicBoardContent(boardId, targetCatId = null) {
-    const boards = await cachedGet('/api/boards');
-    const categories = await cachedGet('/api/categories');
-
-    const board = boards.find(b => b.id === boardId);
-    if(!board) return;
-
-    document.getElementById('boardMainTitle').textContent = `📄 ${board.name}`;
-
-    const filterContainer = document.getElementById('boardFilterContainer');
-    const cats = categories[boardId] || [];
-    let filterHtml = `<button type="button" class="filter-btn active" data-category="all">전체</button>`;
-    cats.forEach(c => { filterHtml += `<button type="button" class="filter-btn" data-category="${c.id}">${c.name}</button>`; });
-    filterContainer.innerHTML = filterHtml;
-
-    const filterBtns = filterContainer.querySelectorAll('.filter-btn');
-    filterBtns.forEach(btn => {
-        btn.addEventListener('click', function() {
-            filterBtns.forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            renderPostGrid(boardId, this.getAttribute('data-category'));
-        });
-    });
-
-    await renderPostGrid(boardId, targetCatId || 'all');
-
-    if(targetCatId && targetCatId !== 'all') {
-        const targetBtn = filterContainer.querySelector(`[data-category="${targetCatId}"]`);
-        if(targetBtn) { filterBtns.forEach(b => b.classList.remove('active')); targetBtn.classList.add('active'); }
-    }
-}
-
-async function renderPostGrid(boardId, categoryId = 'all') {
-    let url = `/api/posts?boardId=${boardId}`;
-    if (categoryId !== 'all') url += `&categoryId=${categoryId}`;
-    let posts = await api.get(url);
-    const categories = await cachedGet('/api/categories');
-    const catMap = {};
-    if(categories[boardId]) categories[boardId].forEach(c => catMap[c.id] = c.name);
-
-    // 순서 정렬
-    posts = posts.sort((a, b) => (parseInt(a.order) || 999) - (parseInt(b.order) || 999));
-
-    const grid = document.getElementById('boardGridContainer');
-
-    if (posts.length === 0) {
-        grid.innerHTML = `<div style="text-align: center; padding: 60px 20px; color: var(--text-light);">
-            <div style="font-size: 48px; margin-bottom: 16px;">📭</div>
-            <p style="font-size: 16px;">등록된 게시물이 없습니다.</p>
-        </div>`;
-        return;
-    }
-
-    const typeLabels = { pdf: 'PDF', docx: 'DOCX', xlsx: 'XLSX', pptx: 'PPTX', url: 'LINK', text: 'TEXT' };
-
-    const favs = getFavorites();
-    const now = new Date();
-
-    let html = `<div style="display:flex; justify-content:flex-end; margin-bottom:12px;">
-        <button type="button" class="print-btn" onclick="window.print()">🖨️ 인쇄</button>
+                <div class="write-form-group">
+                    <label>&#52852;&#53580;&#44256;&#47532; (&#51473;&#48516;&#47448;)</label>
+                    <select id="writeCat"></select>
+                </div>
+            </div>
+            <div class="write-form-group">
+                <label>&#51228;&#47785;</label>
+                <input type="text" id="writeTitle" placeholder="&#44172;&#49884;&#47932; &#51228;&#47785;&#51012; &#51077;&#47141;&#54616;&#49464;&#50836;">
+            </div>
+            <div class="write-form-row">
+                <div class="write-form-group">
+                    <label>&#50976;&#54805;</label>
+                    <select id="writeType" onchange="toggleWriteFields()">
+                        <option value="text">&#53581;&#49828;&#53944;</option>
+                        <option value="pdf">PDF</option>
+                        <option value="url">URL &#47553;&#53356;</option>
+                        <option value="docx">DOCX</option>
+                        <option value="xlsx">XLSX</option>
+                        <option value="pptx">PPTX</option>
+                    </select>
+                </div>
+                <div class="write-form-group">
+                    <label>&#48512;&#44032;&#51221;&#48372; (&#48260;&#51204;, &#44552;&#50529; &#46321;)</label>
+                    <input type="text" id="writeSubInfo" placeholder="&#50696;: v2.0, 2026&#45380;&#46020;">
+                </div>
+            </div>
+            <div class="write-form-group" id="writeUrlGroup" style="display:none;">
+                <label>URL</label>
+                <input type="text" id="writeUrl" placeholder="https://...">
+            </div>
+            <div class="write-form-group" id="writeFileGroup" style="display:none;">
+                <label>&#54028;&#51068; &#52392;&#48512;</label>
+                <input type="file" id="writeFile" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.png,.jpg,.jpeg,.gif">
+                <div id="writeFileStatus" style="font-size:12px; color:var(--text-light); margin-top:4px;"></div>
+            </div>
+            <div class="write-form-group" id="writeThumbGroup">
+                <label>&#49452;&#45348;&#51068; &#51060;&#48120;&#51648; (&#44040;&#47084;&#47532;&#50857;, &#49440;&#53469;)</label>
+                <input type="file" id="writeThumb" accept=".png,.jpg,.jpeg,.gif">
+            </div>
+            <div class="write-form-group">
+                <label>갤러리 바탕색 (선택)</label>
+                <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+                    <input type="color" id="writeBgColor" value="#ffffff" style="width:40px; height:36px; border:1px solid var(--border-color); border-radius:6px; cursor:pointer; padding:2px;">
+                    <button type="button" onclick="document.getElementById('writeBgColor').value='#ffffff'" style="padding:6px 12px; border:1px solid var(--border-color); border-radius:6px; background:#fff; cursor:pointer; font-size:12px;">흰색</button>
+                    <button type="button" onclick="document.getElementById('writeBgColor').value='#f8f9fa'" style="padding:6px 12px; border:1px solid var(--border-color); border-radius:6px; background:#f8f9fa; cursor:pointer; font-size:12px;">밝은회색</button>
+                    <button type="button" onclick="document.getElementById('writeBgColor').value='#1e293b'" style="padding:6px 12px; border:1px solid var(--border-color); border-radius:6px; background:#1e293b; color:#fff; cursor:pointer; font-size:12px;">다크</button>
+                    <button type="button" onclick="document.getElementById('writeBgColor').value='#fff7ed'" style="padding:6px 12px; border:1px solid var(--border-color); border-radius:6px; background:#fff7ed; cursor:pointer; font-size:12px;">오렌지톤</button>
+                    <button type="button" onclick="document.getElementById('writeBgColor').value='#f0f9ff'" style="padding:6px 12px; border:1px solid var(--border-color); border-radius:6px; background:#f0f9ff; cursor:pointer; font-size:12px;">블루톤</button>
+                    <button type="button" onclick="document.getElementById('writeBgColor').value='#f0fdf4'" style="padding:6px 12px; border:1px solid var(--border-color); border-radius:6px; background:#f0fdf4; cursor:pointer; font-size:12px;">그린톤</button>
+                </div>
+            </div>
+            <div class="write-form-group" id="writeContentGroup">
+                <label>&#45236;&#50857;</label>
+                <textarea id="writeContent" placeholder="&#44172;&#49884;&#47932; &#45236;&#50857;&#51012; &#51077;&#47141;&#54616;&#49464;&#50836;..."></textarea>
+            </div>
+            <div class="write-form-actions">
+                <button type="button" class="write-cancel-btn" onclick="closeWriteModal()">&#52712;&#49548;</button>
+                <button type="button" class="write-submit-btn" onclick="submitWriteForm()">&#51200;&#51109;</button>
+            </div>
+        </div>
     </div>
-    <table class="board-table">
-        <thead><tr>
-            <th style="width:30px;">★</th>
-            <th style="width:50px;"></th>
-            <th>제목</th>
-            <th style="width:100px;">카테고리</th>
-            <th style="width:80px;">유형</th>
-            <th style="width:80px;">부가정보</th>
-            <th style="width:80px;">날짜</th>
-            <th style="width:60px;">조회</th>
-        </tr></thead><tbody>`;
 
-    posts.forEach(post => {
-        let icon = '📋', typeClass = post.type || 'text';
-        if(post.type === 'pdf') icon = '📕';
-        else if(post.type === 'url') icon = '🔗';
-        else if(post.type === 'docx') icon = '📄';
-        else if(post.type === 'xlsx') icon = '📊';
-        else if(post.type === 'pptx') icon = '📑';
-        if(post.icon && post.icon.trim() !== '') icon = post.icon;
-        const catName = catMap[post.categoryId] || '기타';
-        const isFav = favs.includes(post.id);
-        // NEW 배지: 7일 이내 등록된 게시물
-        const postDate = new Date(post.date);
-        const diffDays = (now - postDate) / (1000 * 60 * 60 * 24);
-        const newBadge = diffDays <= 7 ? '<span class="new-badge">NEW</span>' : '';
-
-        html += `<tr>
-            <td onclick="event.stopPropagation(); toggleFavorite('${post.id}', this)"><span class="fav-star ${isFav ? 'active' : ''}">${isFav ? '⭐' : '☆'}</span></td>
-            <td class="td-icon" onclick="openPost('${post.id}')"><span class="board-row-icon ${typeClass}">${icon}</span></td>
-            <td class="td-title" onclick="openPost('${post.id}')"><span class="board-row-title">${post.title}</span>${newBadge}</td>
-            <td class="td-cat" onclick="openPost('${post.id}')"><span class="board-row-badge">${catName}</span></td>
-            <td class="td-type" onclick="openPost('${post.id}')"><span class="board-row-type ${typeClass}">${typeLabels[post.type] || 'TEXT'}</span></td>
-            <td onclick="openPost('${post.id}')" style="font-size:13px; color:var(--text-secondary);">${post.subInfo || '-'}</td>
-            <td class="td-date" onclick="openPost('${post.id}')"><span class="board-row-date">${post.date || '-'}</span></td>
-            <td class="td-views" onclick="openPost('${post.id}')"><span class="board-row-views">👁 ${post.views || 0}</span></td>
-        </tr>`;
-    });
-
-    html += `</tbody></table>`;
-    grid.innerHTML = html;
-}
-
-function showPostModal(post, catName) {
-    const modal = document.getElementById('noticeModal');
-    document.getElementById('modalTitle').textContent = post.title;
-    document.getElementById('modalBody').innerHTML = `
-        <div style="margin-bottom: 15px; padding: 10px; background: rgba(255,103,32,0.05); border: 1px solid rgba(255,103,32,0.2); border-radius: 8px; color: var(--text-primary); font-size: 14px;">
-            <strong>분류:</strong> <span class="dept-badge">${catName}</span>
-            ${post.subInfo ? `<span style="margin-left:10px;"><strong>추가정보:</strong> ${post.subInfo}</span>` : ''}
-            <span style="margin-left:10px;"><strong>조회수:</strong> ${post.views || 0}</span>
-        </div>
-        <div style="line-height: 1.8; color: var(--text-primary); overflow-x: auto; font-size: 15px;" oncontextmenu="return false">
-            ${post.content || '등록된 내용이나 링크가 없습니다.'}
-        </div>
-    `;
-    modal.classList.add('show');
-}
-
-/* ==========================================
-   홈
-========================================== */
-async function updateDashboardStats() {
-    const posts = await cachedGet('/api/posts');
-    const contacts = await cachedGet('/api/contacts');
-
-    document.getElementById('count-total').setAttribute('data-target', posts.length);
-    document.getElementById('count-reg').setAttribute('data-target', posts.filter(p => p.boardId === 'regulations').length);
-    document.getElementById('count-form').setAttribute('data-target', posts.filter(p => p.boardId === 'forms').length);
-    document.getElementById('count-emp').setAttribute('data-target', contacts.length);
-
-    ['count-total', 'count-reg', 'count-form', 'count-emp'].forEach(id => animateCounter(document.getElementById(id)));
-}
-
-async function loadDashboardWidgets() {
-    const posts = await cachedGet('/api/posts');
-    const boardsMap = {};
-    (await cachedGet('/api/boards')).forEach(b => boardsMap[b.id] = b.name);
-
-    const recent = [...posts].sort((a,b) => new Date(b.date || 0) - new Date(a.date || 0)).slice(0, 5);
-    const updateContainer = document.getElementById('dashboardUpdateList');
-    if(updateContainer) {
-        updateContainer.innerHTML = recent.length ? recent.map(p => `
-            <div class="update-item" onclick="openPost('${p.id}')">
-                <div class="update-icon" style="background: rgba(255,103,32,0.1); color: var(--primary)">${p.icon || '📄'}</div>
-                <div class="update-content">
-                    <div class="update-title">${p.title}</div>
-                    <div class="update-meta"><span class="dept-badge">${boardsMap[p.boardId] || p.boardId}</span><span>${p.date || '-'}</span></div>
+    <!-- 메뉴/카테고리 수정 모달 -->
+    <div class="write-modal-overlay" id="editMenuModal" onclick="if(event.target===this) closeEditMenuModal()">
+        <div class="write-modal" style="max-width:480px;">
+            <h2 id="editMenuModalTitle">수정</h2>
+            <div class="write-form-group">
+                <label>이름</label>
+                <input type="text" id="editMenuName" placeholder="이름을 입력하세요" onkeypress="if(event.key==='Enter') submitEditMenu()">
+            </div>
+            <div class="write-form-group">
+                <label>보기 방식</label>
+                <div style="display:flex; gap:8px;">
+                    <label style="flex:1; display:flex; align-items:center; gap:8px; padding:12px 16px; border:2px solid var(--border-color); border-radius:8px; cursor:pointer; transition:all 0.15s;" id="editMenuViewList" onclick="selectEditMenuView('list')">
+                        <input type="radio" name="editMenuView" value="list" checked> 📋 리스트형
+                    </label>
+                    <label style="flex:1; display:flex; align-items:center; gap:8px; padding:12px 16px; border:2px solid var(--border-color); border-radius:8px; cursor:pointer; transition:all 0.15s;" id="editMenuViewGallery" onclick="selectEditMenuView('gallery')">
+                        <input type="radio" name="editMenuView" value="gallery"> 🖼️ 갤러리형
+                    </label>
                 </div>
             </div>
-        `).join('') : '<div style="padding:15px; text-align:center; color:#999;">최근 업데이트된 문서가 없습니다.</div>';
-    }
-
-    const popular = [...posts].filter(p => parseInt(p.views) > 0).sort((a,b) => (parseInt(b.views) || 0) - (parseInt(a.views) || 0)).slice(0, 4);
-    const popContainer = document.getElementById('dashboardPopularList');
-    const medals = ['gold', 'silver', 'bronze', 'normal'];
-    if(popContainer) {
-        popContainer.innerHTML = popular.length ? popular.map((p, i) => `
-            <div class="popular-item" onclick="openPost('${p.id}')">
-                <div class="popular-rank ${medals[i] || 'normal'}">${i+1}</div>
-                <div class="popular-title" style="flex:1;">${p.title}</div>
-                <div style="font-size:11px; color:var(--text-light)">조회 ${p.views||0}</div>
-            </div>
-        `).join('') : '<div style="padding:15px; text-align:center; color:#999;">아직 조회된 문서가 없습니다.</div>';
-    }
-}
-
-window.addEventListener('popstate', function(e) {
-    const page = e.state && e.state.page ? e.state.page : 'dashboard';
-    navigateTo(page, false, e.state?.cat);
-});
-
-/* ==========================================
-   앱 초기화
-========================================== */
-/* ==========================================
-   다크모드
-========================================== */
-function initDarkMode() {
-    const saved = localStorage.getItem('kms-dark-mode');
-    if (saved === 'true') {
-        document.body.classList.add('dark-mode');
-        document.getElementById('darkModeToggle').textContent = '☀️';
-    }
-}
-document.getElementById('darkModeToggle').addEventListener('click', function() {
-    const isDark = document.body.classList.toggle('dark-mode');
-    localStorage.setItem('kms-dark-mode', isDark);
-    this.textContent = isDark ? '☀️' : '🌙';
-});
-
-/* ==========================================
-   즐겨찾기 (localStorage 기반)
-========================================== */
-function getFavorites() {
-    try { return JSON.parse(localStorage.getItem('kms-favorites') || '[]'); } catch { return []; }
-}
-function saveFavorites(favs) {
-    localStorage.setItem('kms-favorites', JSON.stringify(favs));
-}
-function toggleFavorite(postId, el) {
-    let favs = getFavorites();
-    const idx = favs.indexOf(postId);
-    if (idx > -1) {
-        favs.splice(idx, 1);
-        el.querySelector('.fav-star').className = 'fav-star';
-        el.querySelector('.fav-star').textContent = '☆';
-    } else {
-        favs.push(postId);
-        el.querySelector('.fav-star').className = 'fav-star active';
-        el.querySelector('.fav-star').textContent = '⭐';
-    }
-    saveFavorites(favs);
-    renderFavorites();
-}
-
-async function renderFavorites() {
-    const favs = getFavorites();
-    const section = document.getElementById('favoritesSection');
-    const list = document.getElementById('favoritesList');
-    if (!favs.length) { section.style.display = 'none'; return; }
-
-    const posts = await cachedGet('/api/posts');
-    const favPosts = posts.filter(p => favs.includes(p.id));
-    if (!favPosts.length) { section.style.display = 'none'; return; }
-
-    section.style.display = 'block';
-    list.innerHTML = favPosts.map(p => `
-        <div class="quick-item" onclick="openPost('${p.id}')">
-            <div class="quick-item-title">⭐ ${p.title}</div>
-            <div class="quick-item-meta">${p.date || ''}</div>
-        </div>
-    `).join('');
-}
-
-/* ==========================================
-   최근 본 문서 (localStorage 기반)
-========================================== */
-function getRecentViewed() {
-    try { return JSON.parse(localStorage.getItem('kms-recent') || '[]'); } catch { return []; }
-}
-function addRecentViewed(postId) {
-    let recent = getRecentViewed();
-    recent = recent.filter(id => id !== postId);
-    recent.unshift(postId);
-    if (recent.length > 10) recent = recent.slice(0, 10);
-    localStorage.setItem('kms-recent', JSON.stringify(recent));
-}
-
-async function renderRecentViewed() {
-    const recent = getRecentViewed();
-    const section = document.getElementById('recentSection');
-    const list = document.getElementById('recentList');
-    if (!recent.length) { section.style.display = 'none'; return; }
-
-    const posts = await cachedGet('/api/posts');
-    const recentPosts = recent.map(id => posts.find(p => p.id === id)).filter(Boolean).slice(0, 5);
-    if (!recentPosts.length) { section.style.display = 'none'; return; }
-
-    section.style.display = 'block';
-    list.innerHTML = recentPosts.map(p => `
-        <div class="quick-item" onclick="openPost('${p.id}')" style="border-left-color: var(--brand-gray);">
-            <div class="quick-item-title">🕐 ${p.title}</div>
-            <div class="quick-item-meta">${p.date || ''}</div>
-        </div>
-    `).join('');
-}
-
-/* ==========================================
-   NEW 배지: 사이드바 메뉴에 표시
-========================================== */
-async function updateNewBadges() {
-    try {
-        const posts = await cachedGet('/api/posts');
-        const boards = await cachedGet('/api/boards');
-        const now = new Date();
-        boards.forEach(board => {
-            const boardPosts = posts.filter(p => p.boardId === board.id);
-            const hasNew = boardPosts.some(p => {
-                const d = new Date(p.date);
-                return (now - d) / (1000*60*60*24) <= 7;
-            });
-            const menuItem = document.querySelector(`.menu-item[data-page="${board.id}"] .menu-text`);
-            if (menuItem) {
-                const existing = menuItem.querySelector('.new-badge');
-                if (existing) existing.remove();
-                if (hasNew) menuItem.insertAdjacentHTML('beforeend', '<span class="new-badge">NEW</span>');
-            }
-        });
-    } catch(e) { /* ignore */ }
-}
-
-window.addEventListener('DOMContentLoaded', async () => {
-    try {
-        currentUser = await api.get('/api/me');
-    } catch(e) {
-        window.location.href = '/login.html';
-        return;
-    }
-
-    // 관리자 버튼 표시/숨김
-    const adminBtn = document.getElementById('adminMenuBtn');
-    if (!currentUser.isAdmin) adminBtn.style.display = 'none';
-
-    initDarkMode();
-    await renderSidebarMenus();
-    await updateNewBadges();
-    await renderFavorites();
-    await renderRecentViewed();
-    await updateDashboardStats();
-    await loadDashboardWidgets();
-    await loadNoticeCards();
-    await loadContacts();
-    await loadOrgChart();
-
-    const boards = await cachedGet('/api/boards');
-    const hash = window.location.hash.replace('#', '');
-    if (hash && (pageNames[hash] || boards.find(b => b.id === hash))) {
-        navigateTo(hash, false);
-        history.replaceState({ page: hash }, '', `#${hash}`);
-    } else {
-        history.replaceState({ page: 'dashboard' }, '', '#dashboard');
-        navigateTo('dashboard', false);
-    }
-});
-
-/* ==========================================
-   공지사항
-========================================== */
-async function loadNoticeCards() {
-    const notices = await cachedGet('/api/notices');
-    const container = document.getElementById('noticeListContainer');
-    if (!container) return;
-    container.innerHTML = '';
-    if (notices.length === 0) {
-        container.innerHTML = `<div style="text-align: center; padding: 40px; color: #999;"><p>📢 등록된 공지사항이 없습니다</p></div>`;
-        return;
-    }
-    notices.forEach(notice => {
-        const badgeClass = notice.type === 'urgent' ? 'urgent' : notice.type === 'important' ? 'important' : 'info';
-        const badgeText = notice.type === 'urgent' ? '긴급' : notice.type === 'important' ? '중요' : '공지';
-        const card = document.createElement('div');
-        card.className = 'notice-card';
-        card.innerHTML = `
-            <div class="notice-card-header"><span class="notice-type ${badgeClass}">${badgeText}</span><span class="notice-card-title">${notice.title}</span></div>
-            <div class="notice-card-meta">관리자 | ${notice.date}</div>
-        `;
-        card.addEventListener('click', () => { showPostModal({title: notice.title, content: notice.content, subInfo: notice.date}, badgeText); });
-        container.appendChild(card);
-    });
-}
-
-/* ==========================================
-   연락처
-========================================== */
-async function loadContacts() {
-    const contacts = await cachedGet('/api/contacts');
-    const tbody = document.getElementById('contactTableBody');
-    if (!tbody) return;
-    tbody.innerHTML = '';
-    if (contacts.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 40px; color: #999;">등록된 연락처가 없습니다</td></tr>`; return;
-    }
-    contacts.forEach(contact => {
-        let badgeClass = 'active';
-        if ((contact.status || '').includes('파견') || (contact.status || '').includes('휴가')) badgeClass = 'dispatch';
-        if ((contact.status || '').includes('휴직') || (contact.status || '').includes('부재')) badgeClass = 'leave';
-        const colors = ['#ff6720', '#53565A', '#10b981', '#f59e0b', '#ef4444', '#ff8547', '#757980'];
-        const color = colors[parseInt(contact.id) % colors.length];
-        tbody.innerHTML += `
-            <tr data-dept="${contact.dept}">
-                <td><div style="display: flex; align-items: center; gap: 12px;"><div class="avatar" style="background: ${color};">${(contact.name || '?').substring(0, 1)}</div><span>${contact.name}</span></div></td>
-                <td>${contact.position}</td><td>${contact.dept}</td><td>${contact.phone}</td><td>${contact.email}</td>
-                <td><span class="status-badge ${badgeClass}">${contact.status}</span></td>
-            </tr>
-        `;
-    });
-}
-
-/* ==========================================
-   조직도
-========================================== */
-async function loadOrgChart() {
-    const orgs = await cachedGet('/api/orgchart');
-    const container = document.getElementById('orgChartContainer');
-    if (!container) return;
-    container.innerHTML = '';
-    if (orgs.length === 0) {
-        container.innerHTML = '<div style="text-align:center; padding:40px; color:#999;">등록된 조직도 정보가 없습니다.</div>';
-        return;
-    }
-    for (let i = 1; i <= 6; i++) {
-        const levelOrgs = orgs.filter(o => parseInt(o.level) === i);
-        if (levelOrgs.length > 0) {
-            const levelDiv = document.createElement('div');
-            levelDiv.className = 'org-level';
-            levelOrgs.forEach(org => {
-                const box = document.createElement('div');
-                box.className = `org-box ${i === 1 ? 'ceo' : (i <= 3 ? 'director' : '')}`;
-                box.innerHTML = `<div class="org-name">${org.name}</div><div class="org-title">${org.title}</div>`;
-                levelDiv.appendChild(box);
-            });
-            container.appendChild(levelDiv);
-            if (orgs.some(o => parseInt(o.level) > i)) {
-                const connector = document.createElement('div');
-                connector.className = 'org-connector';
-                container.appendChild(connector);
-            }
-        }
-    }
-}
-
-/* ==========================================
-   UI 헬퍼
-========================================== */
-document.getElementById('sidebarToggle').addEventListener('click', () => {
-    document.getElementById('sidebar').classList.toggle(window.innerWidth <= 768 ? 'mobile-show' : 'collapsed');
-});
-
-function animateCounter(el) {
-    if(!el) return;
-    const target = parseInt(el.getAttribute('data-target')) || 0;
-    let current = 0, step = target / (2000 / 16);
-    if(target === 0) { el.textContent = 0; return; }
-    const t = setInterval(() => { current += step; if(current >= target) { el.textContent = target; clearInterval(t); } else el.textContent = Math.floor(current); }, 16);
-}
-
-document.querySelectorAll('.tab').forEach(tab => {
-    tab.addEventListener('click', function() {
-        const targetTab = this.getAttribute('data-tab');
-        const parent = this.closest('section');
-        parent.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        this.classList.add('active');
-        parent.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
-        parent.querySelector(`#${targetTab}`).classList.add('active');
-    });
-});
-
-const contactSearch = document.getElementById('contactSearch');
-const deptFilter = document.getElementById('deptFilter');
-function filterContacts() {
-    const tbody = document.getElementById('contactTableBody');
-    if (!contactSearch || !tbody) return;
-    const term = contactSearch.value.toLowerCase();
-    const dept = deptFilter ? deptFilter.value : 'all';
-    tbody.querySelectorAll('tr').forEach(row => {
-        const n = row.cells[0]?.textContent.toLowerCase() || '';
-        const d = row.getAttribute('data-dept') || '';
-        row.style.display = (n.includes(term) || d.toLowerCase().includes(term)) && (dept === 'all' || d === dept) ? '' : 'none';
-    });
-}
-if (contactSearch) contactSearch.addEventListener('input', filterContacts);
-if (deptFilter) deptFilter.addEventListener('change', filterContacts);
-
-let sortDirection = {};
-document.querySelectorAll('th[data-sort]').forEach(th => {
-    th.addEventListener('click', function() {
-        const column = this.getAttribute('data-sort');
-        const tbody = this.closest('table').querySelector('tbody');
-        const rows = Array.from(tbody.querySelectorAll('tr'));
-        sortDirection[column] = !sortDirection[column];
-        const direction = sortDirection[column] ? 1 : -1;
-        rows.sort((a, b) => {
-            let aVal = a.cells[column==='name'?0:column==='position'?1:2].textContent.trim();
-            let bVal = b.cells[column==='name'?0:column==='position'?1:2].textContent.trim();
-            return aVal.localeCompare(bVal, 'ko') * direction;
-        });
-        rows.forEach(row => tbody.appendChild(row));
-    });
-});
-
-const scrollTop = document.getElementById('scrollTop');
-window.addEventListener('scroll', () => { scrollTop.classList.toggle('show', window.scrollY > 300); });
-if (scrollTop) scrollTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
-
-/* ==========================================
-   관리자 모드 (Google OAuth + 비밀번호 인증)
-========================================== */
-let adminVerified = false;
-
-document.getElementById('adminMenuBtn').addEventListener('click', async e => {
-    e.preventDefault();
-    // 실시간으로 관리자 여부 재확인
-    try {
-        const me = await api.get('/api/me');
-        currentUser = me;
-    } catch(e) {}
-    if (!currentUser || !currentUser.isAdmin) return alert('관리자 권한이 없습니다.');
-    if (adminVerified) {
-        document.getElementById('adminOverlay').classList.add('show');
-        // 슈퍼 관리자 탭 표시/숨김
-        const manageBtn = document.getElementById('adminManageTabBtn');
-        if (manageBtn) manageBtn.style.display = currentUser.isSuperAdmin ? '' : 'none';
-        await loadAdminPanelData();
-    } else {
-        document.getElementById('adminLoginModal').classList.add('show');
-        document.getElementById('adminPasswordInput').value = '';
-        document.getElementById('adminPasswordInput').focus();
-        document.getElementById('adminLoginError').classList.remove('show');
-    }
-});
-
-document.getElementById('adminLoginSubmitBtn').addEventListener('click', async () => {
-    const pw = document.getElementById('adminPasswordInput').value;
-    if (!pw) return;
-    try {
-        await api.post('/api/admin/verify', { password: pw });
-        adminVerified = true;
-        // 슈퍼 관리자 여부 재확인
-        try { currentUser = await api.get('/api/me'); } catch(e) {}
-        const manageBtn = document.getElementById('adminManageTabBtn');
-        if (manageBtn) manageBtn.style.display = currentUser.isSuperAdmin ? '' : 'none';
-        document.getElementById('adminLoginModal').classList.remove('show');
-        document.getElementById('adminOverlay').classList.add('show');
-        await loadAdminPanelData();
-    } catch(err) {
-        document.getElementById('adminLoginError').classList.add('show');
-    }
-});
-
-document.getElementById('adminPasswordInput').addEventListener('keydown', e => {
-    if (e.key === 'Enter') document.getElementById('adminLoginSubmitBtn').click();
-});
-
-document.getElementById('adminLoginCancelBtn').addEventListener('click', () => {
-    document.getElementById('adminLoginModal').classList.remove('show');
-});
-
-document.getElementById('adminLogoutBtn').addEventListener('click', () => {
-    if(confirm('종료하시겠습니까?')) {
-        document.getElementById('adminOverlay').classList.remove('show');
-        adminVerified = false;
-    }
-});
-
-document.querySelectorAll('.admin-tab').forEach(tab => {
-    tab.addEventListener('click', function() {
-        document.querySelectorAll('.admin-tab, .admin-tab-content').forEach(e => e.classList.remove('active'));
-        this.classList.add('active'); document.getElementById(this.getAttribute('data-tab') + 'Tab').classList.add('active');
-    });
-});
-
-async function loadAdminPanelData() {
-    invalidateAll();
-    const tasks = [loadAdminMenuManager(), loadAdminPosts(), loadAdminNotices(), loadAdminContacts(), loadAdminOrgChart(), loadAdminSettings()];
-    if (currentUser && currentUser.isSuperAdmin) tasks.push(loadAdminList());
-    await Promise.all(tasks);
-}
-
-// ─── 관리자 관리 함수 ───
-async function loadAdminList() {
-    try {
-        const admins = await api.get('/api/admins');
-        const container = document.getElementById('adminListContainer');
-        if (!admins || admins.length === 0) {
-            container.innerHTML = '<p style="color: var(--text-light);">등록된 관리자가 없습니다.</p>';
-            return;
-        }
-        let html = '<table style="width:100%; border-collapse: collapse;">';
-        html += '<thead><tr style="background: var(--main-bg); text-align: left;">';
-        html += '<th style="padding: 12px 16px; font-weight: 600;">이메일</th>';
-        html += '<th style="padding: 12px 16px; font-weight: 600;">이름</th>';
-        html += '<th style="padding: 12px 16px; font-weight: 600;">유형</th>';
-        html += '<th style="padding: 12px 16px; font-weight: 600;">추가일</th>';
-        html += '<th style="padding: 12px 16px; font-weight: 600;">작업</th>';
-        html += '</tr></thead><tbody>';
-        admins.forEach(a => {
-            const badge = a.isSuperAdmin
-                ? '<span style="background:#ff6720; color:white; padding:2px 8px; border-radius:4px; font-size:12px;">슈퍼 관리자</span>'
-                : '<span style="background:#10b981; color:white; padding:2px 8px; border-radius:4px; font-size:12px;">추가 관리자</span>';
-            const resetBtn = a.isSuperAdmin
-                ? ''
-                : `<button type="button" onclick="resetAdminPassword('${a.email}')" style="background:#f59e0b; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:12px; margin-right:6px;">PW초기화</button>`;
-            const deleteBtn = a.isSuperAdmin
-                ? '<span style="color: var(--text-light); font-size: 12px;">삭제 불가</span>'
-                : `${resetBtn}<button type="button" onclick="removeAdmin('${a.email}')" style="background:#ef4444; color:white; border:none; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:12px;">삭제</button>`;
-            html += `<tr style="border-bottom: 1px solid var(--border-color);">`;
-            html += `<td style="padding: 12px 16px;">${a.email}</td>`;
-            html += `<td style="padding: 12px 16px;">${a.name || '-'}</td>`;
-            html += `<td style="padding: 12px 16px;">${badge}</td>`;
-            html += `<td style="padding: 12px 16px;">${a.addedDate || '-'}</td>`;
-            html += `<td style="padding: 12px 16px;">${deleteBtn}</td>`;
-            html += '</tr>';
-        });
-        html += '</tbody></table>';
-        container.innerHTML = html;
-    } catch(err) {
-        document.getElementById('adminListContainer').innerHTML = '<p style="color: var(--red);">관리자 목록을 불러올 수 없습니다.</p>';
-    }
-}
-
-async function addAdmin() {
-    const email = document.getElementById('newAdminEmail').value.trim();
-    const name = document.getElementById('newAdminName').value.trim();
-    if (!email) return alert('이메일을 입력해주세요.');
-    if (!email.includes('@')) return alert('올바른 이메일 형식이 아닙니다.');
-    try {
-        await api.post('/api/admins', { email, name });
-        alert(`${email} 관리자가 추가되었습니다.`);
-        document.getElementById('newAdminEmail').value = '';
-        document.getElementById('newAdminName').value = '';
-        await loadAdminList();
-    } catch(err) {
-        alert(err.message || '관리자 추가에 실패했습니다.');
-    }
-}
-
-async function removeAdmin(email) {
-    if (!confirm(`${email}을(를) 관리자에서 제거하시겠습니까?`)) return;
-    try {
-        await api.del(`/api/admins/${encodeURIComponent(email)}`);
-        alert('관리자가 제거되었습니다.');
-        await loadAdminList();
-    } catch(err) {
-        alert(err.message || '관리자 제거에 실패했습니다.');
-    }
-}
-
-async function resetAdminPassword(email) {
-    if (!confirm(`${email}의 비밀번호를 기본 비밀번호로 초기화하시겠습니까?\n초기화 후 해당 관리자는 .env의 ADMIN_PASSWORD로 로그인해야 합니다.`)) return;
-    try {
-        await api.post(`/api/admins/${encodeURIComponent(email)}/reset-password`);
-        alert(`${email}의 비밀번호가 초기화되었습니다.`);
-    } catch(err) {
-        alert(err.message || '비밀번호 초기화에 실패했습니다.');
-    }
-}
-
-async function changeMyPassword() {
-    const currentPw = document.getElementById('currentPwInput').value;
-    const newPw = document.getElementById('newPwInput').value;
-    const confirmPw = document.getElementById('newPwConfirmInput').value;
-
-    if (!currentPw) return alert('현재 비밀번호를 입력해주세요.');
-    if (!newPw || newPw.length < 4) return alert('새 비밀번호는 4자 이상이어야 합니다.');
-    if (newPw !== confirmPw) return alert('새 비밀번호가 일치하지 않습니다.');
-
-    try {
-        await api.post('/api/admin/change-password', { currentPassword: currentPw, newPassword: newPw });
-        document.getElementById('currentPwInput').value = '';
-        document.getElementById('newPwInput').value = '';
-        document.getElementById('newPwConfirmInput').value = '';
-        const msg = document.getElementById('pwChangeSuccess');
-        msg.textContent = '✅ 비밀번호가 변경되었습니다.';
-        msg.style.display = 'block';
-        setTimeout(() => { msg.style.display = 'none'; }, 3000);
-    } catch(err) {
-        alert(err.message || '비밀번호 변경에 실패했습니다.');
-    }
-}
-
-let editBoardId = null, editCatId = null, editCatBoardId = null;
-let allAdminPosts = []; // 게시물 필터용 전체 목록
-
-// ─── 순서 변경 공통 함수 ───
-async function moveItem(sheetName, items, idx, direction) {
-    const swapIdx = idx + direction;
-    if (swapIdx < 0 || swapIdx >= items.length) return;
-    const a = items[idx], b = items[swapIdx];
-    const newItems = [
-        { id: a.id, order: b.order || String(swapIdx) },
-        { id: b.id, order: a.order || String(idx) }
-    ];
-    await api.put(`/api/${sheetName}/reorder`, { items: newItems });
-    invalidateAll();
-}
-
-function sortByOrder(items) {
-    return items.sort((a, b) => (parseInt(a.order) || 999) - (parseInt(b.order) || 999));
-}
-
-async function loadAdminMenuManager() {
-    let boards = await api.get('/api/boards');
-    const categories = await api.get('/api/categories');
-
-    boards = sortByOrder(boards);
-    document.getElementById('boardListContainer').innerHTML = boards.map((b, i) => `
-        <div class="admin-data-item" style="display:flex; align-items:center; gap:8px;">
-            <div style="display:flex; flex-direction:column; gap:2px;">
-                <button type="button" onclick="moveBoardUp(${i})" style="background:none; border:1px solid var(--border-color); border-radius:4px; cursor:pointer; padding:2px 6px; font-size:11px; color:var(--text-secondary);" ${i===0?'disabled':''}>▲</button>
-                <button type="button" onclick="moveBoardDown(${i})" style="background:none; border:1px solid var(--border-color); border-radius:4px; cursor:pointer; padding:2px 6px; font-size:11px; color:var(--text-secondary);" ${i===boards.length-1?'disabled':''}>▼</button>
-            </div>
-            <div style="flex:1;"><div class="admin-data-item-title">${b.name}</div><div class="admin-data-item-meta">ID: ${b.id}</div></div>
-            <div class="admin-item-actions">
-                <button type="button" class="admin-btn admin-btn-small admin-btn-outline" onclick="editBoard('${b.id}')">수정</button>
-                <button type="button" class="admin-btn admin-btn-danger admin-btn-small" onclick="deleteBoard('${b.id}')">삭제</button>
+            <div class="write-form-actions">
+                <button type="button" class="write-cancel-btn" onclick="closeEditMenuModal()">취소</button>
+                <button type="button" class="write-submit-btn" onclick="submitEditMenu()">저장</button>
             </div>
         </div>
-    `).join('');
+    </div>
 
-    document.getElementById('catTargetBoard').innerHTML = boards.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
-
-    let catHtml = '';
-    boards.forEach(b => {
-        const cats = categories[b.id] || [];
-        const sortedCats = sortByOrder(cats);
-        sortedCats.forEach((c, i) => {
-            catHtml += `<div class="admin-data-item" style="display:flex; align-items:center; gap:8px;">
-                <div style="display:flex; flex-direction:column; gap:2px;">
-                    <button type="button" onclick="moveCatUp('${b.id}', ${i})" style="background:none; border:1px solid var(--border-color); border-radius:4px; cursor:pointer; padding:2px 6px; font-size:11px; color:var(--text-secondary);" ${i===0?'disabled':''}>▲</button>
-                    <button type="button" onclick="moveCatDown('${b.id}', ${i})" style="background:none; border:1px solid var(--border-color); border-radius:4px; cursor:pointer; padding:2px 6px; font-size:11px; color:var(--text-secondary);" ${i===sortedCats.length-1?'disabled':''}>▼</button>
+    <!-- 연락처 추가/수정 모달 -->
+    <div class="write-modal-overlay" id="contactModal" onclick="if(event.target===this) closeContactModal()">
+        <div class="write-modal" style="max-width:520px;">
+            <h2 id="contactModalTitle">직원 추가</h2>
+            <div class="write-form-row">
+                <div class="write-form-group"><label>이름</label><input type="text" id="cmName" placeholder="홍길동"></div>
+                <div class="write-form-group"><label>직급</label><input type="text" id="cmPosition" placeholder="책임"></div>
+            </div>
+            <div class="write-form-row">
+                <div class="write-form-group"><label>부서</label><input type="text" id="cmDept" placeholder="경영지원본부/인사총무팀"></div>
+                <div class="write-form-group"><label>전화번호</label><input type="text" id="cmPhone" placeholder="02-2284-9999"></div>
+            </div>
+            <div class="write-form-row">
+                <div class="write-form-group"><label>이메일</label><input type="email" id="cmEmail" placeholder="hong@neolab.net"></div>
+                <div class="write-form-group"><label>상태</label>
+                    <select id="cmStatus" style="width:100%; padding:10px 14px; border:1px solid var(--border-color); border-radius:8px; font-size:14px;">
+                        <option value="active">🟢 재직중</option>
+                        <option value="dispatch">🟠 파견중</option>
+                        <option value="leave">🟣 휴직중</option>
+                    </select>
                 </div>
-                <div style="flex:1;"><div class="admin-data-item-title">${b.name} > ${c.name}</div><div class="admin-data-item-meta">ID: ${c.id}</div></div>
-                <div class="admin-item-actions">
-                    <button type="button" class="admin-btn admin-btn-small admin-btn-outline" onclick="editCategory('${b.id}', '${c.id}')">수정</button>
-                    <button type="button" class="admin-btn admin-btn-danger admin-btn-small" onclick="deleteCategory('${b.id}', '${c.id}')">삭제</button>
-                </div>
-            </div>`;
-        });
-    });
-    document.getElementById('catListContainer').innerHTML = catHtml;
-}
-
-// 대분류 순서 변경
-window.moveBoardUp = async function(idx) {
-    const boards = sortByOrder(await api.get('/api/boards'));
-    await moveItem('boards', boards, idx, -1);
-    await loadAdminMenuManager(); await renderSidebarMenus();
-};
-window.moveBoardDown = async function(idx) {
-    const boards = sortByOrder(await api.get('/api/boards'));
-    await moveItem('boards', boards, idx, 1);
-    await loadAdminMenuManager(); await renderSidebarMenus();
-};
-
-// 중분류 순서 변경
-window.moveCatUp = async function(boardId, idx) {
-    const categories = await api.get('/api/categories');
-    const cats = sortByOrder(categories[boardId] || []);
-    await moveItem('categories', cats, idx, -1);
-    await loadAdminMenuManager(); await renderSidebarMenus();
-};
-window.moveCatDown = async function(boardId, idx) {
-    const categories = await api.get('/api/categories');
-    const cats = sortByOrder(categories[boardId] || []);
-    await moveItem('categories', cats, idx, 1);
-    await loadAdminMenuManager(); await renderSidebarMenus();
-};
-
-// 대분류 추가/수정
-document.getElementById('addBoardBtn').addEventListener('click', async function() {
-    const id = document.getElementById('boardIdInput').value.trim();
-    const name = document.getElementById('boardNameInput').value.trim();
-    if (!id || !name) return alert('ID와 이름을 모두 입력하세요.');
-
-    try {
-        if (editBoardId) {
-            await api.put(`/api/boards/${editBoardId}`, { id, name });
-            editBoardId = null; this.textContent = '대분류 추가'; this.classList.replace('admin-btn-primary', 'admin-btn-success');
-        } else {
-            await api.post('/api/boards', { id, name, icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' });
-        }
-        document.getElementById('boardIdInput').value = ''; document.getElementById('boardNameInput').value = '';
-        invalidateAll(); await loadAdminMenuManager(); await renderSidebarMenus(); await loadAdminPosts();
-    } catch(err) { alert('오류: ' + err.message); }
-});
-
-window.editBoard = async function(id) {
-    const boards = await api.get('/api/boards');
-    const board = boards.find(b => b.id === id);
-    if(board) {
-        document.getElementById('boardIdInput').value = board.id;
-        document.getElementById('boardNameInput').value = board.name;
-        editBoardId = id;
-        const btn = document.getElementById('addBoardBtn'); btn.textContent = '저장'; btn.classList.replace('admin-btn-success', 'admin-btn-primary');
-    }
-};
-window.deleteBoard = async function(id) {
-    if (!confirm('게시판을 삭제하면 하위 게시물 접근이 어려워집니다. 진행하시겠습니까?')) return;
-    await api.del(`/api/boards/${id}`);
-    invalidateAll(); await loadAdminMenuManager(); await renderSidebarMenus();
-};
-
-// 중분류 추가/수정
-document.getElementById('addCatBtn').addEventListener('click', async function() {
-    const boardId = document.getElementById('catTargetBoard').value;
-    const id = document.getElementById('catIdInput').value.trim();
-    const name = document.getElementById('catNameInput').value.trim();
-    if (!boardId || !id || !name) return alert('모든 필드를 입력하세요.');
-
-    try {
-        if (editCatId) {
-            await api.put(`/api/categories/${editCatBoardId}/${editCatId}`, { id, boardId, name });
-            editCatId = null; editCatBoardId = null; this.textContent = '중분류 추가'; this.classList.replace('admin-btn-primary', 'admin-btn-success');
-        } else {
-            await api.post('/api/categories', { id, boardId, name });
-        }
-        document.getElementById('catIdInput').value = ''; document.getElementById('catNameInput').value = '';
-        invalidateAll(); await loadAdminMenuManager(); await renderSidebarMenus(); await loadAdminPosts();
-    } catch(err) { alert('오류: ' + err.message); }
-});
-
-window.editCategory = async function(boardId, catId) {
-    const categories = await api.get('/api/categories');
-    const cat = categories[boardId]?.find(c => c.id === catId);
-    if(cat) {
-        document.getElementById('catTargetBoard').value = boardId;
-        document.getElementById('catIdInput').value = cat.id;
-        document.getElementById('catNameInput').value = cat.name;
-        editCatId = catId; editCatBoardId = boardId;
-        const btn = document.getElementById('addCatBtn'); btn.textContent = '저장'; btn.classList.replace('admin-btn-success', 'admin-btn-primary');
-    }
-};
-window.deleteCategory = async function(boardId, catId) {
-    if (!confirm('카테고리를 삭제하시겠습니까?')) return;
-    await api.del(`/api/categories/${boardId}/${catId}`);
-    invalidateAll(); await loadAdminMenuManager(); await renderSidebarMenus();
-};
-
-/* ==========================================
-   게시물 관리
-========================================== */
-let editPostId = null;
-
-async function updatePostCategoryDropdown() {
-    const boardId = document.getElementById('postBoardSel').value;
-    const categories = await cachedGet('/api/categories');
-    const cats = categories[boardId] || [];
-    document.getElementById('postCatSel').innerHTML = cats.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-}
-
-async function loadAdminPosts() {
-    const boards = await api.get('/api/boards');
-    const boardSel = document.getElementById('postBoardSel');
-    const curVal = boardSel.value;
-    boardSel.innerHTML = boards.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
-    if(curVal && boards.find(b=>b.id===curVal)) boardSel.value = curVal;
-    await updatePostCategoryDropdown();
-
-    // 필터 드롭다운 업데이트
-    const filterSel = document.getElementById('postFilterBoard');
-    const filterVal = filterSel.value;
-    filterSel.innerHTML = '<option value="">전체 게시판</option>' + boards.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
-    if(filterVal) filterSel.value = filterVal;
-
-    allAdminPosts = sortByOrder(await api.get('/api/posts'));
-    filterAdminPosts();
-}
-
-window.filterAdminPosts = function() {
-    const filterBoard = document.getElementById('postFilterBoard').value;
-    const search = (document.getElementById('postSearchInput').value || '').toLowerCase();
-    let filtered = allAdminPosts;
-    if (filterBoard) filtered = filtered.filter(p => p.boardId === filterBoard);
-    if (search) filtered = filtered.filter(p => p.title.toLowerCase().includes(search));
-
-    document.getElementById('postsListContainer').innerHTML = filtered.length === 0
-        ? '<p style="color:var(--text-light); padding:12px;">게시물이 없습니다.</p>'
-        : filtered.map((p, i) => `
-        <div class="admin-data-item" style="display:flex; align-items:center; gap:8px;">
-            <div style="display:flex; flex-direction:column; gap:2px;">
-                <button type="button" onclick="movePostUp(${i}, '${filterBoard}')" style="background:none; border:1px solid var(--border-color); border-radius:4px; cursor:pointer; padding:2px 6px; font-size:11px; color:var(--text-secondary);" ${i===0?'disabled':''}>▲</button>
-                <button type="button" onclick="movePostDown(${i}, '${filterBoard}')" style="background:none; border:1px solid var(--border-color); border-radius:4px; cursor:pointer; padding:2px 6px; font-size:11px; color:var(--text-secondary);" ${i===filtered.length-1?'disabled':''}>▼</button>
             </div>
-            <div style="flex:1;">
-                <div class="admin-data-item-title">${p.title}</div>
-                <div class="admin-data-item-meta">📁 ${p.boardId} > ${p.categoryId} | ${p.type} | 조회 ${p.views || 0}</div>
-            </div>
-            <div class="admin-item-actions">
-                <button type="button" class="admin-btn admin-btn-small admin-btn-outline" onclick="editPost('${p.id}')">수정</button>
-                <button type="button" class="admin-btn admin-btn-danger admin-btn-small" onclick="deletePost('${p.id}')">삭제</button>
+            <div class="write-form-actions">
+                <button type="button" class="write-cancel-btn" onclick="closeContactModal()">취소</button>
+                <button type="button" class="write-submit-btn" onclick="submitContactModal()">저장</button>
             </div>
         </div>
-    `).join('');
-};
+    </div>
 
-// 게시물 순서 변경
-window.movePostUp = async function(idx, filterBoard) {
-    const filtered = filterBoard ? allAdminPosts.filter(p => p.boardId === filterBoard) : allAdminPosts;
-    const sorted = sortByOrder(filtered);
-    await moveItem('posts', sorted, idx, -1);
-    allAdminPosts = sortByOrder(await api.get('/api/posts'));
-    filterAdminPosts();
-};
-window.movePostDown = async function(idx, filterBoard) {
-    const filtered = filterBoard ? allAdminPosts.filter(p => p.boardId === filterBoard) : allAdminPosts;
-    const sorted = sortByOrder(filtered);
-    await moveItem('posts', sorted, idx, 1);
-    allAdminPosts = sortByOrder(await api.get('/api/posts'));
-    filterAdminPosts();
-};
-
-window.togglePostFields = function() {
-    const type = document.getElementById('postType').value;
-    document.getElementById('postUrlGroup').style.display = ['url','docx','xlsx','pptx'].includes(type) ? 'block' : 'none';
-    document.getElementById('postPdfGroup').style.display = type === 'pdf' ? 'block' : 'none';
-    document.getElementById('postContentGroup').style.display = type === 'text' ? 'block' : 'none';
-};
-
-// PDF 파일 선택 → 서버 업로드
-document.getElementById('postPdfFile').addEventListener('change', async function(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    if (file.type !== 'application/pdf') return alert('PDF 파일만 업로드 가능합니다.');
-    document.getElementById('postPdfFileName').textContent = `업로드 중...`;
-    try {
-        const result = await api.upload(file);
-        document.getElementById('postFileName').value = result.fileName;
-        document.getElementById('postPdfFileName').textContent = `업로드 완료: ${file.name}`;
-    } catch(err) {
-        document.getElementById('postPdfFileName').textContent = `업로드 실패: ${err.message}`;
-    }
-});
-
-document.getElementById('addPostBtn').addEventListener('click', async function() {
-    const boardId = document.getElementById('postBoardSel').value;
-    const categoryId = document.getElementById('postCatSel').value;
-    const type = document.getElementById('postType').value;
-    const title = document.getElementById('postTitle').value;
-    const icon = document.getElementById('postIcon').value;
-    const subInfo = document.getElementById('postSubInfo').value;
-    const content = document.getElementById('postContent').value;
-    const url = document.getElementById('postUrl').value;
-    const fileName = document.getElementById('postFileName').value;
-
-    if (!title) return alert('제목을 입력하세요.');
-
-    const postData = { boardId, categoryId, type, title, icon, subInfo,
-        content: type === 'text' ? content : '',
-        url: ['url','docx','xlsx','pptx'].includes(type) ? url : '',
-        fileName: type === 'pdf' ? fileName : ''
-    };
-
-    try {
-        if (editPostId) {
-            await api.put(`/api/posts/${editPostId}`, postData);
-            editPostId = null; this.textContent = '게시물 등록'; this.classList.replace('admin-btn-primary', 'admin-btn-success');
-        } else {
-            await api.post('/api/posts', postData);
-        }
-        alert('게시물이 저장되었습니다!');
-        document.getElementById('postTitle').value = ''; document.getElementById('postContent').value = ''; document.getElementById('postUrl').value = '';
-        document.getElementById('postFileName').value = ''; document.getElementById('postPdfFileName').textContent = '';
-        invalidateAll(); await loadAdminPosts(); await updateDashboardStats(); await loadDashboardWidgets();
-    } catch(err) { alert('저장 실패: ' + err.message); }
-});
-
-window.editPost = async function(id) {
-    const post = await api.get(`/api/posts/${id}`);
-    if(post) {
-        document.getElementById('postBoardSel').value = post.boardId;
-        await updatePostCategoryDropdown();
-        setTimeout(() => document.getElementById('postCatSel').value = post.categoryId, 50);
-        document.getElementById('postType').value = post.type; togglePostFields();
-        document.getElementById('postTitle').value = post.title;
-        document.getElementById('postIcon').value = post.icon || '';
-        document.getElementById('postSubInfo').value = post.subInfo || '';
-        document.getElementById('postContent').value = post.content || '';
-        document.getElementById('postUrl').value = post.url || '';
-        if(post.fileName) document.getElementById('postFileName').value = post.fileName;
-
-        editPostId = id;
-        const btn = document.getElementById('addPostBtn'); btn.textContent = '저장'; btn.classList.replace('admin-btn-success', 'admin-btn-primary');
-        document.querySelector('.admin-container').scrollTo({ top: 0, behavior: 'smooth' });
-    }
-};
-window.deletePost = async function(id) {
-    if (!confirm('삭제하시겠습니까?')) return;
-    await api.del(`/api/posts/${id}`);
-    invalidateAll(); await loadAdminPosts(); await updateDashboardStats(); await loadDashboardWidgets();
-};
-
-/* ==========================================
-   공지/연락처/조직도 관리
-========================================== */
-/* ── 공지사항 관리 (수정 기능 추가) ── */
-let editNoticeId = null;
-let allAdminContacts = [];
-
-async function loadAdminNotices() {
-    const notices = await api.get('/api/notices');
-    const typeLabel = { general: '🔵 일반', important: '🟡 중요', urgent: '🔴 긴급' };
-    document.getElementById('noticesList').innerHTML = notices.map(n => `
-        <div class="admin-data-item">
-            <div style="flex:1;">
-                <div class="admin-data-item-title">${n.title}</div>
-                <div class="admin-data-item-meta">${typeLabel[n.type] || n.type} | ${n.date || ''}</div>
-            </div>
-            <div class="admin-item-actions">
-                <button type="button" class="admin-btn admin-btn-small admin-btn-outline" onclick="editNotice('${n.id}')">수정</button>
-                <button type="button" class="admin-btn admin-btn-danger admin-btn-small" onclick="deleteNotice('${n.id}')">삭제</button>
-            </div>
+    <!-- 갤러리 라이트박스 -->
+    <div class="lightbox-overlay" id="lightboxOverlay" onclick="if(event.target===this) closeLightbox()">
+        <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+        <div class="lightbox-content" id="lightboxContent"></div>
+        <div class="lightbox-info">
+            <div class="lightbox-title" id="lightboxTitle"></div>
+            <div class="lightbox-sub" id="lightboxSub"></div>
         </div>
-    `).join('');
-}
+    </div>
 
-window.editNotice = async function(id) {
-    const notices = await api.get('/api/notices');
-    const n = notices.find(x => x.id === id);
-    if (!n) return;
-    document.getElementById('noticeTitle').value = n.title || '';
-    document.getElementById('noticeType').value = n.type || 'general';
-    document.getElementById('noticeContent').value = n.content || '';
-    editNoticeId = id;
-    document.getElementById('editNoticeIndicator').style.display = 'inline';
-    document.getElementById('addNoticeBtn').textContent = '저장';
-    document.getElementById('addNoticeBtn').classList.replace('admin-btn-success', 'admin-btn-primary');
-};
-
-window.cancelEditNotice = function() {
-    editNoticeId = null;
-    document.getElementById('noticeTitle').value = '';
-    document.getElementById('noticeContent').value = '';
-    document.getElementById('editNoticeIndicator').style.display = 'none';
-    document.getElementById('addNoticeBtn').textContent = '추가';
-    document.getElementById('addNoticeBtn').classList.replace('admin-btn-primary', 'admin-btn-success');
-};
-
-document.getElementById('addNoticeBtn').addEventListener('click', async function() {
-    const data = { title: document.getElementById('noticeTitle').value, type: document.getElementById('noticeType').value, content: document.getElementById('noticeContent').value };
-    if (!data.title) return alert('제목을 입력하세요.');
-    try {
-        if (editNoticeId) {
-            await api.put(`/api/notices/${editNoticeId}`, data);
-            cancelEditNotice();
-        } else {
-            await api.post('/api/notices', data);
-        }
-        document.getElementById('noticeTitle').value = ''; document.getElementById('noticeContent').value = '';
-        invalidate('/api/notices'); await loadAdminNotices(); await loadNoticeCards();
-    } catch(err) { alert('오류: ' + err.message); }
-});
-window.deleteNotice = async function(id) { if(!confirm('삭제하시겠습니까?')) return; await api.del(`/api/notices/${id}`); invalidate('/api/notices'); await loadAdminNotices(); await loadNoticeCards(); };
-
-/* ── 인사정보 관리 (수정/검색 기능 추가) ── */
-let editContactId = null;
-
-async function loadAdminContacts() {
-    allAdminContacts = await api.get('/api/contacts');
-    filterAdminContacts();
-}
-
-window.filterAdminContacts = function() {
-    const search = (document.getElementById('contactSearchInput').value || '').toLowerCase();
-    let filtered = allAdminContacts;
-    if (search) filtered = filtered.filter(c =>
-        (c.name||'').toLowerCase().includes(search) ||
-        (c.dept||'').toLowerCase().includes(search) ||
-        (c.position||'').toLowerCase().includes(search)
-    );
-    document.getElementById('contactsList').innerHTML = filtered.map(c => `
-        <div class="admin-data-item">
-            <div style="flex:1;">
-                <div class="admin-data-item-title">${c.name} <span style="font-size:12px; color:var(--text-secondary);">${c.position || ''}</span></div>
-                <div class="admin-data-item-meta">${c.dept || ''} | ${c.phone || ''} | ${c.email || ''} | ${c.status || ''}</div>
-            </div>
-            <div class="admin-item-actions">
-                <button type="button" class="admin-btn admin-btn-small admin-btn-outline" onclick="editContact('${c.id}')">수정</button>
-                <button type="button" class="admin-btn admin-btn-danger admin-btn-small" onclick="deleteContact('${c.id}')">삭제</button>
-            </div>
-        </div>
-    `).join('');
-};
-
-window.editContact = async function(id) {
-    const c = allAdminContacts.find(x => x.id === id);
-    if (!c) return;
-    document.getElementById('contactName').value = c.name || '';
-    document.getElementById('contactPosition').value = c.position || '';
-    document.getElementById('contactDept').value = c.dept || '';
-    document.getElementById('contactPhone').value = c.phone || '';
-    document.getElementById('contactEmail').value = c.email || '';
-    document.getElementById('contactStatus').value = c.status || '🟢 재직중';
-    editContactId = id;
-    document.getElementById('editContactIndicator').style.display = 'inline';
-    document.getElementById('addContactBtn').textContent = '저장';
-    document.getElementById('addContactBtn').classList.replace('admin-btn-success', 'admin-btn-primary');
-    document.querySelector('#contactsTab').scrollTo({ top: 0, behavior: 'smooth' });
-};
-
-window.cancelEditContact = function() {
-    editContactId = null;
-    document.getElementById('contactName').value = '';
-    document.getElementById('contactPosition').value = '';
-    document.getElementById('contactDept').value = '';
-    document.getElementById('contactPhone').value = '';
-    document.getElementById('contactEmail').value = '';
-    document.getElementById('editContactIndicator').style.display = 'none';
-    document.getElementById('addContactBtn').textContent = '추가';
-    document.getElementById('addContactBtn').classList.replace('admin-btn-primary', 'admin-btn-success');
-};
-
-document.getElementById('addContactBtn').addEventListener('click', async function() {
-    const data = { name: document.getElementById('contactName').value, position: document.getElementById('contactPosition').value, dept: document.getElementById('contactDept').value, status: document.getElementById('contactStatus').value, phone: document.getElementById('contactPhone').value, email: document.getElementById('contactEmail').value };
-    if (!data.name) return alert('이름을 입력하세요.');
-    try {
-        if (editContactId) {
-            await api.put(`/api/contacts/${editContactId}`, data);
-            cancelEditContact();
-        } else {
-            await api.post('/api/contacts', data);
-        }
-        document.getElementById('contactName').value = ''; document.getElementById('contactPosition').value = '';
-        document.getElementById('contactDept').value = ''; document.getElementById('contactPhone').value = '';
-        document.getElementById('contactEmail').value = '';
-        invalidateAll(); await loadAdminContacts(); await loadContacts(); await updateDashboardStats();
-    } catch(err) { alert('오류: ' + err.message); }
-});
-window.deleteContact = async function(id) { if(!confirm('삭제하시겠습니까?')) return; await api.del(`/api/contacts/${id}`); invalidateAll(); await loadAdminContacts(); await loadContacts(); await updateDashboardStats(); };
-
-/* ── 조직도 관리 (수정 기능 추가) ── */
-let editOrgId = null;
-
-async function loadAdminOrgChart() {
-    const orgs = await api.get('/api/orgchart');
-    const levelLabel = { '1': '👑 1단계(대표이사)', '2': '👔 2단계(COO)', '3': '👔 3단계(CSO)', '4': '💼 4단계(본부장)', '5': '👤 5단계(팀장)', '6': '🧑‍💻 6단계(팀원)' };
-    document.getElementById('orgchartList').innerHTML = orgs.sort((a,b) => a.level - b.level).map(o => `
-        <div class="admin-data-item">
-            <div style="flex:1;">
-                <div class="admin-data-item-title">${o.name}</div>
-                <div class="admin-data-item-meta">${o.title || ''} | ${levelLabel[o.level] || o.level+'단계'}</div>
-            </div>
-            <div class="admin-item-actions">
-                <button type="button" class="admin-btn admin-btn-small admin-btn-outline" onclick="editOrg('${o.id}')">수정</button>
-                <button type="button" class="admin-btn admin-btn-danger admin-btn-small" onclick="deleteOrg('${o.id}')">삭제</button>
-            </div>
-        </div>
-    `).join('');
-}
-
-window.editOrg = async function(id) {
-    const orgs = await api.get('/api/orgchart');
-    const o = orgs.find(x => x.id === id);
-    if (!o) return;
-    document.getElementById('orgName').value = o.name || '';
-    document.getElementById('orgTitle').value = o.title || '';
-    document.getElementById('orgLevel').value = o.level || '6';
-    editOrgId = id;
-    document.getElementById('editOrgIndicator').style.display = 'inline';
-    document.getElementById('addOrgBtn').textContent = '저장';
-    document.getElementById('addOrgBtn').classList.replace('admin-btn-success', 'admin-btn-primary');
-};
-
-window.cancelEditOrg = function() {
-    editOrgId = null;
-    document.getElementById('orgName').value = '';
-    document.getElementById('orgTitle').value = '';
-    document.getElementById('editOrgIndicator').style.display = 'none';
-    document.getElementById('addOrgBtn').textContent = '추가';
-    document.getElementById('addOrgBtn').classList.replace('admin-btn-primary', 'admin-btn-success');
-};
-
-document.getElementById('addOrgBtn').addEventListener('click', async function() {
-    const data = { name: document.getElementById('orgName').value, title: document.getElementById('orgTitle').value, level: document.getElementById('orgLevel').value };
-    if (!data.name) return alert('이름을 입력하세요.');
-    try {
-        if (editOrgId) {
-            await api.put(`/api/orgchart/${editOrgId}`, data);
-            cancelEditOrg();
-        } else {
-            await api.post('/api/orgchart', data);
-        }
-        document.getElementById('orgName').value = ''; document.getElementById('orgTitle').value = '';
-        invalidate('/api/orgchart'); await loadAdminOrgChart(); await loadOrgChart();
-    } catch(err) { alert('오류: ' + err.message); }
-});
-window.deleteOrg = async function(id) { if(!confirm('삭제하시겠습니까?')) return; await api.del(`/api/orgchart/${id}`); invalidate('/api/orgchart'); await loadAdminOrgChart(); await loadOrgChart(); };
-
-/* ==========================================
-   설정
-========================================== */
-async function loadAdminSettings() {
-    const s = await api.get('/api/settings');
-    document.getElementById('companyName').value = s.companyName || 'NeoLab';
-}
-document.getElementById('saveSettingsBtn').addEventListener('click', async function() {
-    await api.put('/api/settings', { companyName: document.getElementById('companyName').value });
-    showAdminSuccess('settingsSuccess', '저장되었습니다!');
-});
-
-/* ==========================================
-   백업/복원
-========================================== */
-document.getElementById('backupBtn').addEventListener('click', async function() {
-    try {
-        const res = await fetch('/api/backup');
-        const blob = await res.blob();
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'kms_backup.json';
-        a.click();
-    } catch(err) { alert('백업 실패: ' + err.message); }
-});
-
-document.getElementById('restoreBtn').addEventListener('click', async function() {
-    const file = document.getElementById('restoreFile').files[0];
-    if (!file || !confirm('기존 데이터를 덮어씁니다. 진행하시겠습니까?')) return;
-    const reader = new FileReader();
-    reader.onload = async function(e) {
-        try {
-            const data = JSON.parse(e.target.result);
-            await api.post('/api/restore', data);
-            alert('복원 완료!');
-            location.reload();
-        } catch(err) { alert('복원 실패: ' + err.message); }
-    };
-    reader.readAsText(file);
-});
-
-document.getElementById('resetBtn').addEventListener('click', async function() {
-    if (confirm('정말 초기화하시겠습니까? 모든 데이터가 삭제됩니다.')) {
-        try {
-            await api.post('/api/restore', { boards: [], categories: [], posts: [], notices: [], contacts: [], orgchart: [], settings: [] });
-            alert('초기화 완료!');
-            location.reload();
-        } catch(err) { alert('초기화 실패: ' + err.message); }
-    }
-});
-
-function showAdminSuccess(id, msg) { const e = document.getElementById(id); if (e) { e.textContent = msg; e.classList.add('show'); setTimeout(() => e.classList.remove('show'), 3000); } }
-
-// 문서 보호: 우클릭 방지
-document.addEventListener('contextmenu', function(e) {
-    if (e.target.closest('.modal-body') || e.target.closest('iframe')) {
-        e.preventDefault();
-    }
-});
-</script>
+<script src="js/core.js?v=3"></script>
+<script src="js/navigation.js?v=3"></script>
+<script src="js/search.js?v=3"></script>
+<script src="js/viewer.js?v=3"></script>
+<script src="js/board.js?v=3"></script>
+<script src="js/features.js?v=3"></script>
+<script src="js/app.js?v=3"></script>
+<script src="js/admin.js?v=3"></script>
 </body>
 </html>
