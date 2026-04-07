@@ -4,7 +4,6 @@
 async function renderSidebarMenus() {
     const boards = (await cachedGet('/api/boards')).sort((a,b) => (parseInt(a.order)||999) - (parseInt(b.order)||999));
     const categories = await cachedGet('/api/categories');
-    // 각 게시판의 카테고리도 정렬
     Object.keys(categories).forEach(k => {
         if (Array.isArray(categories[k])) categories[k].sort((a,b) => (parseInt(a.order)||999) - (parseInt(b.order)||999));
     });
@@ -40,95 +39,109 @@ async function renderSidebarMenus() {
 /* ==========================================
    페이지 네비게이션
 ========================================== */
-async function navigateTo(pageId, pushToHistory = true, targetCatId = null) {
+async function navigateTo(pageId, pushToHistory, targetCatId) {
+    if (pushToHistory === undefined) pushToHistory = true;
     if (!pageNames[pageId]) return;
 
     // 페이지 이동 시 인라인 뷰어 및 제품 상세 닫기
     closeInlineViewer();
-    if (document.getElementById('productDetailView')) closeProductDetail();
+    var detailView = document.getElementById('productDetailView');
+    if (detailView && detailView.style.display !== 'none') closeProductDetail();
 
-    document.querySelectorAll('.menu-item').forEach(mi => mi.classList.remove('active'));
-    const targetMenu = document.querySelector(`.menu-item[data-page="${pageId}"]`);
+    document.querySelectorAll('.menu-item').forEach(function(mi) { mi.classList.remove('active'); });
+    var targetMenu = document.querySelector('.menu-item[data-page="' + pageId + '"]');
     if (targetMenu) {
         targetMenu.classList.add('active');
-        const submenu = targetMenu.nextElementSibling;
+        var submenu = targetMenu.nextElementSibling;
         if (submenu && submenu.classList.contains('submenu')) {
             targetMenu.classList.add('expanded');
             submenu.classList.add('show');
         }
     }
 
-    document.querySelectorAll('.page-section').forEach(ps => ps.classList.remove('active'));
+    document.querySelectorAll('.page-section').forEach(function(ps) { ps.classList.remove('active'); });
 
-    const boards = await cachedGet('/api/boards');
-    const isDynamicBoard = boards.some(b => b.id === pageId);
+    var boards = await cachedGet('/api/boards');
+    var isDynamicBoard = boards.some(function(b) { return b.id === pageId; });
 
     if (isDynamicBoard) {
         document.getElementById('dynamicBoardSection').classList.add('active');
         await renderDynamicBoardContent(pageId, targetCatId);
     } else {
-        const targetSection = document.getElementById(pageId);
+        var targetSection = document.getElementById(pageId);
         if (targetSection) targetSection.classList.add('active');
     }
 
     // 빵가루 네비게이션 업데이트
-    const breadcrumb = document.getElementById('breadcrumb');
+    var breadcrumb = document.getElementById('breadcrumb');
     if (pageId === 'dashboard') {
-        breadcrumb.innerHTML = `<span class="breadcrumb-current">🏠 홈</span>`;
+        breadcrumb.innerHTML = '<span class="breadcrumb-current">🏠 홈</span>';
     } else {
-        let crumbHtml = `<span class="breadcrumb-item"><a onclick="navigateTo('dashboard')">🏠 홈</a></span><span class="breadcrumb-sep">›</span>`;
+        var crumbHtml = '<span class="breadcrumb-item"><a onclick="navigateTo(\'dashboard\')">🏠 홈</a></span><span class="breadcrumb-sep">›</span>';
         if (targetCatId && targetCatId !== 'all') {
-            const cats = await cachedGet('/api/categories');
-            const boardCats = cats[pageId] || [];
-            const cat = boardCats.find(c => c.id === targetCatId);
-            crumbHtml += `<span class="breadcrumb-item"><a onclick="navigateTo('${pageId}')">${pageNames[pageId]?.replace(/^[^\s]+\s/, '') || pageId}</a></span>`;
-            if (cat) crumbHtml += `<span class="breadcrumb-sep">›</span><span class="breadcrumb-current">${cat.name}</span>`;
+            var cats = await cachedGet('/api/categories');
+            var boardCats = cats[pageId] || [];
+            var cat = boardCats.find(function(c) { return c.id === targetCatId; });
+            crumbHtml += '<span class="breadcrumb-item"><a onclick="navigateTo(\'' + pageId + '\')">' + (pageNames[pageId] || pageId).replace(/^[^\s]+\s/, '') + '</a></span>';
+            if (cat) crumbHtml += '<span class="breadcrumb-sep">›</span><span class="breadcrumb-current">' + cat.name + '</span>';
         } else {
-            crumbHtml += `<span class="breadcrumb-current">${pageNames[pageId] || pageId}</span>`;
+            crumbHtml += '<span class="breadcrumb-current">' + (pageNames[pageId] || pageId) + '</span>';
         }
         breadcrumb.innerHTML = crumbHtml;
     }
+
+    // 히스토리 관리
     if (pushToHistory) {
-        navHistory.push({ type: 'page', page: pageId, cat: targetCatId });
-        history.pushState({ page: pageId, cat: targetCatId }, '', `#${pageId}`);
+        navHistory.push({ type: 'page', page: pageId, cat: targetCatId || null });
     }
-    backBtn.style.display = navHistory.length > 1 ? 'flex' : 'none';
+    updateBackBtn();
     if (window.innerWidth <= 768) document.getElementById('sidebar').classList.remove('mobile-show');
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// 뒤로가기 버튼 클릭
-backBtn.addEventListener('click', function() {
-    if (navHistoryLock) return;
-    // 현재 게시물 상세가 열려있으면 먼저 닫기
+// 뒤로가기 버튼 상태 업데이트
+function updateBackBtn() {
+    backBtn.style.display = navHistory.length > 1 ? 'flex' : 'none';
+}
+
+// 뒤로가기 실행
+function goBack() {
+    // 게시물 상세가 열려있으면 먼저 닫기
     var detailView = document.getElementById('productDetailView');
     if (detailView && detailView.style.display !== 'none') {
         closeProductDetail();
-        // 상세보기 히스토리 제거
         if (navHistory.length > 0 && navHistory[navHistory.length - 1].type === 'post') {
             navHistory.pop();
         }
-        backBtn.style.display = navHistory.length > 1 ? 'flex' : 'none';
+        updateBackBtn();
         return;
     }
+
     // 이전 페이지로 이동
     if (navHistory.length > 1) {
         navHistory.pop(); // 현재 제거
-        var prev = navHistory[navHistory.length - 1]; // 이전
-        navHistoryLock = true;
+        var prev = navHistory[navHistory.length - 1];
         navigateTo(prev.page, false, prev.cat);
-        navHistoryLock = false;
-        history.back();
     } else {
         navigateTo('dashboard', false);
     }
-    backBtn.style.display = navHistory.length > 1 ? 'flex' : 'none';
+    updateBackBtn();
+}
+
+// 뒤로가기 버튼 클릭
+backBtn.addEventListener('click', function() {
+    goBack();
+});
+
+// 브라우저 뒤로가기/앞으로가기
+window.addEventListener('popstate', function(e) {
+    goBack();
 });
 
 document.getElementById('sidebar').addEventListener('click', function(e) {
-    const submenuItem = e.target.closest('.submenu-item');
+    var submenuItem = e.target.closest('.submenu-item');
     if (submenuItem) {
-        const action = submenuItem.getAttribute('data-action');
+        var action = submenuItem.getAttribute('data-action');
         if (action === 'goto-board') {
             navigateTo(submenuItem.getAttribute('data-board'), true, submenuItem.getAttribute('data-cat'));
         } else if (action === 'goto-hr-contacts') {
@@ -138,29 +151,25 @@ document.getElementById('sidebar').addEventListener('click', function(e) {
         }
         return;
     }
-    const menuItem = e.target.closest('.menu-item');
+    var menuItem = e.target.closest('.menu-item');
     if (menuItem) {
         if (menuItem.id === 'adminMenuBtn') return;
-        const submenu = menuItem.nextElementSibling;
-        const hasSubmenu = submenu && submenu.classList.contains('submenu');
+        var submenu = menuItem.nextElementSibling;
+        var hasSubmenu = submenu && submenu.classList.contains('submenu');
 
         if (hasSubmenu) {
-            // 서브메뉴가 있는 경우: 접기/펼치기 토글
-            const isExpanded = menuItem.classList.contains('expanded');
+            var isExpanded = menuItem.classList.contains('expanded');
             if (isExpanded) {
-                // 이미 펼쳐져 있으면 접기
                 menuItem.classList.remove('expanded');
                 submenu.classList.remove('show');
             } else {
-                // 접혀있으면 펼치고 해당 게시판으로 이동
                 menuItem.classList.add('expanded');
                 submenu.classList.add('show');
-                const page = menuItem.getAttribute('data-page');
+                var page = menuItem.getAttribute('data-page');
                 if (page) navigateTo(page);
             }
         } else {
-            // 서브메뉴가 없는 경우: 바로 이동
-            const page = menuItem.getAttribute('data-page');
+            var page = menuItem.getAttribute('data-page');
             if (page) navigateTo(page);
         }
     }

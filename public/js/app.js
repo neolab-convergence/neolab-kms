@@ -45,23 +45,7 @@ async function loadDashboardWidgets() {
     }
 }
 
-window.addEventListener('popstate', function(e) {
-    // 게시물 상세가 열려있으면 먼저 닫기
-    var detailView = document.getElementById('productDetailView');
-    if (detailView && detailView.style.display !== 'none') {
-        closeProductDetail();
-        if (navHistory.length > 0 && navHistory[navHistory.length - 1].type === 'post') {
-            navHistory.pop();
-        }
-        backBtn.style.display = navHistory.length > 1 ? 'flex' : 'none';
-        return;
-    }
-    const page = e.state && e.state.page ? e.state.page : 'dashboard';
-    // navHistory 동기화
-    if (navHistory.length > 1) navHistory.pop();
-    navigateTo(page, false, e.state?.cat);
-    backBtn.style.display = navHistory.length > 1 ? 'flex' : 'none';
-});
+// popstate는 navigation.js에서 처리 (중복 제거)
 
 /* ==========================================
    앱 초기화
@@ -74,7 +58,6 @@ window.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
-    // 관리자 버튼 표시/숨김
     const adminBtn = document.getElementById('adminMenuBtn');
     if (!currentUser.isAdmin) adminBtn.style.display = 'none';
 
@@ -89,15 +72,14 @@ window.addEventListener('DOMContentLoaded', async () => {
     await loadContacts();
     await loadOrgChart();
 
+    // 초기 페이지 설정
+    navHistory = [{ type: 'page', page: 'dashboard', cat: null }];
+
     const boards = await cachedGet('/api/boards');
     const hash = window.location.hash.replace('#', '');
     if (hash && (pageNames[hash] || boards.find(b => b.id === hash))) {
-        navHistory = [{ type: 'page', page: hash, cat: null }];
-        navigateTo(hash, false);
-        history.replaceState({ page: hash }, '', `#${hash}`);
+        navigateTo(hash, true);
     } else {
-        navHistory = [{ type: 'page', page: 'dashboard', cat: null }];
-        history.replaceState({ page: 'dashboard' }, '', '#dashboard');
         navigateTo('dashboard', false);
     }
 });
