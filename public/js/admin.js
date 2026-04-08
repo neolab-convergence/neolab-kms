@@ -160,6 +160,12 @@ window.openWriteModal = async function(postId) {
         if (document.getElementById('writeFile')) document.getElementById('writeFile').value = '';
         if (document.getElementById('writeThumb')) document.getElementById('writeThumb').value = '';
         for (var di = 1; di <= 3; di++) { var dEl = document.getElementById('writeDetailImage' + di); if (dEl) dEl.value = ''; }
+        var imgInput = document.getElementById('writeImages');
+        if (imgInput) imgInput.value = '';
+        var imgPreview = document.getElementById('writeImagesPreview');
+        if (imgPreview) imgPreview.innerHTML = '';
+        var imgStatus = document.getElementById('writeImagesStatus');
+        if (imgStatus) imgStatus.textContent = '';
         var thumbPreview2 = document.getElementById('writeThumbPreview');
         if (thumbPreview2) thumbPreview2.innerHTML = '';
         var detailPreview2 = document.getElementById('writeDetailPreview');
@@ -229,10 +235,12 @@ window.updateWriteCategories = function() {
 };
 
 window.toggleWriteFields = function() {
-    const type = document.getElementById('writeType').value;
+    var type = document.getElementById('writeType').value;
     document.getElementById('writeUrlGroup').style.display = (type === 'url') ? 'block' : 'none';
     document.getElementById('writeFileGroup').style.display = (['pdf','docx','xlsx','pptx'].includes(type)) ? 'block' : 'none';
     document.getElementById('writeContentGroup').style.display = (type === 'text') ? 'block' : 'none';
+    var imagesGroup = document.getElementById('writeImagesGroup');
+    if (imagesGroup) imagesGroup.style.display = (type === 'images') ? 'block' : 'none';
 };
 
 window.submitWriteForm = async function() {
@@ -281,8 +289,28 @@ window.submitWriteForm = async function() {
     }
     var detailImage = detailImages.length > 0 ? detailImages.join('|') : '';
 
-    const bgColor = document.getElementById('writeBgColor') ? document.getElementById('writeBgColor').value : '';
-    const postData = { boardId, categoryId, title, type, subInfo, url, content, bgColor };
+    // 이미지 복수 업로드 (type === 'images')
+    var imagesInput = document.getElementById('writeImages');
+    if (type === 'images' && imagesInput && imagesInput.files.length > 0) {
+        var imgNames = [];
+        var maxFiles = Math.min(imagesInput.files.length, 10);
+        var statusEl = document.getElementById('writeImagesStatus');
+        for (var ii = 0; ii < maxFiles; ii++) {
+            if (statusEl) statusEl.textContent = '업로드 중... (' + (ii+1) + '/' + maxFiles + ')';
+            var imgFd = new FormData();
+            imgFd.append('file', imagesInput.files[ii]);
+            var imgRes = await fetch('/api/upload', { method: 'POST', body: imgFd });
+            var imgData = await imgRes.json();
+            if (!imgData.error) imgNames.push(imgData.fileName);
+        }
+        if (statusEl) statusEl.textContent = '업로드 완료! ' + imgNames.length + '장';
+        // 첫 번째를 썸네일, 전체를 detailImage에 저장
+        if (imgNames.length > 0 && !thumbnail) thumbnail = imgNames[0];
+        if (imgNames.length > 0) detailImage = imgNames.join('|');
+    }
+
+    var bgColor = document.getElementById('writeBgColor') ? document.getElementById('writeBgColor').value : '';
+    var postData = { boardId: boardId, categoryId: categoryId, title: title, type: type, subInfo: subInfo, url: url, content: content, bgColor: bgColor };
     if (fileName) postData.fileName = fileName;
     if (thumbnail) postData.thumbnail = thumbnail;
     if (detailImage) postData.detailImage = detailImage;
@@ -1529,6 +1557,28 @@ window.deleteInfra = async function(id) {
         await loadAdminInfra();
     } catch(e) { alert('삭제 실패: ' + e.message); }
 };
+
+// 이미지 복수 선택 시 미리보기
+var writeImagesEl = document.getElementById('writeImages');
+if (writeImagesEl) writeImagesEl.addEventListener('change', function() {
+    var preview = document.getElementById('writeImagesPreview');
+    if (!preview) return;
+    preview.innerHTML = '';
+    var files = this.files;
+    if (files.length > 10) {
+        alert('최대 10장까지 선택할 수 있습니다.');
+        this.value = '';
+        return;
+    }
+    for (var i = 0; i < files.length; i++) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            preview.innerHTML += '<img src="' + e.target.result + '" style="max-height:60px; border-radius:6px; border:1px solid var(--border-color);">';
+        };
+        reader.readAsDataURL(files[i]);
+    }
+    document.getElementById('writeImagesStatus').textContent = files.length + '장 선택됨';
+});
 
 // 문서 보호: 우클릭 방지
 document.addEventListener('contextmenu', function(e) {
