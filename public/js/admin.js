@@ -129,6 +129,13 @@ window.openWriteModal = async function(postId) {
     if (postId) {
         title.textContent = '게시물 수정';
         const post = await api.get('/api/posts/' + postId);
+        // 원본 데이터 보존 (수정 시 기존 이미지/파일 유지용)
+        window._writeEditOriginal = {
+            thumbnail: post.thumbnail || '',
+            detailImage: post.detailImage || '',
+            bgColor: post.bgColor || '',
+            fileName: post.fileName || ''
+        };
         boardSelect.value = post.boardId;
         updateWriteCategories();
         document.getElementById('writeCat').value = post.categoryId;
@@ -175,7 +182,7 @@ window.openWriteModal = async function(postId) {
     modal.classList.add('show');
 };
 
-window.closeWriteModal = function() { document.getElementById('writeModalOverlay').classList.remove('show'); adminEditPostId = null; };
+window.closeWriteModal = function() { document.getElementById('writeModalOverlay').classList.remove('show'); adminEditPostId = null; window._writeEditOriginal = null; };
 window.editPost = async function(id) {
     // postWrite 탭으로 전환
     document.querySelectorAll('.admin-nav-item').forEach(function(n) { n.classList.remove('active'); });
@@ -192,6 +199,12 @@ window.editPost = async function(id) {
     if (!post) return;
 
     editPostId = id;
+    // 원본 데이터 보존 (수정 시 기존 이미지/bgColor 유지용)
+    window._editPostOriginal = {
+        thumbnail: post.thumbnail || '',
+        detailImage: post.detailImage || '',
+        bgColor: post.bgColor || ''
+    };
     document.getElementById('postBoardSel').value = post.boardId;
     await updatePostCategoryDropdown();
     setTimeout(function() { document.getElementById('postCatSel').value = post.categoryId; }, 50);
@@ -215,6 +228,7 @@ window.editPost = async function(id) {
 
 window.cancelEditPostForm = function() {
     editPostId = null;
+    window._editPostOriginal = null;
     document.getElementById('editPostIndicator').style.display = 'none';
     document.getElementById('postTitle').value = '';
     document.getElementById('postContent').value = '';
@@ -309,12 +323,21 @@ window.submitWriteForm = async function() {
 
     var bgColor = document.getElementById('writeBgColor') ? document.getElementById('writeBgColor').value : '';
     var postData = { boardId: boardId, categoryId: categoryId, title: title, type: type, subInfo: subInfo, url: url, content: content, bgColor: bgColor };
+
+    // 수정 시 기존 이미지/파일 보존 (새로 업로드 안 했으면 기존 값 유지)
+    if (adminEditPostId && window._writeEditOriginal) {
+        if (!fileName && window._writeEditOriginal.fileName) postData.fileName = window._writeEditOriginal.fileName;
+        if (!thumbnail && window._writeEditOriginal.thumbnail) postData.thumbnail = window._writeEditOriginal.thumbnail;
+        if (!detailImage && window._writeEditOriginal.detailImage) postData.detailImage = window._writeEditOriginal.detailImage;
+    }
+
     if (fileName) postData.fileName = fileName;
     if (thumbnail) postData.thumbnail = thumbnail;
     if (detailImage) postData.detailImage = detailImage;
 
     if (adminEditPostId) {
         await api.put('/api/posts/' + adminEditPostId, postData);
+        window._writeEditOriginal = null;
     } else {
         await api.post('/api/posts', postData);
     }
@@ -1039,6 +1062,13 @@ if (addPostBtnEl) addPostBtnEl.addEventListener('click', async function() {
         fileName: type === 'pdf' ? fileName : ''
     };
 
+    // 수정 시 기존 이미지 정보 보존
+    if (editPostId && window._editPostOriginal) {
+        if (window._editPostOriginal.thumbnail) postData.thumbnail = window._editPostOriginal.thumbnail;
+        if (window._editPostOriginal.detailImage) postData.detailImage = window._editPostOriginal.detailImage;
+        if (window._editPostOriginal.bgColor) postData.bgColor = window._editPostOriginal.bgColor;
+    }
+
     // 이미지 복수 업로드 처리
     if (type === 'images') {
         var postOrderedFiles = orderedImageFiles['postImages'] || [];
@@ -1064,7 +1094,7 @@ if (addPostBtnEl) addPostBtnEl.addEventListener('click', async function() {
     try {
         if (editPostId) {
             await api.put('/api/posts/' + editPostId, postData);
-            editPostId = null; this.textContent = '게시물 등록'; this.classList.replace('admin-btn-primary', 'admin-btn-success');
+            editPostId = null; window._editPostOriginal = null; this.textContent = '게시물 등록'; this.classList.replace('admin-btn-primary', 'admin-btn-success');
             document.getElementById('editPostIndicator').style.display = 'none';
         } else {
             await api.post('/api/posts', postData);
