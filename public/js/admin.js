@@ -997,10 +997,12 @@ window.movePostDown = async function(idx, filterBoard) {
 };
 
 window.togglePostFields = function() {
-    const type = document.getElementById('postType').value;
+    var type = document.getElementById('postType').value;
     document.getElementById('postUrlGroup').style.display = ['url','docx','xlsx','pptx'].includes(type) ? 'block' : 'none';
     document.getElementById('postPdfGroup').style.display = type === 'pdf' ? 'block' : 'none';
     document.getElementById('postContentGroup').style.display = type === 'text' ? 'block' : 'none';
+    var postImgGroup = document.getElementById('postImagesGroup');
+    if (postImgGroup) postImgGroup.style.display = (type === 'images') ? 'block' : 'none';
 };
 
 // PDF 파일 선택 → 서버 업로드
@@ -1033,22 +1035,49 @@ if (addPostBtnEl) addPostBtnEl.addEventListener('click', async function() {
 
     if (!title) return alert('제목을 입력하세요.');
 
-    const postData = { boardId, categoryId, type, title, icon, subInfo,
+    var postData = { boardId: boardId, categoryId: categoryId, type: type, title: title, icon: icon, subInfo: subInfo,
         content: type === 'text' ? content : '',
         url: ['url','docx','xlsx','pptx'].includes(type) ? url : '',
         fileName: type === 'pdf' ? fileName : ''
     };
 
+    // 이미지 복수 업로드 처리
+    if (type === 'images') {
+        var postImgInput = document.getElementById('postImages');
+        if (postImgInput && postImgInput.files.length > 0) {
+            var imgNames = [];
+            var maxFiles = Math.min(postImgInput.files.length, 10);
+            var statusEl = document.getElementById('postImagesStatus');
+            for (var ii = 0; ii < maxFiles; ii++) {
+                if (statusEl) statusEl.textContent = '업로드 중... (' + (ii+1) + '/' + maxFiles + ')';
+                var imgFd = new FormData();
+                imgFd.append('file', postImgInput.files[ii]);
+                var imgRes = await fetch('/api/upload', { method: 'POST', body: imgFd });
+                var imgData = await imgRes.json();
+                if (!imgData.error) imgNames.push(imgData.fileName);
+            }
+            if (statusEl) statusEl.textContent = '업로드 완료! ' + imgNames.length + '장';
+            if (imgNames.length > 0) {
+                postData.thumbnail = imgNames[0];
+                postData.detailImage = imgNames.join('|');
+            }
+        }
+    }
+
     try {
         if (editPostId) {
-            await api.put(`/api/posts/${editPostId}`, postData);
+            await api.put('/api/posts/' + editPostId, postData);
             editPostId = null; this.textContent = '게시물 등록'; this.classList.replace('admin-btn-primary', 'admin-btn-success');
+            document.getElementById('editPostIndicator').style.display = 'none';
         } else {
             await api.post('/api/posts', postData);
         }
         alert('게시물이 저장되었습니다!');
         document.getElementById('postTitle').value = ''; document.getElementById('postContent').value = ''; document.getElementById('postUrl').value = '';
         document.getElementById('postFileName').value = ''; document.getElementById('postPdfFileName').textContent = '';
+        var postImgEl = document.getElementById('postImages'); if (postImgEl) postImgEl.value = '';
+        var postImgPrev = document.getElementById('postImagesPreview'); if (postImgPrev) postImgPrev.innerHTML = '';
+        var postImgStat = document.getElementById('postImagesStatus'); if (postImgStat) postImgStat.textContent = '';
         invalidateAll(); await loadAdminPosts(); await updateDashboardStats(); await loadDashboardWidgets();
     } catch(err) { alert('저장 실패: ' + err.message); }
 });
@@ -1559,26 +1588,32 @@ window.deleteInfra = async function(id) {
 };
 
 // 이미지 복수 선택 시 미리보기
-var writeImagesEl = document.getElementById('writeImages');
-if (writeImagesEl) writeImagesEl.addEventListener('change', function() {
-    var preview = document.getElementById('writeImagesPreview');
-    if (!preview) return;
-    preview.innerHTML = '';
-    var files = this.files;
-    if (files.length > 10) {
-        alert('최대 10장까지 선택할 수 있습니다.');
-        this.value = '';
-        return;
-    }
-    for (var i = 0; i < files.length; i++) {
-        var reader = new FileReader();
-        reader.onload = function(e) {
-            preview.innerHTML += '<img src="' + e.target.result + '" style="max-height:60px; border-radius:6px; border:1px solid var(--border-color);">';
-        };
-        reader.readAsDataURL(files[i]);
-    }
-    document.getElementById('writeImagesStatus').textContent = files.length + '장 선택됨';
-});
+// 이미지 복수 선택 미리보기 (글쓰기 모달 + 게시물 등록/수정 탭 공통)
+function setupImagePreview(inputId, previewId, statusId) {
+    var el = document.getElementById(inputId);
+    if (el) el.addEventListener('change', function() {
+        var preview = document.getElementById(previewId);
+        if (!preview) return;
+        preview.innerHTML = '';
+        var files = this.files;
+        if (files.length > 10) {
+            alert('최대 10장까지 선택할 수 있습니다.');
+            this.value = '';
+            return;
+        }
+        for (var i = 0; i < files.length; i++) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                preview.innerHTML += '<img src="' + e.target.result + '" style="max-height:60px; border-radius:6px; border:1px solid var(--border-color);">';
+            };
+            reader.readAsDataURL(files[i]);
+        }
+        var stat = document.getElementById(statusId);
+        if (stat) stat.textContent = files.length + '장 선택됨';
+    });
+}
+setupImagePreview('writeImages', 'writeImagesPreview', 'writeImagesStatus');
+setupImagePreview('postImages', 'postImagesPreview', 'postImagesStatus');
 
 // 문서 보호: 우클릭 방지
 document.addEventListener('contextmenu', function(e) {
