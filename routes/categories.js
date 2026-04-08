@@ -13,7 +13,7 @@ router.get('/api/categories', requireAuth, async (req, res) => {
             const grouped = {};
             clean.forEach(c => {
                 if (!grouped[c.boardId]) grouped[c.boardId] = [];
-                grouped[c.boardId].push({ id: c.id, name: c.name });
+                grouped[c.boardId].push({ id: c.id, name: c.name, viewType: c.viewType || '' });
             });
             res.json(grouped);
         }
@@ -22,9 +22,9 @@ router.get('/api/categories', requireAuth, async (req, res) => {
 
 router.post('/api/categories', requireAdmin, async (req, res) => {
     try {
-        const { id, boardId, name } = req.body;
+        const { id, boardId, name, viewType } = req.body;
         if (!id || !boardId || !name) return res.status(400).json({ error: 'id, boardId, name은 필수입니다.' });
-        await appendRow('categories', { id, boardId, name });
+        await appendRow('categories', { id, boardId, name, viewType: viewType || '' });
         invalidateCache('categories');
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
