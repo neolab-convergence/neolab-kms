@@ -27,27 +27,25 @@ async function renderDynamicBoardContent(boardId, targetCatId = null) {
             const catId = this.getAttribute('data-category');
             currentCategoryId = catId;
 
-            // 카테고리별 보기 설정 적용
-            let catViewType = null;
+            // 카테고리별 보기 설정 적용 (없으면 보드 기본값으로 복원)
+            let resolvedViewType = currentBoardViewType || 'list';
             if (catId !== 'all' && categories[boardId]) {
                 const cat = categories[boardId].find(c => c.id === catId);
-                if (cat && cat.viewType) catViewType = cat.viewType;
+                if (cat && cat.viewType) resolvedViewType = cat.viewType;
             }
 
-            if (catViewType) {
-                currentViewMode = catViewType;
-                document.querySelectorAll('.view-toggle-btn').forEach(b => b.classList.remove('active'));
-                const activeToggle = document.querySelector('.view-toggle-btn[data-view="' + catViewType + '"]');
-                if (activeToggle) activeToggle.classList.add('active');
-                const listC = document.getElementById('boardGridContainer');
-                const galleryC = document.getElementById('boardGalleryContainer');
-                if (catViewType === 'gallery') {
-                    if (listC) listC.style.display = 'none';
-                    if (galleryC) galleryC.style.display = 'grid';
-                } else {
-                    if (listC) listC.style.display = 'flex';
-                    if (galleryC) galleryC.style.display = 'none';
-                }
+            currentViewMode = resolvedViewType;
+            document.querySelectorAll('.view-toggle-btn').forEach(b => b.classList.remove('active'));
+            const activeToggle = document.querySelector('.view-toggle-btn[data-view="' + resolvedViewType + '"]');
+            if (activeToggle) activeToggle.classList.add('active');
+            const listC = document.getElementById('boardGridContainer');
+            const galleryC = document.getElementById('boardGalleryContainer');
+            if (resolvedViewType === 'gallery') {
+                if (listC) listC.style.display = 'none';
+                if (galleryC) galleryC.style.display = 'grid';
+            } else {
+                if (listC) listC.style.display = 'flex';
+                if (galleryC) galleryC.style.display = 'none';
             }
 
             renderPostGrid(boardId, catId);
@@ -62,6 +60,14 @@ async function renderDynamicBoardContent(boardId, targetCatId = null) {
     const currentBoard = board;
     currentBoardViewType = currentBoard.viewType || 'list';
     currentViewMode = currentBoardViewType;
+
+    // targetCatId가 지정된 경우 해당 카테고리의 viewType 우선 적용
+    if (targetCatId && targetCatId !== 'all' && categories[boardId]) {
+        const targetCat = categories[boardId].find(c => c.id === targetCatId);
+        if (targetCat && targetCat.viewType) {
+            currentViewMode = targetCat.viewType;
+        }
+    }
 
     // 카테고리 없고 갤러리 전용이면 보기 전환 숨김
     const viewToggleEl = document.getElementById('viewToggle');

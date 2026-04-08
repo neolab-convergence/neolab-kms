@@ -641,11 +641,11 @@ async function renderMenuTree() {
             var catViewStyle = catIsGallery
                 ? 'background:#fff7ed; color:#ff6720; border-color:#ff6720;'
                 : 'background:#f0f9ff; color:#2563eb; border-color:#2563eb;';
-            var catViewText = catIsGallery ? '🖼️' : '📋';
+            var catViewText = catIsGallery ? '🖼️ 갤러리' : '📋 리스트';
             html += '<div class="menu-tree-cat">';
             html += '<span style="color:#d1d5db;">├</span>';
             html += '<span class="cat-name">' + cat.name + '</span>';
-            html += '<button class="tree-btn" style="' + catViewStyle + ' font-size:11px; padding:2px 6px;" onclick="toggleCatView(\'' + board.id + '\',\'' + cat.id + '\',\'' + (catIsGallery ? 'list' : 'gallery') + '\')" title="' + (catIsGallery ? '갤러리형' : '리스트형') + '">' + catViewText + '</button>';
+            html += '<button class="tree-btn" style="' + catViewStyle + ' font-weight:600;" onclick="toggleCatView(\'' + board.id + '\',\'' + cat.id + '\',\'' + (catIsGallery ? 'list' : 'gallery') + '\')" title="' + (catIsGallery ? '갤러리형' : '리스트형') + '">' + catViewText + '</button>';
             html += '<div class="tree-actions">';
             html += '<button class="tree-btn" onclick="moveCatUp(\'' + board.id + '\',' + cIdx + ')" ' + (cIdx===0?'disabled style="opacity:0.3"':'') + '>▲</button>';
             html += '<button class="tree-btn" onclick="moveCatDown(\'' + board.id + '\',' + cIdx + ')" ' + (cIdx===cats.length-1?'disabled style="opacity:0.3"':'') + '>▼</button>';
