@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=22">
+    <link rel="stylesheet" href="css/style.css?v=23">
     <!-- CSS is loaded from css/style.css -->
 </head>
 <body>
@@ -354,6 +354,7 @@
                     <div class="admin-nav-item" data-tab="orgchartAdmin"><span class="nav-icon">🏢</span> 조직도</div>
                     <div class="admin-nav-item" data-tab="suggestionsAdmin"><span class="nav-icon">💡</span> 개선요청</div>
                     <div class="admin-sidebar-label">시스템</div>
+                    <div class="admin-nav-item" data-tab="accessStats"><span class="nav-icon">📊</span> 접속 현황</div>
                     <div class="admin-nav-item" data-tab="settings"><span class="nav-icon">⚙️</span> 설정</div>
                     <div class="admin-nav-item" data-tab="backup"><span class="nav-icon">💾</span> 백업/복원</div>
                     <div class="admin-nav-item" data-tab="adminManage" id="adminManageNavBtn" style="display:none;"><span class="nav-icon">👑</span> 관리자 관리</div>
@@ -740,6 +741,37 @@
                     </div>
                 </div>
 
+                <!-- 접속 현황 탭 -->
+                <div class="admin-tab-content" id="accessStatsTab">
+                    <h2>📊 일별 접속 현황</h2>
+                    <p style="color: var(--text-secondary); margin-bottom: 20px;">사용자별 일일 접속 기록을 확인할 수 있습니다.</p>
+
+                    <div style="display:flex; gap:12px; align-items:center; margin-bottom:24px; flex-wrap:wrap;">
+                        <select id="accessStatsDays" style="padding:8px 16px; border-radius:8px; border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-primary); font-size:14px;">
+                            <option value="7">최근 7일</option>
+                            <option value="14">최근 14일</option>
+                            <option value="30" selected>최근 30일</option>
+                            <option value="90">최근 90일</option>
+                        </select>
+                        <button type="button" class="admin-btn admin-btn-primary" onclick="loadAccessStats()">조회</button>
+                    </div>
+
+                    <!-- 요약 카드 -->
+                    <div id="accessStatsSummary" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px; margin-bottom:28px;"></div>
+
+                    <!-- 일별 차트 (막대 그래프) -->
+                    <div class="admin-section" style="margin-bottom:28px;">
+                        <h3 style="color:var(--primary); margin-bottom:16px;">일별 접속자 수</h3>
+                        <div id="accessStatsChart" style="overflow-x:auto;"></div>
+                    </div>
+
+                    <!-- 일별 상세 테이블 -->
+                    <div class="admin-section">
+                        <h3 style="color:var(--primary); margin-bottom:16px;">상세 기록</h3>
+                        <div id="accessStatsTable"></div>
+                    </div>
+                </div>
+
                 <!-- 관리자 관리 탭 (슈퍼 관리자만 표시) -->
                 <div class="admin-tab-content" id="adminManageTab">
                     <h2>👑 관리자 관리</h2>
@@ -930,13 +962,13 @@
         </div>
     </div>
 
-<script src="js/core.js?v=22"></script>
-<script src="js/navigation.js?v=22"></script>
-<script src="js/search.js?v=22"></script>
-<script src="js/viewer.js?v=22"></script>
-<script src="js/board.js?v=22"></script>
-<script src="js/features.js?v=22"></script>
-<script src="js/app.js?v=22"></script>
-<script src="js/admin.js?v=22"></script>
+<script src="js/core.js?v=23"></script>
+<script src="js/navigation.js?v=23"></script>
+<script src="js/search.js?v=23"></script>
+<script src="js/viewer.js?v=23"></script>
+<script src="js/board.js?v=23"></script>
+<script src="js/features.js?v=23"></script>
+<script src="js/app.js?v=23"></script>
+<script src="js/admin.js?v=23"></script>
 </body>
 </html>

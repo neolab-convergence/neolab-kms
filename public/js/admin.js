@@ -476,6 +476,7 @@ document.querySelectorAll('.admin-nav-item').forEach(nav => {
         if (tab === 'postWrite') loadAdminPosts();
         if (tab === 'infraAdmin') loadAdminInfra();
         if (tab === 'suggestionsAdmin') loadAdminSuggestions();
+        if (tab === 'accessStats') loadAccessStats();
     });
 });
 // 기존 admin-tab 호환 (숨겨진 상태)
@@ -1720,3 +1721,93 @@ document.addEventListener('contextmenu', function(e) {
         e.preventDefault();
     }
 });
+
+/* ==========================================
+   📊 일별 접속 현황
+========================================== */
+window.loadAccessStats = async function() {
+    var days = parseInt(document.getElementById('accessStatsDays').value) || 30;
+    try {
+        var data = await api.get('/api/access-stats?days=' + days);
+        var stats = data.stats || [];
+
+        // ── 요약 카드 ──
+        var totalVisits = 0;
+        var totalHits = 0;
+        stats.forEach(function(d) { totalVisits += d.uniqueUsers; totalHits += d.totalHits; });
+        var avgVisits = stats.length > 0 ? (totalVisits / stats.length).toFixed(1) : 0;
+        var todayStr = new Date().toISOString().split('T')[0];
+        var todayData = stats.find(function(d) { return d.date === todayStr; });
+
+        document.getElementById('accessStatsSummary').innerHTML =
+            '<div style="background:linear-gradient(135deg,#ff6720,#ff8f5a); padding:20px; border-radius:12px; color:#fff;">' +
+                '<div style="font-size:13px; opacity:0.9;">오늘 접속자</div>' +
+                '<div style="font-size:32px; font-weight:800; margin-top:4px;">' + (todayData ? todayData.uniqueUsers : 0) + '명</div>' +
+            '</div>' +
+            '<div style="background:linear-gradient(135deg,#2563eb,#60a5fa); padding:20px; border-radius:12px; color:#fff;">' +
+                '<div style="font-size:13px; opacity:0.9;">일평균 접속자</div>' +
+                '<div style="font-size:32px; font-weight:800; margin-top:4px;">' + avgVisits + '명</div>' +
+            '</div>' +
+            '<div style="background:linear-gradient(135deg,#059669,#34d399); padding:20px; border-radius:12px; color:#fff;">' +
+                '<div style="font-size:13px; opacity:0.9;">총 누적 접속</div>' +
+                '<div style="font-size:32px; font-weight:800; margin-top:4px;">' + totalVisits + '회</div>' +
+            '</div>' +
+            '<div style="background:linear-gradient(135deg,#7c3aed,#a78bfa); padding:20px; border-radius:12px; color:#fff;">' +
+                '<div style="font-size:13px; opacity:0.9;">전체 사용자 수</div>' +
+                '<div style="font-size:32px; font-weight:800; margin-top:4px;">' + (data.totalUniqueUsers || 0) + '명</div>' +
+            '</div>';
+
+        // ── 막대 차트 ──
+        var chartDays = stats.slice().reverse(); // 오래된 날짜부터
+        var maxUsers = 1;
+        chartDays.forEach(function(d) { if (d.uniqueUsers > maxUsers) maxUsers = d.uniqueUsers; });
+
+        var chartHtml = '<div style="display:flex; align-items:flex-end; gap:4px; height:200px; padding:8px 0;">';
+        chartDays.forEach(function(d) {
+            var height = Math.max(4, (d.uniqueUsers / maxUsers) * 160);
+            var dateLabel = d.date.substring(5); // MM-DD
+            var isToday = d.date === todayStr;
+            var barColor = isToday ? '#ff6720' : '#60a5fa';
+            chartHtml += '<div style="flex:1; min-width:28px; max-width:60px; display:flex; flex-direction:column; align-items:center; gap:4px;">';
+            chartHtml += '<span style="font-size:11px; font-weight:700; color:var(--text-primary);">' + d.uniqueUsers + '</span>';
+            chartHtml += '<div style="width:100%; height:' + height + 'px; background:' + barColor + '; border-radius:4px 4px 0 0; transition:height 0.3s;" title="' + d.date + ': ' + d.uniqueUsers + '명"></div>';
+            chartHtml += '<span style="font-size:10px; color:var(--text-light); writing-mode:vertical-lr; transform:rotate(180deg); height:40px; overflow:hidden;">' + dateLabel + '</span>';
+            chartHtml += '</div>';
+        });
+        chartHtml += '</div>';
+        document.getElementById('accessStatsChart').innerHTML = chartDays.length > 0 ? chartHtml : '<p style="color:var(--text-light); text-align:center; padding:40px;">접속 기록이 없습니다.</p>';
+
+        // ── 상세 테이블 ──
+        var tableHtml = '<table class="board-table" style="font-size:14px;">';
+        tableHtml += '<thead><tr><th style="width:120px;">날짜</th><th style="width:60px;">요일</th><th style="width:80px;">접속자 수</th><th>접속자 목록</th></tr></thead><tbody>';
+        var dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+
+        stats.forEach(function(d) {
+            var dt = new Date(d.date + 'T00:00:00');
+            var dayName = dayNames[dt.getDay()];
+            var isWeekend = dt.getDay() === 0 || dt.getDay() === 6;
+            var dayStyle = isWeekend ? 'color:#ef4444;' : '';
+            var isToday2 = d.date === todayStr;
+            var rowStyle = isToday2 ? 'background:rgba(255,103,32,0.05);' : '';
+
+            var userList = d.users.sort(function(a, b) { return b.count - a.count; }).map(function(u) {
+                var displayName = u.name || u.email.split('@')[0];
+                return '<span style="display:inline-block; padding:2px 8px; margin:2px; border-radius:12px; font-size:12px; background:var(--bg-light); border:1px solid var(--border-color);">' + displayName + (u.count > 1 ? ' <span style="color:var(--primary); font-weight:600;">(' + u.count + ')</span>' : '') + '</span>';
+            }).join('');
+
+            tableHtml += '<tr style="' + rowStyle + '">';
+            tableHtml += '<td style="font-weight:' + (isToday2 ? '700' : '400') + ';">' + d.date + '</td>';
+            tableHtml += '<td style="' + dayStyle + '">' + dayName + '</td>';
+            tableHtml += '<td style="text-align:center; font-weight:700; color:var(--primary);">' + d.uniqueUsers + '명</td>';
+            tableHtml += '<td>' + userList + '</td>';
+            tableHtml += '</tr>';
+        });
+
+        tableHtml += '</tbody></table>';
+        document.getElementById('accessStatsTable').innerHTML = stats.length > 0 ? tableHtml : '<p style="color:var(--text-light); text-align:center; padding:40px;">접속 기록이 없습니다.</p>';
+
+    } catch(e) {
+        console.error('접속 현황 로드 실패:', e);
+        document.getElementById('accessStatsTable').innerHTML = '<p style="color:#ef4444; text-align:center; padding:20px;">데이터 로드 실패: ' + e.message + '</p>';
+    }
+};

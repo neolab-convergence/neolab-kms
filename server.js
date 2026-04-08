@@ -59,6 +59,7 @@ app.use((req, res, next) => {
 });
 
 // ─── 라우트 등록 ───
+app.use(require('./routes/access'));
 app.use(require('./routes/auth'));
 app.use(require('./routes/admin'));
 app.use(require('./routes/boards'));
