@@ -521,6 +521,19 @@
         /* 인라인 입력 */
         .tree-inline-input { padding: 4px 10px; border: 1px solid #ff6720; border-radius: 4px; font-size: 13px; outline: none; width: 200px; }
 
+        /* 이미지 순서 카드 */
+        .img-order-card { position: relative; display: inline-flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px; background: var(--main-bg); border: 2px solid var(--border-color); border-radius: 10px; cursor: grab; transition: all 0.15s; min-width: 90px; }
+        .img-order-card:hover { border-color: var(--primary); }
+        .img-order-card.dragging { opacity: 0.4; }
+        .img-order-card.drag-over { border-color: var(--primary); background: rgba(255,103,32,0.05); }
+        .img-order-num { position: absolute; top: -8px; left: -8px; width: 22px; height: 22px; border-radius: 50%; background: var(--primary); color: #fff; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+        .img-order-thumb { width: 70px; height: 70px; object-fit: cover; border-radius: 6px; }
+        .img-order-name { font-size: 10px; color: var(--text-light); max-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; }
+        .img-order-btns { display: flex; gap: 2px; }
+        .img-order-btns button { background: none; border: 1px solid var(--border-color); border-radius: 4px; padding: 2px 6px; cursor: pointer; font-size: 10px; color: var(--text-secondary); }
+        .img-order-btns button:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); }
+        .img-order-btns button:disabled { opacity: 0.3; cursor: default; }
+
         /* 개선요청 폼 */
         .suggestion-form-card { background: var(--card-bg); border-radius: 12px; padding: 24px; box-shadow: var(--shadow); }
         .suggestion-textarea { width: 100%; padding: 16px; border: 2px solid var(--border-color); border-radius: 10px; font-size: 14px; font-family: inherit; resize: vertical; min-height: 120px; background: var(--main-bg); color: var(--text-primary); transition: border-color 0.2s; box-sizing: border-box; }
