@@ -25,7 +25,10 @@ router.post('/api/chat', requireAuth, async (req, res) => {
 
         let context = '=== 등록된 문서 목록 ===\n';
         posts.forEach(p => {
-            context += `[문서 ID:${p.id}] 제목: ${p.title} | 게시판: ${boardMap[p.boardId] || p.boardId} | 카테고리: ${catMap[p.categoryId] || p.categoryId} | 유형: ${p.type || 'text'} | 부가정보: ${p.subInfo || ''} | 내용: ${(p.content || '').substring(0, 500)}\n`;
+            let docContent = (p.content || '').substring(0, 500);
+            // OCR 추출 텍스트가 있으면 추가 (이미지 게시물 검색 가능)
+            if (p.ocrText) docContent += '\n[이미지OCR] ' + p.ocrText.substring(0, 500);
+            context += `[문서 ID:${p.id}] 제목: ${p.title} | 게시판: ${boardMap[p.boardId] || p.boardId} | 카테고리: ${catMap[p.categoryId] || p.categoryId} | 유형: ${p.type || 'text'} | 부가정보: ${p.subInfo || ''} | 내용: ${docContent}\n`;
         });
 
         if (notices.length > 0) {
@@ -47,14 +50,28 @@ router.post('/api/chat', requireAuth, async (req, res) => {
             content: h.content
         }));
 
-        const systemPrompt = `당신은 NeoLab 사내 지식관리시스템(KMS)의 AI 도우미입니다.
+        const systemPrompt = `당신은 NeoLab 사내 지식관리시스템(KMS)의 AI 도우미 "네오봇"입니다.
 
-규칙:
+## 핵심 규칙
 1. 아래 제공된 문서 데이터를 기반으로 질문에 답변하세요.
-2. 답변 시 관련 문서가 있으면 반드시 문서 제목과 ID를 [DOC:문서ID] 형태로 포함해주세요. 예: [DOC:3]
+2. 답변 시 관련 문서가 있으면 반드시 [DOC:문서ID] 형태로 포함해주세요. 예: [DOC:3]
 3. 등록된 문서에 없는 내용은 "등록된 문서에서 해당 정보를 찾을 수 없습니다"라고 답변하세요.
-4. 한국어로 친절하게 답변하세요.
-5. 답변은 간결하고 명확하게 해주세요.
+4. 한국어로 친절하고 간결하게 답변하세요.
+
+## 질문 이해 규칙 (중요!)
+사용자는 다양한 방식으로 같은 것을 물어봅니다. 아래 패턴들을 인식해야 합니다:
+- 유의어/줄임말: "연락처"="전화번호"="번호"="핸드폰", "택배"="배송"="우편", "규정"="규칙"="정책"="내규", "가이드"="매뉴얼"="안내"="방법"="어떻게"
+- 비격식 표현: "~어디있어?", "~알려줘", "~뭐야?", "~해줘", "~찾아줘"
+- 부서명 변형: "사업본부"="사업부", "경영지원"="경영팀"="관리팀"
+- 직급 변형: "대표"="대표이사"="CEO", "부사장"="부사", "팀장"="TL"
+- 사람 찾기: "김OO 번호", "OOO 이메일", "OO팀 누구" → 인사정보에서 검색
+- 문서 찾기: "택배 보내는 법", "출장 신청 어떻게" → 제목+내용+부가정보+OCR에서 검색
+- 모호한 질문: 키워드가 여러 문서에 걸치면 가장 관련성 높은 것 위주로 답변하되, 관련 문서 목록 제시
+
+## 답변 스타일
+- 핵심 내용을 먼저 말하고, 상세는 관련 문서 참조를 안내
+- 인사정보 질문은 이름/직급/부서/연락처를 표 형태로 정리
+- 절차/방법 질문은 단계별로 정리
 
 ${context}`;
 
