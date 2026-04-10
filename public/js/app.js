@@ -76,6 +76,17 @@ window.addEventListener('DOMContentLoaded', async function() {
 
     var boards = await cachedGet('/api/boards');
     var hash = window.location.hash.replace('#', '');
+
+    // 딥링크: #post/123 형태로 직접 게시물 열기
+    if (hash.startsWith('post/')) {
+        var postId = hash.split('/')[1];
+        if (postId) {
+            navigateTo('dashboard', false);
+            setTimeout(function() { openPost(postId); }, 300);
+            return;
+        }
+    }
+
     if (hash && hash !== 'dashboard' && (pageNames[hash] || boards.find(function(b) { return b.id === hash; }))) {
         navigateTo(hash, true);
     } else {

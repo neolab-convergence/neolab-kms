@@ -2,6 +2,15 @@
 var adminPostPage = 1;
 const ADMIN_POSTS_PER_PAGE = 15;
 var adminEditPostId = null;
+var adminPostSortField = 'order';
+var adminPostSortDir = 1; // 1=오름, -1=내림
+
+window.sortAdminPosts = function(field) {
+    if (adminPostSortField === field) { adminPostSortDir *= -1; }
+    else { adminPostSortField = field; adminPostSortDir = 1; }
+    adminPostPage = 1;
+    loadAdminPostTable();
+};
 
 async function loadAdminPostTable() {
     const boardFilter = document.getElementById('adminPostBoardFilter');
@@ -31,7 +40,16 @@ async function loadAdminPostTable() {
     }
 
     let posts = await api.get('/api/posts');
-    posts = posts.sort((a,b) => (parseInt(a.order)||999) - (parseInt(b.order)||999));
+    // 정렬 적용
+    posts = posts.sort(function(a, b) {
+        var va, vb;
+        if (adminPostSortField === 'order') { va = parseInt(a.order)||999; vb = parseInt(b.order)||999; }
+        else if (adminPostSortField === 'title') { va = (a.title||''); vb = (b.title||''); return va.localeCompare(vb, 'ko') * adminPostSortDir; }
+        else if (adminPostSortField === 'date') { va = a.date||''; vb = b.date||''; return va.localeCompare(vb) * adminPostSortDir * -1; }
+        else if (adminPostSortField === 'views') { va = parseInt(a.views)||0; vb = parseInt(b.views)||0; }
+        else { va = parseInt(a.order)||999; vb = parseInt(b.order)||999; }
+        return (va - vb) * adminPostSortDir;
+    });
     if (selectedBoard !== 'all') posts = posts.filter(p => p.boardId === selectedBoard);
     const selectedCat = catFilter.value;
     if (selectedCat !== 'all') posts = posts.filter(p => p.categoryId === selectedCat);
@@ -107,6 +125,38 @@ window.deleteOnePost = async function(id) {
     if (!confirm('이 게시물을 삭제하시겠습니까?')) return;
     await api.del('/api/posts/' + id);
     invalidateAll(); loadAdminPostTable();
+};
+
+// ═══ 일괄 이동 ═══
+window.moveSelectedPosts = async function() {
+    var checks = document.querySelectorAll('.post-check:checked');
+    if (checks.length === 0) return alert('이동할 게시물을 선택해주세요.');
+
+    var boards = await cachedGet('/api/boards');
+    var boardOpts = boards.map(function(b) { return b.id + ':' + b.name; }).join('\n');
+    var targetBoard = prompt('이동할 게시판 ID를 입력하세요:\n\n' + boardOpts);
+    if (!targetBoard) return;
+    var boardId = targetBoard.split(':')[0].trim();
+    if (!boards.find(function(b) { return b.id === boardId; })) return alert('유효하지 않은 게시판입니다.');
+
+    var categories = await cachedGet('/api/categories');
+    var cats = categories[boardId] || [];
+    var catId = '';
+    if (cats.length > 0) {
+        var catOpts = cats.map(function(c) { return c.id + ':' + c.name; }).join('\n');
+        var targetCat = prompt('카테고리 ID를 입력하세요 (빈칸=미지정):\n\n' + catOpts);
+        if (targetCat) catId = targetCat.split(':')[0].trim();
+    }
+
+    if (!confirm(checks.length + '개 게시물을 [' + boardId + '] 게시판으로 이동하시겠습니까?')) return;
+
+    for (var i = 0; i < checks.length; i++) {
+        var moveData = { boardId: boardId };
+        if (catId) moveData.categoryId = catId;
+        await api.put('/api/posts/' + checks[i].value, moveData);
+    }
+    invalidateAll(); loadAdminPostTable();
+    alert(checks.length + '개 게시물이 이동되었습니다.');
 };
 
 // ═══ 글쓰기/수정 모달 ═══
@@ -1805,6 +1855,31 @@ window.loadAccessStats = async function() {
 
         tableHtml += '</tbody></table>';
         document.getElementById('accessStatsTable').innerHTML = stats.length > 0 ? tableHtml : '<p style="color:var(--text-light); text-align:center; padding:40px;">접속 기록이 없습니다.</p>';
+
+        // ── 인기 문서 TOP 10 ──
+        try {
+            var posts = await api.get('/api/posts');
+            var boards = await cachedGet('/api/boards');
+            var bMap = {}; boards.forEach(function(b) { bMap[b.id] = b.name; });
+            var popular = posts.filter(function(p) { return parseInt(p.views) > 0; })
+                .sort(function(a, b) { return (parseInt(b.views)||0) - (parseInt(a.views)||0); })
+                .slice(0, 10);
+
+            var popHtml = '<table class="board-table" style="font-size:14px;">';
+            popHtml += '<thead><tr><th style="width:40px;">순위</th><th>제목</th><th style="width:100px;">게시판</th><th style="width:80px;">조회수</th></tr></thead><tbody>';
+            var medals = ['#FFD700', '#C0C0C0', '#CD7F32'];
+            popular.forEach(function(p, i) {
+                var medalStyle = i < 3 ? 'color:' + medals[i] + '; font-weight:700;' : 'color:var(--text-light);';
+                popHtml += '<tr>';
+                popHtml += '<td style="text-align:center; ' + medalStyle + '">' + (i + 1) + '</td>';
+                popHtml += '<td style="font-weight:500;">' + p.title + '</td>';
+                popHtml += '<td><span class="board-row-badge">' + (bMap[p.boardId] || '') + '</span></td>';
+                popHtml += '<td style="text-align:center; font-weight:700; color:var(--primary);">' + (p.views || 0) + '</td>';
+                popHtml += '</tr>';
+            });
+            popHtml += '</tbody></table>';
+            document.getElementById('popularDocsTable').innerHTML = popular.length > 0 ? popHtml : '<p style="color:var(--text-light); text-align:center; padding:20px;">조회 기록이 없습니다.</p>';
+        } catch(pe) { console.error('인기 문서 로드 실패:', pe); }
 
     } catch(e) {
         console.error('접속 현황 로드 실패:', e);

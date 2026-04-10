@@ -1,38 +1,36 @@
 /* ==========================================
    API 클라이언트 레이어
 ========================================== */
+var _apiLoading = 0;
+function showLoading() {
+    _apiLoading++;
+    var el = document.getElementById('globalLoading');
+    if (el) el.style.display = 'flex';
+}
+function hideLoading() {
+    _apiLoading = Math.max(0, _apiLoading - 1);
+    if (_apiLoading === 0) {
+        var el = document.getElementById('globalLoading');
+        if (el) el.style.display = 'none';
+    }
+}
+async function _fetch(path, opts) {
+    showLoading();
+    try {
+        var res = await fetch(path, opts);
+        if (res.status === 401) { window.location.href = '/login.html'; throw new Error('Unauthorized'); }
+        if (!res.ok) throw new Error(await res.text());
+        return res.json();
+    } finally { hideLoading(); }
+}
 const api = {
-    async get(path) {
-        const res = await fetch(path);
-        if (res.status === 401) { window.location.href = '/login.html'; throw new Error('Unauthorized'); }
-        if (!res.ok) throw new Error(await res.text());
-        return res.json();
-    },
-    async post(path, data) {
-        const res = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-        if (res.status === 401) { window.location.href = '/login.html'; throw new Error('Unauthorized'); }
-        if (!res.ok) throw new Error(await res.text());
-        return res.json();
-    },
-    async put(path, data) {
-        const res = await fetch(path, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-        if (res.status === 401) { window.location.href = '/login.html'; throw new Error('Unauthorized'); }
-        if (!res.ok) throw new Error(await res.text());
-        return res.json();
-    },
-    async del(path) {
-        const res = await fetch(path, { method: 'DELETE' });
-        if (res.status === 401) { window.location.href = '/login.html'; throw new Error('Unauthorized'); }
-        if (!res.ok) throw new Error(await res.text());
-        return res.json();
-    },
+    async get(path) { return _fetch(path); },
+    async post(path, data) { return _fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); },
+    async put(path, data) { return _fetch(path, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); },
+    async del(path) { return _fetch(path, { method: 'DELETE' }); },
     async upload(file) {
-        const fd = new FormData();
-        fd.append('file', file);
-        const res = await fetch('/api/upload', { method: 'POST', body: fd });
-        if (res.status === 401) { window.location.href = '/login.html'; throw new Error('Unauthorized'); }
-        if (!res.ok) throw new Error(await res.text());
-        return res.json();
+        var fd = new FormData(); fd.append('file', file);
+        return _fetch('/api/upload', { method: 'POST', body: fd });
     }
 };
 

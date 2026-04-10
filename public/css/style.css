@@ -147,6 +147,9 @@
         .filter-btn:hover { border-color: var(--primary); color: var(--primary); }
         .filter-btn.active { border-color: var(--primary); background: var(--primary); color: white; }
 
+        /* 로딩 스피너 */
+        .loading-spinner { width:24px; height:24px; border:3px solid var(--border-color); border-top-color:var(--primary); border-radius:50%; animation:spin 0.7s linear infinite; }
+        @keyframes spin { to { transform:rotate(360deg); } }
 
         /* 보기 전환 버튼 */
         .view-toggle { display: flex; gap: 4px; margin-left: auto; }
@@ -550,3 +553,30 @@
         .suggestion-card-body { font-size: 14px; line-height: 1.7; color: var(--text-primary); white-space: pre-wrap; }
 
         @media (max-width: 768px) { .admin-row { grid-template-columns: 1fr; } .admin-tabs { flex-wrap: wrap; } .admin-sidebar { width: 60px; min-width: 60px; } .admin-sidebar-logo h2, .admin-sidebar-logo small, .admin-nav-item span:not(.nav-icon), .admin-sidebar-label, .admin-sidebar-user-info { display: none; } .admin-sidebar-logo { padding: 16px 12px; } .admin-nav-item { justify-content: center; padding: 14px 0; } .admin-panel { padding: 16px; } }
+
+        /* 모바일 반응형 개선 */
+        @media (max-width: 768px) {
+            .sidebar { width: 0; overflow: hidden; }
+            .sidebar.mobile-show { width: 260px; box-shadow: 4px 0 20px rgba(0,0,0,0.3); }
+            .main-content { margin-left: 0 !important; }
+            .topbar { padding: 12px 16px; gap: 12px; }
+            .search-box { max-width: none; }
+            .content { padding: 16px; }
+            .welcome-banner { padding: 24px; flex-direction: column; text-align: center; }
+            .welcome-title { font-size: 22px; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+            .stat-card { padding: 16px; }
+            .stat-value { font-size: 24px; }
+            .grid-2-1 { grid-template-columns: 1fr; }
+            .category-filter { gap: 6px; }
+            .filter-btn { padding: 6px 14px; font-size: 12px; }
+            .gallery-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
+            .gallery-card { border-radius: 10px; }
+            #chatbotPanel { width: calc(100vw - 20px) !important; right: 10px !important; left: 10px !important; bottom: 70px !important; height: 60vh !important; }
+            .menu-item { padding: 14px 20px; min-height: 44px; }
+            .submenu-item { padding: 12px 20px 12px 52px; min-height: 44px; }
+        }
+
+        /* 모바일 오버레이 (사이드바 열릴 때) */
+        .mobile-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 999; }
+        .sidebar.mobile-show ~ .main-content .mobile-overlay { display: block; }

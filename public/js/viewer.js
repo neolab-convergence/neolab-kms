@@ -28,7 +28,8 @@ async function openProductDetail(post, catName) {
 
     // 제목
     document.getElementById('productDetailTitle').textContent = post.title;
-    document.getElementById('productDetailSub').innerHTML = [catName, post.subInfo, post.date].filter(Boolean).join(' · ') + '&nbsp;&nbsp;<span style="color:var(--text-light);">조회 ' + (post.views || 0) + '</span>';
+    document.getElementById('productDetailSub').innerHTML = [catName, post.subInfo, post.date].filter(Boolean).join(' · ') + '&nbsp;&nbsp;<span style="color:var(--text-light);">조회 ' + (post.views || 0) + '</span>' +
+        '&nbsp;&nbsp;<button onclick="copyShareLink(\'' + post.id + '\')" style="background:none; border:1px solid var(--border-color); padding:3px 10px; border-radius:6px; cursor:pointer; font-size:12px; color:var(--text-secondary);" title="공유 링크 복사">🔗 공유</button>';
 
     var contentDiv = document.getElementById('productDetailImages');
     var html = '';
@@ -191,7 +192,7 @@ async function renderGalleryView(boardId, categoryId) {
         var bg = post.bgColor || '#ffffff';
 
         if (post.thumbnail) {
-            thumbHtml = '<div class="gallery-thumb" style="background:' + bg + ';"><img style="background:' + bg + ';" src="/api/files/' + post.thumbnail + '" alt="' + post.title + '" onerror="this.parentElement.innerHTML=\'' + icon + '\'"></div>';
+            thumbHtml = '<div class="gallery-thumb" style="background:' + bg + ';"><img style="background:' + bg + ';" data-src="/api/files/' + post.thumbnail + '" alt="' + post.title + '" class="lazy-img" onerror="this.parentElement.innerHTML=\'' + icon + '\'"></div>';
         } else if (post.type === 'pdf' && post.fileName) {
             thumbHtml = '<div class="gallery-thumb pdf-lazy-thumb" data-pdf="/api/files/' + post.fileName + '" style="background:' + bg + '; padding:0; overflow:hidden; position:relative;">' +
                 '<div style="display:flex; align-items:center; justify-content:center; width:100%; height:100%; color:#d1d5db; font-size:48px;">📄</div>' +
@@ -214,6 +215,22 @@ async function renderGalleryView(boardId, categoryId) {
     });
 
     container.innerHTML = html;
+
+    // 이미지 Lazy Loading
+    var lazyImgs = container.querySelectorAll('.lazy-img');
+    if (lazyImgs.length > 0) {
+        var imgObserver = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+                if (entry.isIntersecting) {
+                    var img = entry.target;
+                    img.src = img.getAttribute('data-src');
+                    img.classList.remove('lazy-img');
+                    imgObserver.unobserve(img);
+                }
+            });
+        }, { rootMargin: '200px' });
+        lazyImgs.forEach(function(img) { imgObserver.observe(img); });
+    }
 
     // PDF 미리보기 Lazy Loading - 화면에 보이는 것만 로드
     const lazyThumbs = container.querySelectorAll('.pdf-lazy-thumb');
@@ -245,6 +262,15 @@ window.goToBoardAndOpen = async function(boardId, postId) {
     } else {
         openPost(postId);
     }
+};
+
+window.copyShareLink = function(postId) {
+    var url = window.location.origin + '/#post/' + postId;
+    navigator.clipboard.writeText(url).then(function() {
+        alert('공유 링크가 복사되었습니다!\n' + url);
+    }).catch(function() {
+        prompt('아래 링크를 복사하세요:', url);
+    });
 };
 
 window.openPost = async function(id) {

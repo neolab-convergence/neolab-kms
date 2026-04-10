@@ -110,9 +110,55 @@ process.on('unhandledRejection', (reason) => {
     writeLog('ERROR', `Unhandled Rejection: ${reason}`);
 });
 
+// ─── 자동 백업 (매일 자정) ───
+function scheduleAutoBackup() {
+    const { getSheetData, SHEET_HEADERS } = require('./lib/sheets');
+    const backupPath = path.join(__dirname, 'backups');
+    if (!fs.existsSync(backupPath)) fs.mkdirSync(backupPath, { recursive: true });
+
+    async function runBackup() {
+        try {
+            const backup = {};
+            for (const sheetName of Object.keys(SHEET_HEADERS)) {
+                const data = await getSheetData(sheetName);
+                backup[sheetName] = data.map(({ _rowIndex, ...r }) => r);
+            }
+            const dateStr = new Date().toISOString().split('T')[0];
+            const filePath = path.join(backupPath, 'auto_backup_' + dateStr + '.json');
+            fs.writeFileSync(filePath, JSON.stringify(backup, null, 2));
+            writeLog('BACKUP', '자동 백업 완료: ' + filePath);
+
+            // 30일 이전 백업 삭제
+            const files = fs.readdirSync(backupPath).filter(f => f.startsWith('auto_backup_'));
+            const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 30);
+            files.forEach(f => {
+                const match = f.match(/auto_backup_(\d{4}-\d{2}-\d{2})/);
+                if (match && new Date(match[1]) < cutoff) {
+                    fs.unlinkSync(path.join(backupPath, f));
+                    writeLog('BACKUP', '오래된 백업 삭제: ' + f);
+                }
+            });
+        } catch (e) {
+            writeLog('ERROR', '자동 백업 실패: ' + e.message);
+        }
+    }
+
+    // 다음 자정까지 시간 계산
+    function scheduleNext() {
+        const now = new Date();
+        const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0);
+        const ms = next - now;
+        setTimeout(() => { runBackup(); setInterval(runBackup, 24 * 60 * 60 * 1000); }, ms);
+        writeLog('INFO', '자동 백업 예약: ' + next.toISOString().split('T')[0] + ' 00:00');
+    }
+
+    scheduleNext();
+}
+
 // ─── 서버 시작 ───
 async function start() {
     await initSheets();
+    scheduleAutoBackup();
     app.listen(PORT, () => {
         writeLog('INFO', `NeoLab KMS 서버 시작: http://localhost:${PORT}`);
         writeLog('INFO', `허용 도메인: @${process.env.ALLOWED_DOMAIN}`);

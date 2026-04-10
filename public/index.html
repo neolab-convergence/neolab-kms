@@ -7,10 +7,17 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=23">
+    <link rel="stylesheet" href="css/style.css?v=24">
     <!-- CSS is loaded from css/style.css -->
 </head>
 <body>
+    <!-- 글로벌 로딩 오버레이 -->
+    <div id="globalLoading" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(255,255,255,0.5); z-index:9999; align-items:center; justify-content:center;">
+        <div style="background:var(--card-bg); padding:20px 32px; border-radius:12px; box-shadow:0 4px 20px rgba(0,0,0,0.15); display:flex; align-items:center; gap:12px;">
+            <div class="loading-spinner"></div>
+            <span style="font-size:14px; color:var(--text-secondary); font-weight:500;">로딩 중...</span>
+        </div>
+    </div>
     <div class="layout">
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-logo">
@@ -76,6 +83,7 @@
         </aside>
         
         <main class="main-content">
+            <div class="mobile-overlay" onclick="document.getElementById('sidebar').classList.remove('mobile-show')"></div>
             <header class="topbar">
                 <button type="button" class="icon-btn" id="sidebarToggle">
                     <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -162,6 +170,22 @@
                 <section class="page-section" id="search-results">
                     <h1 style="font-size: 28px; font-weight: 800; margin-bottom: 24px;">🔍 검색 결과</h1>
                     <div id="searchKeywordDisplay" style="margin-bottom: 20px; color: var(--text-secondary); font-size: 15px;"></div>
+                    <div id="searchFilters" style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;">
+                        <select id="searchBoardFilter" style="padding:6px 12px; border-radius:8px; border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
+                            <option value="all">전체 게시판</option>
+                        </select>
+                        <select id="searchTypeFilter" style="padding:6px 12px; border-radius:8px; border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-primary); font-size:13px;">
+                            <option value="all">전체 유형</option>
+                            <option value="text">TEXT</option>
+                            <option value="pdf">PDF</option>
+                            <option value="url">LINK</option>
+                            <option value="docx">DOCX</option>
+                            <option value="xlsx">XLSX</option>
+                            <option value="pptx">PPTX</option>
+                            <option value="images">이미지</option>
+                        </select>
+                        <span id="searchResultCount" style="margin-left:auto; font-size:13px; color:var(--text-light); align-self:center;"></span>
+                    </div>
                     <div class="form-grid" id="searchGridContainer"></div>
                 </section>
 
@@ -430,8 +454,9 @@
                             <span id="adminPostCount">&#52509; 0&#44060;</span>
                         </div>
                         <div class="admin-toolbar-right">
-                            <button type="button" class="admin-delete-btn" onclick="deleteSelectedPosts()">&#49325;&#51228;</button>
-                            <button type="button" class="admin-write-btn" onclick="openWriteModal()">&#44544;&#50416;&#44592;</button>
+                            <button type="button" class="admin-btn admin-btn-primary" onclick="moveSelectedPosts()" style="font-size:13px; padding:6px 14px;">일괄 이동</button>
+                            <button type="button" class="admin-delete-btn" onclick="deleteSelectedPosts()">삭제</button>
+                            <button type="button" class="admin-write-btn" onclick="openWriteModal()">글쓰기</button>
                         </div>
                     </div>
 
@@ -441,14 +466,14 @@
                             <thead>
                                 <tr>
                                     <th class="td-check"><input type="checkbox" id="adminCheckAll" onchange="toggleAllPostChecks(this.checked)"></th>
-                                    <th style="width:50px">&#48264;&#54840;</th>
-                                    <th style="width:80px">&#44172;&#49884;&#54032;</th>
-                                    <th style="width:80px">&#52852;&#53580;&#44256;&#47532;</th>
-                                    <th>&#51228;&#47785;</th>
-                                    <th style="width:70px">&#50976;&#54805;</th>
-                                    <th style="width:90px">&#45216;&#51676;</th>
-                                    <th style="width:60px">&#51312;&#54924;</th>
-                                    <th style="width:100px">&#44288;&#47532;</th>
+                                    <th style="width:50px; cursor:pointer;" onclick="sortAdminPosts('order')">번호 ↕</th>
+                                    <th style="width:80px">게시판</th>
+                                    <th style="width:80px">카테고리</th>
+                                    <th style="cursor:pointer;" onclick="sortAdminPosts('title')">제목 ↕</th>
+                                    <th style="width:70px">유형</th>
+                                    <th style="width:90px; cursor:pointer;" onclick="sortAdminPosts('date')">날짜 ↕</th>
+                                    <th style="width:60px; cursor:pointer;" onclick="sortAdminPosts('views')">조회 ↕</th>
+                                    <th style="width:100px">관리</th>
                                 </tr>
                             </thead>
                             <tbody id="adminPostTableBody"></tbody>
@@ -765,6 +790,12 @@
                         <div id="accessStatsChart" style="overflow-x:auto;"></div>
                     </div>
 
+                    <!-- 인기 문서 TOP 10 -->
+                    <div class="admin-section" style="margin-bottom:28px;">
+                        <h3 style="color:var(--primary); margin-bottom:16px;">인기 문서 TOP 10</h3>
+                        <div id="popularDocsTable"></div>
+                    </div>
+
                     <!-- 일별 상세 테이블 -->
                     <div class="admin-section">
                         <h3 style="color:var(--primary); margin-bottom:16px;">상세 기록</h3>
@@ -962,13 +993,13 @@
         </div>
     </div>
 
-<script src="js/core.js?v=23"></script>
-<script src="js/navigation.js?v=23"></script>
-<script src="js/search.js?v=23"></script>
-<script src="js/viewer.js?v=23"></script>
-<script src="js/board.js?v=23"></script>
-<script src="js/features.js?v=23"></script>
-<script src="js/app.js?v=23"></script>
-<script src="js/admin.js?v=23"></script>
+<script src="js/core.js?v=24"></script>
+<script src="js/navigation.js?v=24"></script>
+<script src="js/search.js?v=24"></script>
+<script src="js/viewer.js?v=24"></script>
+<script src="js/board.js?v=24"></script>
+<script src="js/features.js?v=24"></script>
+<script src="js/app.js?v=24"></script>
+<script src="js/admin.js?v=24"></script>
 </body>
 </html>

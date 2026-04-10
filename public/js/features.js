@@ -59,9 +59,31 @@ async function renderFavorites() {
 }
 
 /* ==========================================
-   AI 챗봇
+   AI 챗봇 (히스토리 저장 + 빠른 질문)
    ========================================== */
 const chatHistory = [];
+
+// 히스토리 복원
+function loadChatHistory() {
+    try {
+        var saved = JSON.parse(sessionStorage.getItem('kms-chat-history') || '[]');
+        if (saved.length > 0) {
+            var container = document.getElementById('chatMessages');
+            saved.forEach(function(msg) {
+                if (msg.role === 'user') {
+                    container.innerHTML += '<div style="align-self:flex-end; background:var(--primary); color:white; padding:10px 16px; border-radius:12px; border-top-right-radius:4px; font-size:13px; max-width:85%;">' + escapeHtml(msg.content) + '</div>';
+                } else {
+                    container.innerHTML += '<div style="background:rgba(255,103,32,0.08); padding:12px 16px; border-radius:12px; border-top-left-radius:4px; font-size:13px; max-width:85%; color:var(--text-primary);">' + escapeHtml(msg.content).replace(/\n/g, '<br>') + '</div>';
+                }
+                chatHistory.push(msg);
+            });
+            container.scrollTop = container.scrollHeight;
+        }
+    } catch(e) {}
+}
+function saveChatHistory() {
+    try { sessionStorage.setItem('kms-chat-history', JSON.stringify(chatHistory.slice(-20))); } catch(e) {}
+}
 
 function toggleChatbot() {
     const panel = document.getElementById('chatbotPanel');
@@ -70,6 +92,15 @@ function toggleChatbot() {
         panel.style.display = 'flex';
         toggle.innerHTML = '✕';
         toggle.style.background = '#666';
+        if (chatHistory.length === 0) loadChatHistory();
+        // 빠른 질문 표시
+        var container = document.getElementById('chatMessages');
+        if (chatHistory.length === 0 && !container.querySelector('.quick-questions')) {
+            container.innerHTML += '<div class="quick-questions" style="display:flex; flex-wrap:wrap; gap:6px; padding:4px;">' +
+                ['사내 규정 알려줘', '제품 종류가 뭐가 있어?', '연락처 찾아줘', '최근 등록된 문서는?'].map(function(q) {
+                    return '<button onclick="quickChat(\'' + q + '\')" style="background:var(--main-bg); border:1px solid var(--border-color); padding:6px 12px; border-radius:16px; font-size:12px; cursor:pointer; color:var(--text-secondary); transition:all 0.2s;" onmouseover="this.style.borderColor=\'var(--primary)\';this.style.color=\'var(--primary)\'" onmouseout="this.style.borderColor=\'var(--border-color)\';this.style.color=\'var(--text-secondary)\'">' + q + '</button>';
+                }).join('') + '</div>';
+        }
         document.getElementById('chatInput').focus();
     } else {
         panel.style.display = 'none';
@@ -77,6 +108,13 @@ function toggleChatbot() {
         toggle.style.background = 'var(--primary)';
     }
 }
+
+window.quickChat = function(msg) {
+    document.getElementById('chatInput').value = msg;
+    var quickEl = document.querySelector('.quick-questions');
+    if (quickEl) quickEl.remove();
+    sendChat();
+};
 
 async function sendChat() {
     const input = document.getElementById('chatInput');
@@ -119,6 +157,7 @@ async function sendChat() {
         container.innerHTML += `<div style="background:rgba(255,103,32,0.08); padding:12px 16px; border-radius:12px; border-top-left-radius:4px; font-size:13px; max-width:85%; color:var(--text-primary);">${answerHtml}</div>`;
 
         chatHistory.push({ role: 'assistant', content: res.answer });
+        saveChatHistory();
 
     } catch (err) {
         const loadingEl = document.getElementById(loadingId);
