@@ -1403,11 +1403,14 @@ window.moveContact = async function(id, direction) {
     if (idx < 0) return;
     var swapIdx = direction === 'up' ? idx - 1 : idx + 1;
     if (swapIdx < 0 || swapIdx >= list.length) return;
+    // 배열에서 스왑
+    var temp = list[idx];
+    list[idx] = list[swapIdx];
+    list[swapIdx] = temp;
+    // 전체 목록에 순번 부여 (배치 API 1회 호출)
+    var items = list.map(function(c, i) { return { id: c.id, order: i + 1 }; });
     try {
-        await api.put('/api/contacts/reorder', { items: [
-            { id: list[idx].id, order: swapIdx + 1 },
-            { id: list[swapIdx].id, order: idx + 1 }
-        ]});
+        await api.put('/api/contacts/reorder', { items: items });
         invalidateAll();
         await loadAdminContacts();
         await loadContacts();

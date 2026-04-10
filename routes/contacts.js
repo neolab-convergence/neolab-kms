@@ -38,13 +38,15 @@ router.put('/api/contacts/reorder', requireAdmin, async (req, res) => {
         const { items } = req.body;
         if (!items || !Array.isArray(items)) return res.status(400).json({ error: 'items 배열이 필요합니다.' });
         const data = await getSheetData('contacts');
+        const updates = [];
         for (const item of items) {
             const row = data.find(r => r.id === item.id);
             if (row) {
                 row.order = String(item.order);
-                await updateRow('contacts', row._rowIndex, row);
+                updates.push({ rowIndex: row._rowIndex, data: row });
             }
         }
+        if (updates.length > 0) await batchUpdateRows('contacts', updates);
         invalidateCache('contacts');
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
