@@ -1699,8 +1699,8 @@ function setupImagePreview(inputId, previewId, statusId) {
     if (!el) return;
     el.addEventListener('change', function() {
         var files = Array.from(this.files);
-        if (files.length > 10) {
-            alert('최대 10장까지 선택할 수 있습니다.');
+        if (files.length > 20) {
+            alert('최대 20장까지 선택할 수 있습니다.');
             this.value = '';
             return;
         }
