@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { requireAuth, requireAdmin } = require('../lib/auth');
-const { getCached, getSheetData, appendRow, updateRow, deleteRow, invalidateCache } = require('../lib/sheets');
+const { getCached, getSheetData, appendRow, updateRow, batchUpdateRows, deleteRow, invalidateCache } = require('../lib/sheets');
 
 router.get('/api/contacts', requireAuth, async (req, res) => {
     try {
@@ -47,6 +47,24 @@ router.put('/api/contacts/reorder', requireAdmin, async (req, res) => {
         }
         invalidateCache('contacts');
         res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// 최초 1회: order가 비어있는 전체 연락처에 순서 일괄 부여 (배치 API로 1회 호출)
+router.post('/api/contacts/init-order', requireAdmin, async (req, res) => {
+    try {
+        const data = await getSheetData('contacts');
+        const updates = [];
+        for (let i = 0; i < data.length; i++) {
+            if (!data[i].order) {
+                data[i].order = String(i + 1);
+                updates.push({ rowIndex: data[i]._rowIndex, data: data[i] });
+            }
+        }
+        if (updates.length === 0) return res.json({ success: true, message: '이미 초기화됨' });
+        await batchUpdateRows('contacts', updates);
+        invalidateCache('contacts');
+        res.json({ success: true, initialized: updates.length });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 

@@ -1232,9 +1232,15 @@ window.deleteNotice = async function(id) { if(!confirm('삭제하시겠습니까
 /* ── 인사정보 관리 (수정/검색 기능 추가) ── */
 var editContactId = null;
 
+var _contactOrderInitialized = false;
 async function loadAdminContacts() {
     try {
         allAdminContacts = await api.get('/api/contacts');
+        // 최초 1회: order가 없는 연락처가 있으면 자동 초기화
+        if (!_contactOrderInitialized && allAdminContacts.some(function(c) { return !c.order; })) {
+            _contactOrderInitialized = true;
+            try { await api.post('/api/contacts/init-order'); allAdminContacts = await api.get('/api/contacts'); } catch(e) { console.warn('order 초기화 실패:', e); }
+        }
         console.log('[Admin] 연락처 로드 완료:', allAdminContacts.length, '건');
         filterAdminContacts();
     } catch(e) { console.error('연락처 로드 실패:', e); }
@@ -1403,12 +1409,13 @@ window.moveContact = async function(id, direction) {
     if (idx < 0) return;
     var swapIdx = direction === 'up' ? idx - 1 : idx + 1;
     if (swapIdx < 0 || swapIdx >= list.length) return;
-    var temp = list[idx];
-    list[idx] = list[swapIdx];
-    list[swapIdx] = temp;
-    var items = list.map(function(c, i) { return { id: c.id, order: i + 1 }; });
+    var orderA = list[idx].order || String(idx + 1);
+    var orderB = list[swapIdx].order || String(swapIdx + 1);
     try {
-        await api.put('/api/contacts/reorder', { items: items });
+        await api.put('/api/contacts/reorder', { items: [
+            { id: list[idx].id, order: parseInt(orderB) || (swapIdx + 1) },
+            { id: list[swapIdx].id, order: parseInt(orderA) || (idx + 1) }
+        ]});
         invalidateAll();
         await loadAdminContacts();
         await loadContacts();
