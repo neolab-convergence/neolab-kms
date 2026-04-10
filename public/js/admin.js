@@ -1410,7 +1410,7 @@ window.moveContact = async function(id, direction) {
     // 전체 목록에 순번 부여 (배치 API 1회 호출)
     var items = list.map(function(c, i) { return { id: c.id, order: i + 1 }; });
     try {
-        await api.put('/api/contacts/reorder', { items: items });
+        await api.put('/api/contact-order', { items: items });
         invalidateAll();
         await loadAdminContacts();
         await loadContacts();

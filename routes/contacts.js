@@ -51,7 +51,7 @@ router.post('/api/contacts', requireAdmin, async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.put('/api/contacts/reorder', requireAdmin, async (req, res) => {
+router.put('/api/contact-order', requireAdmin, async (req, res) => {
     try {
         const { items } = req.body;
         if (!items || !Array.isArray(items)) return res.status(400).json({ error: 'items 배열이 필요합니다.' });
