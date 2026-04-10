@@ -1482,7 +1482,38 @@ window.deleteOrg = async function(id) { if(!confirm('삭제하시겠습니까?')
 async function loadAdminSettings() {
     const s = await api.get('/api/settings');
     document.getElementById('companyName').value = s.companyName || 'NeoLab';
+    // 점검 모드 상태 로드
+    try {
+        var m = await api.get('/api/maintenance');
+        updateMaintenanceUI(m.maintenance);
+    } catch(e) { console.warn('점검 모드 확인 실패:', e); }
 }
+
+function updateMaintenanceUI(enabled) {
+    var statusEl = document.getElementById('maintenanceStatus');
+    var btnEl = document.getElementById('maintenanceToggleBtn');
+    if (statusEl) statusEl.innerHTML = enabled
+        ? '<span style="color:#ef4444;">🔴 점검 모드 ON (관리자만 접속 가능)</span>'
+        : '<span style="color:#10b981;">🟢 정상 운영 중</span>';
+    if (btnEl) {
+        btnEl.textContent = enabled ? '점검 해제' : '점검 모드 켜기';
+        btnEl.style.background = enabled ? '#10b981' : '#ef4444';
+        btnEl.style.color = 'white';
+        btnEl.style.border = 'none';
+    }
+}
+
+window.toggleMaintenance = async function() {
+    try {
+        var current = await api.get('/api/maintenance');
+        var newState = !current.maintenance;
+        var msg = newState ? '점검 모드를 활성화하면 관리자 외 모든 사용자가 접속할 수 없습니다.\n계속하시겠습니까?' : '점검 모드를 해제하시겠습니까?';
+        if (!confirm(msg)) return;
+        var result = await api.put('/api/maintenance', { enabled: newState });
+        updateMaintenanceUI(result.maintenance);
+        alert(newState ? '점검 모드가 활성화되었습니다.' : '점검 모드가 해제되었습니다.');
+    } catch(e) { alert('오류: ' + e.message); }
+};
 document.getElementById('saveSettingsBtn').addEventListener('click', async function() {
     await api.put('/api/settings', { companyName: document.getElementById('companyName').value });
     showAdminSuccess('settingsSuccess', '저장되었습니다!');

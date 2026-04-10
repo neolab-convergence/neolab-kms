@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=33">
+    <link rel="stylesheet" href="css/style.css?v=34">
     <!-- CSS is loaded from css/style.css -->
 </head>
 <body>
@@ -729,6 +729,15 @@
 
                     <hr style="margin: 30px 0; border: none; border-top: 1px solid var(--border-color);">
 
+                    <h3 style="color: #ef4444; margin-bottom: 16px;">🔧 점검 모드</h3>
+                    <p style="color: var(--text-secondary); margin-bottom: 16px; font-size: 14px;">점검 모드를 활성화하면 관리자(ADMIN_EMAILS)만 접속할 수 있고, 일반 사용자는 "시스템 점검 중" 안내를 받습니다.</p>
+                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+                        <span id="maintenanceStatus" style="font-size:15px; font-weight:600;">확인 중...</span>
+                        <button type="button" class="admin-btn" id="maintenanceToggleBtn" onclick="toggleMaintenance()" style="padding:8px 20px;">전환</button>
+                    </div>
+
+                    <hr style="margin: 30px 0; border: none; border-top: 1px solid var(--border-color);">
+
                     <h3 style="color: var(--primary); margin-bottom: 16px;">🔑 내 비밀번호 변경</h3>
                     <p style="color: var(--text-secondary); margin-bottom: 16px; font-size: 14px;">관리자 모드 진입 시 사용하는 비밀번호를 변경합니다. 본인의 비밀번호만 변경할 수 있습니다.</p>
                     <div class="admin-form-group">
@@ -994,13 +1003,13 @@
         </div>
     </div>
 
-<script src="js/core.js?v=33"></script>
-<script src="js/navigation.js?v=33"></script>
-<script src="js/search.js?v=33"></script>
-<script src="js/viewer.js?v=33"></script>
-<script src="js/board.js?v=33"></script>
-<script src="js/features.js?v=33"></script>
-<script src="js/app.js?v=33"></script>
-<script src="js/admin.js?v=33"></script>
+<script src="js/core.js?v=34"></script>
+<script src="js/navigation.js?v=34"></script>
+<script src="js/search.js?v=34"></script>
+<script src="js/viewer.js?v=34"></script>
+<script src="js/board.js?v=34"></script>
+<script src="js/features.js?v=34"></script>
+<script src="js/app.js?v=34"></script>
+<script src="js/admin.js?v=34"></script>
 </body>
 </html>

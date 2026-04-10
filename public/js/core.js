@@ -19,6 +19,7 @@ async function _fetch(path, opts) {
     try {
         var res = await fetch(path, opts);
         if (res.status === 401) { window.location.href = '/login.html'; throw new Error('Unauthorized'); }
+        if (res.status === 503) { var msg = '현재 시스템 점검 중입니다. 잠시 후 다시 이용해주세요.'; alert(msg); throw new Error(msg); }
         if (!res.ok) throw new Error(await res.text());
         return res.json();
     } finally { hideLoading(); }
