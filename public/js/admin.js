@@ -1264,12 +1264,16 @@ window.filterAdminContacts = function() {
     };
 
     if (filtered.length === 0) {
-        contactsListEl.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:40px; color:var(--text-light);">등록된 연락처가 없습니다.</td></tr>';
+        contactsListEl.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:40px; color:var(--text-light);">등록된 연락처가 없습니다.</td></tr>';
         return;
     }
 
-    contactsListEl.innerHTML = filtered.map(c => `
-        <tr>
+    contactsListEl.innerHTML = filtered.map(function(c, idx) { return `
+        <tr data-contact-id="${c.id}">
+            <td style="text-align:center;">
+                <button type="button" onclick="moveContact('${c.id}','up')" style="background:none; border:none; cursor:pointer; font-size:16px; padding:0 2px; opacity:${idx === 0 ? '0.3' : '1'};" ${idx === 0 ? 'disabled' : ''}>▲</button>
+                <button type="button" onclick="moveContact('${c.id}','down')" style="background:none; border:none; cursor:pointer; font-size:16px; padding:0 2px; opacity:${idx === filtered.length - 1 ? '0.3' : '1'};" ${idx === filtered.length - 1 ? 'disabled' : ''}>▼</button>
+            </td>
             <td style="font-weight:600;">${c.name || ''}</td>
             <td>${c.position || ''}</td>
             <td>${c.dept || ''}</td>
@@ -1281,7 +1285,7 @@ window.filterAdminContacts = function() {
                 <button type="button" onclick="deleteContact('${c.id}')" style="background:none; border:1px solid #ef4444; color:#ef4444; padding:4px 10px; border-radius:4px; cursor:pointer; font-size:12px;">삭제</button>
             </td>
         </tr>
-    `).join('');
+    `; }).join('');
 };
 
 var editContactModalId = null;
@@ -1392,6 +1396,24 @@ if (addContactBtnEl) addContactBtnEl.addEventListener('click', async function() 
     } catch(err) { alert('오류: ' + err.message); }
 });
 window.deleteContact = async function(id) { if(!confirm('삭제하시겠습니까?')) return; await api.del(`/api/contacts/${id}`); invalidateAll(); await loadAdminContacts(); await loadContacts(); await updateDashboardStats(); };
+
+window.moveContact = async function(id, direction) {
+    var list = allAdminContacts || [];
+    var idx = list.findIndex(function(c) { return c.id === id; });
+    if (idx < 0) return;
+    var swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= list.length) return;
+    var temp = list[idx];
+    list[idx] = list[swapIdx];
+    list[swapIdx] = temp;
+    var items = list.map(function(c, i) { return { id: c.id, order: i + 1 }; });
+    try {
+        await api.put('/api/contacts/reorder', { items: items });
+        invalidateAll();
+        await loadAdminContacts();
+        await loadContacts();
+    } catch(e) { alert('순서 변경 실패: ' + e.message); }
+};
 
 /* ── 조직도 관리 (수정 기능 추가) ── */
 var editOrgId = null;

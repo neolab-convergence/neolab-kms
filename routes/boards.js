@@ -49,7 +49,7 @@ router.put('/api/:sheetName/reorder', requireAdmin, async (req, res) => {
         const { sheetName } = req.params;
         const { items } = req.body;
         writeLog('DEBUG', 'reorder called', JSON.stringify({ sheetName, items }));
-        if (!['boards', 'categories', 'posts'].includes(sheetName)) {
+        if (!['boards', 'categories', 'posts', 'contacts'].includes(sheetName)) {
             return res.status(400).json({ error: '순서 변경이 지원되지 않는 시트입니다.' });
         }
         const data = await getSheetData(sheetName);

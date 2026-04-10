@@ -6,7 +6,12 @@ const { getCached, getSheetData, appendRow, updateRow, deleteRow, invalidateCach
 router.get('/api/contacts', requireAuth, async (req, res) => {
     try {
         const data = await getCached('contacts');
-        res.json(data.map(({ _rowIndex, ...r }) => r));
+        const sorted = data.map(({ _rowIndex, ...r }) => r).sort((a, b) => {
+            const oa = parseInt(a.order) || 9999;
+            const ob = parseInt(b.order) || 9999;
+            return oa - ob;
+        });
+        res.json(sorted);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -19,11 +24,29 @@ router.post('/api/contacts', requireAdmin, async (req, res) => {
             dept: req.body.dept || '',
             phone: req.body.phone || '',
             email: req.body.email || '',
-            status: req.body.status || 'active'
+            status: req.body.status || 'active',
+            order: req.body.order || ''
         };
         await appendRow('contacts', contact);
         invalidateCache('contacts');
         res.json({ success: true, id: contact.id });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.put('/api/contacts/reorder', requireAdmin, async (req, res) => {
+    try {
+        const { items } = req.body;
+        if (!items || !Array.isArray(items)) return res.status(400).json({ error: 'items 배열이 필요합니다.' });
+        const data = await getSheetData('contacts');
+        for (const item of items) {
+            const row = data.find(r => r.id === item.id);
+            if (row) {
+                row.order = String(item.order);
+                await updateRow('contacts', row._rowIndex, row);
+            }
+        }
+        invalidateCache('contacts');
+        res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
