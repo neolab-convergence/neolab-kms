@@ -48,20 +48,21 @@ router.put('/api/:sheetName/reorder', requireAdmin, async (req, res) => {
     try {
         const { sheetName } = req.params;
         const { items } = req.body;
-        writeLog('DEBUG', 'reorder called', JSON.stringify({ sheetName, items }));
         if (!['boards', 'categories', 'posts'].includes(sheetName)) {
             return res.status(400).json({ error: '순서 변경이 지원되지 않는 시트입니다.' });
         }
         const data = await getSheetData(sheetName);
+        const updates = [];
         for (const item of items) {
             const row = data.find(r => r.id === item.id);
-            if (row) {
+            if (row && row.order !== String(item.order)) {
                 row.order = String(item.order);
-                await updateRow(sheetName, row._rowIndex, row);
+                updates.push(updateRow(sheetName, row._rowIndex, row));
             }
         }
+        if (updates.length > 0) await Promise.all(updates);
         invalidateCache(sheetName);
-        writeLog('ADMIN', `순서 변경: ${sheetName}`, `${items.length}건 by=${req.user.email}`);
+        writeLog('ADMIN', `순서 변경: ${sheetName}`, `${updates.length}건 by=${req.user.email}`);
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });

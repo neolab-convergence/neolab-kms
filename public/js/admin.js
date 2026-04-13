@@ -659,16 +659,27 @@ var editBoardId = null, editCatId = null, editCatBoardId = null;
 var allAdminPosts = []; // 게시물 필터용 전체 목록
 
 // ─── 순서 변경 공통 함수 ───
+var _reordering = false;
+
 async function moveItem(sheetName, items, idx, direction) {
+    if (_reordering) return;
     const swapIdx = idx + direction;
     if (swapIdx < 0 || swapIdx >= items.length) return;
-    const a = items[idx], b = items[swapIdx];
-    const newItems = [
-        { id: a.id, order: b.order || String(swapIdx) },
-        { id: b.id, order: a.order || String(idx) }
-    ];
-    await api.put(`/api/${sheetName}/reorder`, { items: newItems });
-    invalidateAll();
+    _reordering = true;
+    try {
+        // 배열에서 위치 교환
+        var temp = items[idx];
+        items[idx] = items[swapIdx];
+        items[swapIdx] = temp;
+        // 전체 항목에 순차적 order 재할당
+        var allItems = items.map(function(item, i) {
+            return { id: item.id, order: String(i + 1) };
+        });
+        await api.put('/api/' + sheetName + '/reorder', { items: allItems });
+        invalidateAll();
+    } finally {
+        _reordering = false;
+    }
 }
 
 function sortByOrder(items) {
