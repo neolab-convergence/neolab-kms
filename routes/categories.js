@@ -13,7 +13,7 @@ router.get('/api/categories', requireAuth, async (req, res) => {
             const grouped = {};
             clean.forEach(c => {
                 if (!grouped[c.boardId]) grouped[c.boardId] = [];
-                grouped[c.boardId].push({ id: c.id, name: c.name, viewType: c.viewType || '' });
+                grouped[c.boardId].push({ id: c.id, name: c.name, order: c.order || '', viewType: c.viewType || '' });
             });
             res.json(grouped);
         }
