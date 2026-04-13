@@ -285,26 +285,110 @@ async function loadContacts() {
 }
 
 /* ==========================================
-   조직도
+   조직도 (인터랙티브 트리)
 ========================================== */
+var _orgChartScale = 1;
+
+function buildOrgTree(data) {
+    var map = {};
+    var roots = [];
+    data.forEach(function(n) { map[n.id] = { ...n, children: [] }; });
+    data.forEach(function(n) {
+        if (n.parentId && map[n.parentId]) {
+            map[n.parentId].children.push(map[n.id]);
+        } else {
+            roots.push(map[n.id]);
+        }
+    });
+    // 자식 정렬
+    function sortChildren(node) {
+        node.children.sort(function(a, b) { return (parseInt(a.order)||999) - (parseInt(b.order)||999); });
+        node.children.forEach(sortChildren);
+    }
+    roots.sort(function(a, b) { return (parseInt(a.order)||999) - (parseInt(b.order)||999); });
+    roots.forEach(sortChildren);
+    return roots;
+}
+
+function renderOrgNode(node) {
+    var isDept = !node.title && node.children.length > 0;
+    var html = '<li>';
+    if (isDept) {
+        html += '<div class="org-node org-dept-node">';
+        html += '<div class="org-dept-label">' + escapeHtml(node.name) + '</div>';
+        html += '</div>';
+    } else if (!node.title && node.children.length === 0 && node.department) {
+        // 부서 노드지만 하위가 없는 경우
+        html += '<div class="org-node org-dept-node">';
+        html += '<div class="org-dept-label">' + escapeHtml(node.name) + '</div>';
+        html += '</div>';
+    } else {
+        html += '<div class="org-node org-person-node">';
+        if (node.department) html += '<div class="org-person-dept">' + escapeHtml(node.department) + '</div>';
+        html += '<div class="org-person-name">' + escapeHtml(node.name) + '</div>';
+        if (node.title) html += '<div class="org-person-title">' + escapeHtml(node.title) + '</div>';
+        html += '</div>';
+    }
+    if (node.children.length > 0) {
+        // 부서 하위의 사람만 있는 경우와 혼합 분리
+        var deptChildren = node.children.filter(function(c) { return !c.title || c.children.length > 0; });
+        var personChildren = node.children.filter(function(c) { return c.title && c.children.length === 0; });
+
+        if (personChildren.length > 0) {
+            html += '<ul><li><div class="org-members-group">';
+            personChildren.forEach(function(p) {
+                html += '<div class="org-node org-person-node org-member-card">';
+                html += '<div class="org-person-name">' + escapeHtml(p.name) + '</div>';
+                if (p.title) html += '<div class="org-person-title">' + escapeHtml(p.title) + '</div>';
+                html += '</div>';
+            });
+            html += '</div></li>';
+            deptChildren.forEach(function(c) { html += renderOrgNode(c); });
+            html += '</ul>';
+        } else {
+            html += '<ul>';
+            node.children.forEach(function(c) { html += renderOrgNode(c); });
+            html += '</ul>';
+        }
+    }
+    html += '</li>';
+    return html;
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
 async function loadOrgChart() {
     try {
-        const settings = await cachedGet('/api/settings');
-        const orgChartFile = settings.orgChartImage || '';
-        const imgDiv = document.getElementById('orgChartImage');
-        const emptyDiv = document.getElementById('orgChartEmpty');
-        if (!imgDiv) return;
+        var data = await cachedGet('/api/orgchart');
+        var canvas = document.getElementById('orgChartCanvas');
+        if (!canvas) return;
 
-        if (orgChartFile) {
-            document.getElementById('orgChartImg').src = '/api/files/' + orgChartFile;
-            imgDiv.style.display = 'block';
-            if (emptyDiv) emptyDiv.style.display = 'none';
-        } else {
-            imgDiv.style.display = 'none';
-            if (emptyDiv) emptyDiv.style.display = 'block';
+        if (!data || data.length === 0) {
+            canvas.innerHTML = '<div style="text-align:center; padding:60px 20px; color:var(--text-light);"><div style="font-size:48px; margin-bottom:16px;">🏢</div><p style="font-size:16px;">조직도가 등록되지 않았습니다.</p><p style="font-size:13px;">관리자 모드에서 Excel 파일로 등록해주세요.</p></div>';
+            return;
         }
+
+        var tree = buildOrgTree(data);
+        var html = '<div class="org-tree"><ul>';
+        tree.forEach(function(root) { html += renderOrgNode(root); });
+        html += '</ul></div>';
+        canvas.innerHTML = html;
     } catch(e) { console.error('조직도 로드 오류:', e); }
 }
+
+window.orgChartZoom = function(factor) {
+    _orgChartScale = Math.max(0.3, Math.min(2, _orgChartScale * factor));
+    var canvas = document.getElementById('orgChartCanvas');
+    if (canvas) canvas.style.transform = 'scale(' + _orgChartScale + ')';
+};
+window.orgChartReset = function() {
+    _orgChartScale = 1;
+    var canvas = document.getElementById('orgChartCanvas');
+    if (canvas) canvas.style.transform = 'scale(1)';
+};
 
 /* ==========================================
    UI 헬퍼

@@ -399,32 +399,195 @@ window.submitWriteForm = async function() {
 };
 
 
-// ═══ 조직도 이미지 관리 ═══
-window.uploadOrgChartImage = async function() {
-    const fileInput = document.getElementById('orgChartFileInput');
-    if (!fileInput || !fileInput.files.length) return alert('파일을 선택해주세요.');
+// ═══ 조직도 관리 (Excel 업로드/다운로드 + 트리 편집) ═══
+window.downloadOrgChartTemplate = function() {
+    if (typeof XLSX === 'undefined') return alert('Excel 라이브러리 로딩 중입니다. 잠시 후 다시 시도해주세요.');
+    var headers = ['부서', '직책', '이름', '상위부서'];
+    var sample = [
+        ['대표이사실', '대표이사', '홍길동', ''],
+        ['경영지원본부', '본부장', '김철수', '대표이사실'],
+        ['인사팀', '팀장', '이영희', '경영지원본부'],
+        ['인사팀', '사원', '박민수', '경영지원본부'],
+        ['개발본부', '본부장', '최동훈', '대표이사실'],
+        ['개발1팀', '팀장', '정수연', '개발본부'],
+        ['개발1팀', '선임', '김개발', '개발본부'],
+        ['개발2팀', '팀장', '박지은', '개발본부'],
+    ];
+    var ws = XLSX.utils.aoa_to_sheet([headers].concat(sample));
+    ws['!cols'] = [{wch:18},{wch:12},{wch:12},{wch:18}];
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, '조직도');
+    XLSX.writeFile(wb, '조직도_템플릿.xlsx');
+};
 
-    const formData = new FormData();
-    formData.append('file', fileInput.files[0]);
-    const res = await fetch('/api/upload', { method: 'POST', body: formData });
-    const data = await res.json();
-    if (data.error) return alert('업로드 실패: ' + data.error);
+window.uploadOrgChartExcel = async function() {
+    if (typeof XLSX === 'undefined') return alert('Excel 라이브러리 로딩 중입니다.');
+    var fileInput = document.getElementById('orgExcelFileInput');
+    if (!fileInput || !fileInput.files.length) return alert('Excel 파일을 선택해주세요.');
 
-    // settings에 저장
-    await api.put('/api/settings', { orgChartImage: data.fileName });
-    invalidateAll();
-    alert('조직도가 업로드되었습니다.');
+    var file = fileInput.files[0];
+    var reader = new FileReader();
+    reader.onload = async function(e) {
+        try {
+            var wb = XLSX.read(e.target.result, { type: 'array' });
+            var ws = wb.Sheets[wb.SheetNames[0]];
+            var rawData = XLSX.utils.sheet_to_json(ws);
+
+            if (rawData.length === 0) return alert('데이터가 없습니다.');
+
+            // 미리보기 테이블
+            var previewHtml = '<table style="width:100%; border-collapse:collapse; font-size:13px;">';
+            previewHtml += '<thead><tr style="background:var(--main-bg);"><th style="padding:8px; border:1px solid var(--border-color);">부서</th><th style="padding:8px; border:1px solid var(--border-color);">직책</th><th style="padding:8px; border:1px solid var(--border-color);">이름</th><th style="padding:8px; border:1px solid var(--border-color);">상위부서</th></tr></thead><tbody>';
+            rawData.forEach(function(row) {
+                previewHtml += '<tr><td style="padding:6px 8px; border:1px solid var(--border-color);">' + (row['부서']||'') + '</td><td style="padding:6px 8px; border:1px solid var(--border-color);">' + (row['직책']||'') + '</td><td style="padding:6px 8px; border:1px solid var(--border-color);">' + (row['이름']||'') + '</td><td style="padding:6px 8px; border:1px solid var(--border-color);">' + (row['상위부서']||'') + '</td></tr>';
+            });
+            previewHtml += '</tbody></table>';
+            document.getElementById('orgExcelPreview').innerHTML = '<div style="padding:12px; font-weight:600; color:var(--text-primary);">미리보기 (' + rawData.length + '건)</div>' + previewHtml;
+            document.getElementById('orgExcelPreview').style.display = 'block';
+
+            if (!confirm(rawData.length + '건의 데이터를 업로드하시겠습니까?\n기존 조직도 데이터는 모두 교체됩니다.')) return;
+
+            var items = rawData.map(function(row) {
+                return {
+                    department: row['부서'] || '',
+                    title: row['직책'] || '',
+                    name: row['이름'] || '',
+                    parentDepartment: row['상위부서'] || ''
+                };
+            });
+
+            await api.post('/api/orgchart/bulk', { items: items });
+            invalidate('/api/orgchart');
+            alert('조직도가 업데이트되었습니다! (' + items.length + '건)');
+            await loadAdminOrgChart();
+            await loadOrgChart();
+            fileInput.value = '';
+        } catch(err) { alert('업로드 실패: ' + err.message); }
+    };
+    reader.readAsArrayBuffer(file);
+};
+
+// 관리자 조직도 트리 렌더링
+function renderAdminOrgTree(data) {
+    var container = document.getElementById('adminOrgTreeContainer');
+    if (!container) return;
+    if (!data || data.length === 0) {
+        container.innerHTML = '<div style="text-align:center; padding:40px; color:var(--text-light);">조직도 데이터가 없습니다. Excel 파일을 업로드해주세요.</div>';
+        return;
+    }
+
+    var map = {};
+    var roots = [];
+    data.forEach(function(n) { map[n.id] = { ...n, children: [] }; });
+    data.forEach(function(n) {
+        if (n.parentId && map[n.parentId]) {
+            map[n.parentId].children.push(map[n.id]);
+        } else {
+            roots.push(map[n.id]);
+        }
+    });
+    function sortKids(node) {
+        node.children.sort(function(a,b) { return (parseInt(a.order)||999) - (parseInt(b.order)||999); });
+        node.children.forEach(sortKids);
+    }
+    roots.sort(function(a,b) { return (parseInt(a.order)||999) - (parseInt(b.order)||999); });
+    roots.forEach(sortKids);
+
+    function renderNode(node, depth) {
+        var indent = depth * 24;
+        var isDept = (!node.title && node.children.length > 0) || (!node.title && !node.department);
+        var icon = isDept ? '🏢' : '👤';
+        var label = isDept ? node.name : (node.name + (node.title ? ' (' + node.title + ')' : ''));
+        var deptBadge = (!isDept && node.department) ? '<span style="font-size:11px; background:#e0f2fe; color:#0369a1; padding:1px 6px; border-radius:4px; margin-left:6px;">' + node.department + '</span>' : '';
+
+        var html = '<div class="admin-org-node" draggable="true" data-id="' + node.id + '" data-parent="' + (node.parentId||'') + '" style="display:flex; align-items:center; gap:8px; padding:8px 12px; margin:2px 0; margin-left:' + indent + 'px; background:' + (isDept ? '#f0f9ff' : 'white') + '; border:1px solid var(--border-color); border-radius:8px; cursor:grab; transition:background 0.15s;" ondragstart="orgDragStart(event)" ondragover="orgDragOver(event)" ondrop="orgDrop(event)" ondragend="orgDragEnd(event)">';
+        html += '<span style="cursor:grab; opacity:0.4;">⠿</span>';
+        html += '<span>' + icon + '</span>';
+        html += '<span style="flex:1; font-size:14px; font-weight:' + (isDept ? '600' : '400') + ';">' + label + deptBadge + '</span>';
+        html += '<button type="button" onclick="deleteOrgNode(\'' + node.id + '\')" style="background:none; border:none; cursor:pointer; color:#ef4444; font-size:16px; padding:2px 6px;" title="삭제">×</button>';
+        html += '</div>';
+        node.children.forEach(function(c) { html += renderNode(c, depth + 1); });
+        return html;
+    }
+
+    var html = '';
+    roots.forEach(function(r) { html += renderNode(r, 0); });
+    container.innerHTML = html;
+}
+
+// 드래그앤드롭
+var _orgDragId = null;
+window.orgDragStart = function(e) {
+    _orgDragId = e.currentTarget.dataset.id;
+    e.currentTarget.style.opacity = '0.4';
+    e.dataTransfer.effectAllowed = 'move';
+};
+window.orgDragOver = function(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    e.currentTarget.style.background = '#fef3c7';
+};
+window.orgDragEnd = function(e) {
+    e.currentTarget.style.opacity = '1';
+    document.querySelectorAll('.admin-org-node').forEach(function(el) { el.style.background = ''; });
+};
+window.orgDrop = async function(e) {
+    e.preventDefault();
+    var targetId = e.currentTarget.dataset.id;
+    if (!_orgDragId || _orgDragId === targetId) return;
+    // 자기 자식으로 이동 방지 (간단한 체크)
+    try {
+        await api.put('/api/orgchart/reorder', {
+            updates: [{ id: _orgDragId, parentId: targetId, order: '999' }]
+        });
+        invalidate('/api/orgchart');
+        await loadAdminOrgChart();
+        await loadOrgChart();
+    } catch(err) { alert('이동 실패: ' + err.message); }
+    _orgDragId = null;
+};
+
+window.deleteOrgNode = async function(id) {
+    if (!confirm('이 항목을 삭제하시겠습니까?\n하위 항목도 함께 삭제됩니다.')) return;
+    // 하위 항목도 모두 삭제
+    var data = await api.get('/api/orgchart');
+    var toDelete = [id];
+    function findChildren(parentId) {
+        data.filter(function(n) { return n.parentId === parentId; }).forEach(function(n) {
+            toDelete.push(n.id);
+            findChildren(n.id);
+        });
+    }
+    findChildren(id);
+    for (var i = 0; i < toDelete.length; i++) {
+        try { await api.del('/api/orgchart/' + toDelete[i]); } catch(e) {}
+    }
+    invalidate('/api/orgchart');
     await loadAdminOrgChart();
     await loadOrgChart();
 };
 
-window.deleteOrgChartImage = async function() {
-    if (!confirm('조직도 이미지를 삭제하시겠습니까?')) return;
-    await api.put('/api/settings', { orgChartImage: '' });
-    invalidateAll();
-    alert('조직도가 삭제되었습니다.');
-    await loadAdminOrgChart();
-    await loadOrgChart();
+window.showAddNodeDialog = function(type) {
+    var name = prompt(type === 'dept' ? '부서명을 입력하세요:' : '이름을 입력하세요:');
+    if (!name) return;
+    var title = '';
+    var department = '';
+    if (type === 'person') {
+        title = prompt('직책을 입력하세요 (예: 팀장, 사원):') || '';
+        department = prompt('소속 부서명을 입력하세요:') || '';
+    }
+    api.post('/api/orgchart', {
+        name: name,
+        title: title,
+        department: department,
+        level: type === 'dept' ? '1' : '2',
+        parentId: '',
+        order: '999'
+    }).then(function() {
+        invalidate('/api/orgchart');
+        loadAdminOrgChart();
+        loadOrgChart();
+    });
 };
 
 /* ==========================================
@@ -1428,64 +1591,13 @@ window.moveContact = async function(id, direction) {
     } catch(e) { alert('순서 변경 실패: ' + e.message); }
 };
 
-/* ── 조직도 관리 (수정 기능 추가) ── */
-var editOrgId = null;
-
+/* ── 조직도 관리 ── */
 async function loadAdminOrgChart() {
     try {
-        const settings = await cachedGet('/api/settings');
-        const orgFile = settings.orgChartImage || '';
-        const previewImg = document.getElementById('orgPreviewImg');
-        const previewEmpty = document.getElementById('orgPreviewEmpty');
-        if (orgFile) {
-            document.getElementById('orgAdminPreview').src = '/api/files/' + orgFile;
-            if (previewImg) previewImg.style.display = 'block';
-            if (previewEmpty) previewEmpty.style.display = 'none';
-        } else {
-            if (previewImg) previewImg.style.display = 'none';
-            if (previewEmpty) previewEmpty.style.display = 'block';
-        }
+        var data = await api.get('/api/orgchart');
+        renderAdminOrgTree(data);
     } catch(e) { console.error(e); }
 }
-
-window.editOrg = async function(id) {
-    const orgs = await api.get('/api/orgchart');
-    const o = orgs.find(x => x.id === id);
-    if (!o) return;
-    document.getElementById('orgName').value = o.name || '';
-    document.getElementById('orgTitle').value = o.title || '';
-    document.getElementById('orgLevel').value = o.level || '6';
-    editOrgId = id;
-    document.getElementById('editOrgIndicator').style.display = 'inline';
-    document.getElementById('addOrgBtn').textContent = '저장';
-    document.getElementById('addOrgBtn').classList.replace('admin-btn-success', 'admin-btn-primary');
-};
-
-window.cancelEditOrg = function() {
-    editOrgId = null;
-    document.getElementById('orgName').value = '';
-    document.getElementById('orgTitle').value = '';
-    document.getElementById('editOrgIndicator').style.display = 'none';
-    document.getElementById('addOrgBtn').textContent = '추가';
-    document.getElementById('addOrgBtn').classList.replace('admin-btn-primary', 'admin-btn-success');
-};
-
-var addOrgBtnEl = document.getElementById('addOrgBtn');
-if (addOrgBtnEl) addOrgBtnEl.addEventListener('click', async function() {
-    const data = { name: document.getElementById('orgName').value, title: document.getElementById('orgTitle').value, level: document.getElementById('orgLevel').value };
-    if (!data.name) return alert('이름을 입력하세요.');
-    try {
-        if (editOrgId) {
-            await api.put(`/api/orgchart/${editOrgId}`, data);
-            cancelEditOrg();
-        } else {
-            await api.post('/api/orgchart', data);
-        }
-        document.getElementById('orgName').value = ''; document.getElementById('orgTitle').value = '';
-        invalidate('/api/orgchart'); await loadAdminOrgChart(); await loadOrgChart();
-    } catch(err) { alert('오류: ' + err.message); }
-});
-window.deleteOrg = async function(id) { if(!confirm('삭제하시겠습니까?')) return; await api.del(`/api/orgchart/${id}`); invalidate('/api/orgchart'); await loadAdminOrgChart(); await loadOrgChart(); };
 
 /* ==========================================
    설정
