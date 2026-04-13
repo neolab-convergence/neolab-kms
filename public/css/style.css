@@ -116,6 +116,7 @@
         .board-row-icon.xlsx { background: rgba(16,185,129,0.12); }
         .board-row-icon.pdf { background: rgba(239,68,68,0.12); }
         .board-row-icon.pptx { background: rgba(245,158,11,0.12); }
+        .board-row-icon.link { background: rgba(14,165,233,0.12); }
         .board-row-icon.general { background: rgba(107,114,128,0.12); }
         .board-row-title { font-weight: 600; color: var(--text-primary); }
         .board-row-title:hover { color: var(--primary); }
@@ -128,6 +129,7 @@
         .board-row-type.xlsx { background: rgba(16,185,129,0.1); color: #10b981; }
         .board-row-type.pptx { background: rgba(245,158,11,0.1); color: #f59e0b; }
         .board-row-type.url { background: rgba(99,102,241,0.1); color: #6366f1; }
+        .board-row-type.link { background: rgba(14,165,233,0.1); color: #0ea5e9; }
         .board-row-type.text { background: rgba(107,114,128,0.1); color: #6b7280; }
         @media (max-width: 768px) {
             .board-table thead { display: none; }

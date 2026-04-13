@@ -281,9 +281,11 @@ window.openPost = async function(id) {
         const post = await api.get(`/api/posts/${id}`);
         currentViewerPost = post;
 
-        // 인프라 게시물은 새 창으로 바로 열기
-        if (post.boardId === 'infra' && post.url) {
-            window.open(post.url, '_blank');
+        // link 타입 또는 인프라 게시물은 새 창으로 바로 열기
+        if ((post.type === 'link' || post.boardId === 'infra') && post.url) {
+            var linkUrl = post.url.trim();
+            if (!linkUrl.startsWith('http://') && !linkUrl.startsWith('https://')) linkUrl = 'https://' + linkUrl;
+            window.open(linkUrl, '_blank');
             return;
         }
 

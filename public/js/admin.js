@@ -71,7 +71,7 @@ async function loadAdminPostTable() {
     const pagePosts = posts.slice(startIdx, startIdx + ADMIN_POSTS_PER_PAGE);
 
     const tbody = document.getElementById('adminPostTableBody');
-    const typeLabels = { pdf:'PDF', docx:'DOCX', xlsx:'XLSX', pptx:'PPTX', url:'LINK', text:'TEXT' };
+    const typeLabels = { pdf:'PDF', docx:'DOCX', xlsx:'XLSX', pptx:'PPTX', url:'LINK', link:'URL', text:'TEXT' };
 
     if (pagePosts.length === 0) {
         tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:40px; color:var(--text-light);">등록된 게시물이 없습니다.</td></tr>';
@@ -300,7 +300,7 @@ window.updateWriteCategories = function() {
 
 window.toggleWriteFields = function() {
     var type = document.getElementById('writeType').value;
-    document.getElementById('writeUrlGroup').style.display = (type === 'url') ? 'block' : 'none';
+    document.getElementById('writeUrlGroup').style.display = (['url','link'].includes(type)) ? 'block' : 'none';
     document.getElementById('writeFileGroup').style.display = (['pdf','docx','xlsx','pptx'].includes(type)) ? 'block' : 'none';
     document.getElementById('writeContentGroup').style.display = (type === 'text') ? 'block' : 'none';
     var imagesGroup = document.getElementById('writeImagesGroup');
@@ -1070,7 +1070,7 @@ window.movePostDown = async function(idx, filterBoard) {
 
 window.togglePostFields = function() {
     var type = document.getElementById('postType').value;
-    document.getElementById('postUrlGroup').style.display = ['url','docx','xlsx','pptx'].includes(type) ? 'block' : 'none';
+    document.getElementById('postUrlGroup').style.display = ['url','link','docx','xlsx','pptx'].includes(type) ? 'block' : 'none';
     document.getElementById('postPdfGroup').style.display = type === 'pdf' ? 'block' : 'none';
     document.getElementById('postContentGroup').style.display = type === 'text' ? 'block' : 'none';
     var postImgGroup = document.getElementById('postImagesGroup');
@@ -1109,7 +1109,7 @@ if (addPostBtnEl) addPostBtnEl.addEventListener('click', async function() {
 
     var postData = { boardId: boardId, categoryId: categoryId, type: type, title: title, icon: icon, subInfo: subInfo,
         content: type === 'text' ? content : '',
-        url: ['url','docx','xlsx','pptx'].includes(type) ? url : '',
+        url: ['url','link','docx','xlsx','pptx'].includes(type) ? url : '',
         fileName: type === 'pdf' ? fileName : ''
     };
 

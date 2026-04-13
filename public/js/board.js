@@ -125,7 +125,7 @@ async function renderPostGrid(boardId, categoryId = 'all') {
         return;
     }
 
-    const typeLabels = { pdf: 'PDF', docx: 'DOCX', xlsx: 'XLSX', pptx: 'PPTX', url: 'LINK', text: 'TEXT' };
+    const typeLabels = { pdf: 'PDF', docx: 'DOCX', xlsx: 'XLSX', pptx: 'PPTX', url: 'LINK', link: 'URL', text: 'TEXT' };
 
     const favs = getFavorites();
     const now = new Date();
@@ -152,6 +152,7 @@ async function renderPostGrid(boardId, categoryId = 'all') {
         else if(post.type === 'docx') icon = '📄';
         else if(post.type === 'xlsx') icon = '📊';
         else if(post.type === 'pptx') icon = '📑';
+        else if(post.type === 'link') icon = '🌐';
         if(post.icon && post.icon.trim() !== '') icon = post.icon;
         const catName = catMap[post.categoryId] || '기타';
         const isFav = favs.includes(post.id);

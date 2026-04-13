@@ -29,7 +29,7 @@ function renderSearchResults(posts, query) {
         return;
     }
 
-    var typeLabels = { pdf:'PDF', docx:'DOCX', xlsx:'XLSX', pptx:'PPTX', url:'LINK', text:'TEXT', images:'IMG' };
+    var typeLabels = { pdf:'PDF', docx:'DOCX', xlsx:'XLSX', pptx:'PPTX', url:'LINK', link:'URL', text:'TEXT', images:'IMG' };
     var html = '<table class="board-table"><thead><tr><th style="width:50px;"></th><th>제목</th><th style="width:100px;">게시판</th><th style="width:80px;">유형</th><th style="width:80px;">날짜</th><th style="width:60px;">조회</th></tr></thead><tbody>';
 
     filtered.forEach(function(post) {
@@ -39,6 +39,7 @@ function renderSearchResults(posts, query) {
         else if (post.type === 'docx') icon = '📄';
         else if (post.type === 'xlsx') icon = '📊';
         else if (post.type === 'pptx') icon = '📑';
+        else if (post.type === 'link') icon = '🌐';
         if (post.icon && post.icon.trim()) icon = post.icon;
 
         var boardName = post._boardName || '';
