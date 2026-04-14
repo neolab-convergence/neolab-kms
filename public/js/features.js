@@ -319,20 +319,46 @@ function _orgBuildTree(data) {
     return { roots: roots, map: map };
 }
 
-// 겹침 방지: 같은 y행의 노드들을 최소 간격으로 재배치 (기존 위치 최대한 유지)
+// 겹침 방지 + 행 정렬: 가까운 y값의 노드들을 같은 행으로 묶어 y 스냅 + x 최소간격 확보
 function _orgResolveOverlap(data) {
     var MIN_GAP = 15;
-    var rowBuckets = {};
-    data.forEach(function(n) {
-        var y = parseInt(n.y)||0;
-        // ±10px 이내는 같은 행으로 묶기
-        var key = Math.round(y / 20) * 20;
-        if (!rowBuckets[key]) rowBuckets[key] = [];
-        rowBuckets[key].push(n);
-    });
+    var ROW_SNAP = 30; // 30px 이내 y 차이는 같은 행으로 간주
     var shifted = false;
-    Object.keys(rowBuckets).forEach(function(k) {
-        var row = rowBuckets[k];
+
+    // 1) 행 스냅: y 값이 가까운 노드들을 같은 y로 정렬
+    var sorted = data.slice().sort(function(a,b) { return (parseInt(a.y)||0) - (parseInt(b.y)||0); });
+    var rowId = 0, currentRowY = null, rowMap = {}; // nodeId -> rowId
+    var rowYSum = {}, rowCount = {};
+    sorted.forEach(function(n) {
+        var y = parseInt(n.y)||0;
+        if (currentRowY === null || y - currentRowY > ROW_SNAP) {
+            rowId++;
+            currentRowY = y;
+        }
+        rowMap[n.id] = rowId;
+        rowYSum[rowId] = (rowYSum[rowId]||0) + y;
+        rowCount[rowId] = (rowCount[rowId]||0) + 1;
+    });
+    // 각 행의 평균 y로 스냅
+    var rowAvgY = {};
+    Object.keys(rowCount).forEach(function(rid) {
+        rowAvgY[rid] = Math.round(rowYSum[rid] / rowCount[rid]);
+    });
+    data.forEach(function(n) {
+        var rid = rowMap[n.id];
+        var newY = rowAvgY[rid];
+        if (String(newY) !== String(n.y)) { n.y = String(newY); shifted = true; }
+    });
+
+    // 2) x 겹침 해소: 같은 행 안에서 최소 간격 확보
+    var rows = {};
+    data.forEach(function(n) {
+        var rid = rowMap[n.id];
+        if (!rows[rid]) rows[rid] = [];
+        rows[rid].push(n);
+    });
+    Object.keys(rows).forEach(function(rid) {
+        var row = rows[rid];
         row.sort(function(a,b) { return (parseInt(a.x)||0) - (parseInt(b.x)||0); });
         for (var i = 1; i < row.length; i++) {
             var prev = row[i-1], cur = row[i];
