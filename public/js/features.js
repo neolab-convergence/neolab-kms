@@ -319,9 +319,9 @@ function _orgBuildTree(data) {
     return { roots: roots, map: map };
 }
 
-// 겹침 방지 + 행 정렬: 가까운 y값의 노드들을 같은 행으로 묶어 y 스냅 + x 최소간격 확보
+// 겹침 방지 + 행 정렬: 가까운 y값의 노드들을 같은 행으로 묶어 y 스냅 + x 실제 겹침만 해소
 function _orgResolveOverlap(data) {
-    var MIN_GAP = 15;
+    var MIN_GAP = 0; // 실제로 박스가 겹칠 때만 밀어냄 (저장된 좌표 보존)
     var ROW_SNAP = 40; // 40px 이내 y 차이는 같은 행으로 간주 (NODE_H=46보다 작게)
     var shifted = false;
 
@@ -571,7 +571,7 @@ async function loadOrgChart() {
         canvas.style.position = 'relative';
 
         // SVG 레이어 (연결선)
-        canvas.innerHTML = '<svg style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:0;"></svg>';
+        canvas.innerHTML = '<svg shape-rendering="crispEdges" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:0;"></svg>';
         var svg = canvas.querySelector('svg');
         _orgDrawLines(svg, data);
 
@@ -621,7 +621,7 @@ async function loadAdminOrgCanvas() {
     container.style.height = Math.max(size.h, 600) + 'px';
     container.style.position = 'relative';
 
-    container.innerHTML = '<svg style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:0;"></svg>';
+    container.innerHTML = '<svg shape-rendering="crispEdges" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:0;"></svg>';
     var svg = container.querySelector('svg');
     _orgDrawLines(svg, data);
     _orgRenderNodes(container, data, true);
