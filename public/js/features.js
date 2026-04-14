@@ -322,7 +322,7 @@ function _orgBuildTree(data) {
 // 겹침 방지 + 행 정렬: 가까운 y값의 노드들을 같은 행으로 묶어 y 스냅 + x 최소간격 확보
 function _orgResolveOverlap(data) {
     var MIN_GAP = 15;
-    var ROW_SNAP = 30; // 30px 이내 y 차이는 같은 행으로 간주
+    var ROW_SNAP = 40; // 40px 이내 y 차이는 같은 행으로 간주 (NODE_H=46보다 작게)
     var shifted = false;
 
     // 1) 행 스냅: y 값이 가까운 노드들을 같은 y로 정렬
@@ -466,7 +466,9 @@ function _orgDrawLines(svgEl, data) {
                 var cy = parseInt(c.y)||0;
                 if (cy < minChildTop) minChildTop = cy;
             });
-            var busY = Math.round((pyB + minChildTop) / 2);
+            // busY를 부모 하단에서 고정 오프셋(22px) + 자식보다 10px 위로 제한
+            var busY = Math.min(pyB + 22, minChildTop - 10);
+            if (busY < pyB + 6) busY = pyB + 6;
 
             html += '<path d="M'+px+','+pyB+' L'+px+','+busY+'" fill="none" stroke="'+stroke+'" stroke-width="1.5"/>';
 
