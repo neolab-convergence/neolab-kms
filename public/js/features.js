@@ -377,30 +377,29 @@ function _orgDrawLines(svgEl, data) {
         var sideChildren = [];
         allChildren.forEach(function(c) {
             var cy = parseInt(c.y)||0;
-            // 자식 상단이 부모 하단보다 위쪽이면 "옆" 배치로 판단 (부모와 수직 겹침)
-            if (cy + NODE_H/2 < pyB) {
+            var cyMid = cy + NODE_H/2;
+            // 자식 수직 중앙이 부모 수직 범위 안에 들어오면 "옆" 배치 (같은 행)
+            if (cyMid >= pyT && cyMid <= pyB) {
                 sideChildren.push(c);
             } else {
                 belowChildren.push(c);
             }
         });
 
-        // ─ 옆 배치 자식: 부모 측면 ↔ 자식 측면 직접 연결
+        // ─ 옆 배치 자식: 직각(ㄱ자) 엘보 연결
         sideChildren.forEach(function(c) {
             var cxL = parseInt(c.x)||0;
             var cyT = parseInt(c.y)||0;
             var cyMid = cyT + NODE_H/2;
-            // 자식이 부모 오른쪽인지 왼쪽인지 판단
             if (cxL >= pxL + NODE_W) {
-                // 오른쪽: 부모 우측 중앙 → 자식 좌측 중앙
                 var x1 = pxL + NODE_W, x2 = cxL;
-                html += '<path d="M'+x1+','+pyMid+' L'+x2+','+cyMid+'" fill="none" stroke="'+stroke+'" stroke-width="1.5"/>';
+                var midX = Math.round((x1 + x2) / 2);
+                html += '<path d="M'+x1+','+pyMid+' L'+midX+','+pyMid+' L'+midX+','+cyMid+' L'+x2+','+cyMid+'" fill="none" stroke="'+stroke+'" stroke-width="1.5"/>';
             } else if (cxL + NODE_W <= pxL) {
-                // 왼쪽: 부모 좌측 중앙 → 자식 우측 중앙
                 var x1 = pxL, x2 = cxL + NODE_W;
-                html += '<path d="M'+x1+','+pyMid+' L'+x2+','+cyMid+'" fill="none" stroke="'+stroke+'" stroke-width="1.5"/>';
+                var midX = Math.round((x1 + x2) / 2);
+                html += '<path d="M'+x1+','+pyMid+' L'+midX+','+pyMid+' L'+midX+','+cyMid+' L'+x2+','+cyMid+'" fill="none" stroke="'+stroke+'" stroke-width="1.5"/>';
             } else {
-                // 수평으로도 겹침 — 단순 직선
                 var cxC = cxL + NODE_W/2;
                 html += '<path d="M'+px+','+pyMid+' L'+cxC+','+cyMid+'" fill="none" stroke="'+stroke+'" stroke-width="1.5"/>';
             }
