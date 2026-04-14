@@ -63,12 +63,12 @@ app.use((req, res, next) => {
 app.use(require('./routes/access'));
 app.use(require('./routes/auth'));
 app.use(require('./routes/admin'));
+app.use(require('./routes/orgchart'));
 app.use(require('./routes/boards'));
 app.use(require('./routes/categories'));
 app.use(require('./routes/posts'));
 app.use(require('./routes/notices'));
 app.use(require('./routes/contacts'));
-app.use(require('./routes/orgchart'));
 app.use(require('./routes/settings'));
 app.use(require('./routes/files'));
 app.use(require('./routes/chat'));
