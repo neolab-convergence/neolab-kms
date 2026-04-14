@@ -150,7 +150,10 @@
       "Bash(powershell -Command \"\\(Get-Content public\\\\index.html -Raw\\) -replace 'v=55', 'v=56' | Set-Content public\\\\index.html -NoNewline\")",
       "Bash(ssh -p 22022 ubuntu@130.162.139.142 \"cd /opt/neolab-kms && git pull && pm2 restart kms\")",
       "Bash(curl -sSI https://kms.neolab.net)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(ssh -p 22022 -i ~/.ssh/oci_key ubuntu@130.162.139.142 \"cd /opt/neolab-kms && git pull && pm2 restart kms\")",
+      "Bash(ssh -p 22022 -i ~/.ssh/oci-deploy ubuntu@130.162.139.142 \"cd /opt/neolab-kms && git pull && pm2 restart kms\")",
+      "Bash(ssh -p 22022 -i ~/.ssh/deploy-key-infra-kms ubuntu@130.162.139.142 \"cd /opt/neolab-kms && git pull && pm2 restart kms\")"
     ]
   }
 }

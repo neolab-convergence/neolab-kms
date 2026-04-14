@@ -731,89 +731,28 @@
         .orgc-p-name { font-weight: 700; font-size: 13px; color: #0f172a; letter-spacing: -0.3px; }
         .orgc-p-title { font-size: 11px; color: #64748b; margin-top: 1px; letter-spacing: -0.3px; }
 
-        /* ═══ 조직도 CSS 트리 (사용자 모드) ═══ */
-        .orgc-tree, .orgc-tree ul { list-style: none; padding: 0; margin: 0; position: relative; }
-        .orgc-tree { display: inline-block; padding: 30px 20px 20px 20px; text-align: center; }
-        .orgc-tree ul { padding-top: 22px; display: flex; justify-content: center; }
-        /* 부모 노드에서 자식 버스까지 내려오는 수직선 (중첩 ul만) */
-        .orgc-tree li > ul::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 50%;
-            width: 0; height: 22px;
-            border-left: 2px solid #94a3b8;
-        }
-        .orgc-tree li {
-            text-align: center;
-            list-style-type: none;
-            position: relative;
-            padding: 22px 10px 0 10px;
-            vertical-align: top;
-        }
-        /* 자식 li 위쪽 수평선 + 수직 드롭 */
-        .orgc-tree li::before, .orgc-tree li::after {
-            content: '';
-            position: absolute;
-            top: 0; right: 50%;
-            border-top: 2px solid #94a3b8;
-            width: 50%;
-            height: 22px;
-        }
-        .orgc-tree li::after {
-            right: auto; left: 50%;
-            border-left: 2px solid #94a3b8;
-        }
-        /* 단일 자식(형제 없음): 좌우 수평선 없이 수직선만 */
-        .orgc-tree li:only-child::after, .orgc-tree li:only-child::before { display: none; }
-        .orgc-tree li:only-child { padding-top: 22px; }
-        .orgc-tree li:only-child::before {
-            display: block;
-            border: 0 none;
-            border-left: 2px solid #94a3b8;
-            left: 50%; right: auto;
-            width: 0; height: 22px;
-            top: 0;
-        }
-        /* 첫/마지막 자식의 수평선 모서리 처리 */
-        .orgc-tree li:first-child::before, .orgc-tree li:last-child::after { border: 0 none; }
-        .orgc-tree li:last-child::before {
-            border-right: 2px solid #94a3b8;
-            border-radius: 0 6px 0 0;
-            -webkit-border-radius: 0 6px 0 0;
-        }
-        .orgc-tree li:first-child::after {
-            border-radius: 6px 0 0 0;
-            -webkit-border-radius: 6px 0 0 0;
-        }
-        /* 루트(최상위 li)는 위쪽 연결선 없음 */
-        .orgc-tree > li { padding-top: 0; }
-        .orgc-tree > li::before, .orgc-tree > li::after { display: none; }
-
-        /* 트리 내부의 노드 박스는 절대 위치가 아니라 inline-block */
-        .orgc-tree .orgc-node {
-            position: relative;
-            display: inline-block;
-            min-width: 130px;
-            max-width: 180px;
-            padding: 8px 14px;
+        /* ═══ 조직도 자동 트리 (절대 위치 + SVG 연결선) ═══ */
+        .orgc-node {
+            box-sizing: border-box;
+            padding: 8px 12px;
             border-radius: 10px;
             box-shadow: 0 1px 3px rgba(15,23,42,0.08);
             font-size: 14px;
-            line-height: 1.4;
-            vertical-align: top;
+            line-height: 1.3;
+            text-align: center;
+            overflow: hidden;
+            z-index: 1;
         }
-        .orgc-tree .orgc-dept {
+        .orgc-dept {
             background: linear-gradient(135deg, #ff6720, #ff884d);
             color: white;
             border: 1.5px solid #e55c1c;
-            cursor: default;
         }
-        .orgc-tree .orgc-dept-name { font-weight: 700; font-size: 14px; letter-spacing: -0.3px; color: white; }
-        .orgc-tree .orgc-dept-title { font-weight: 500; font-size: 11px; color: rgba(255,255,255,0.9); margin-top: 2px; }
-        .orgc-tree .orgc-person {
+        .orgc-dept-name { font-weight: 700; font-size: 14px; letter-spacing: -0.3px; color: white; }
+        .orgc-dept-title { font-weight: 500; font-size: 11px; color: rgba(255,255,255,0.9); margin-top: 2px; }
+        .orgc-person {
             background: white;
             border: 1.5px solid #d1d5db;
-            cursor: default;
         }
-        .orgc-tree .orgc-p-name { font-weight: 700; font-size: 13px; color: #0f172a; letter-spacing: -0.3px; }
-        .orgc-tree .orgc-p-title { font-size: 11px; color: #64748b; margin-top: 2px; letter-spacing: -0.3px; }
+        .orgc-p-name { font-weight: 700; font-size: 13px; color: #0f172a; letter-spacing: -0.3px; }
+        .orgc-p-title { font-size: 11px; color: #64748b; margin-top: 2px; letter-spacing: -0.3px; }

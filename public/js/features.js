@@ -548,9 +548,16 @@ function _orgCalcCanvasSize(data) {
 }
 
 // ─── 메인 로드 함수 ───
-// ── 공용 CSS 트리 렌더러 (사용자/관리자 모드 동일 화면) ──
+// ── 공용 자동 트리 렌더러 (사용자/관리자 모드 동일 화면) ──
+// JS로 좌표 계산 → 절대 위치 노드 + SVG 버스 연결선
 function _orgRenderCssTree(container, data, editable) {
-    // 1) parent-child 트리 빌드
+    var NODE_W = 150;
+    var NODE_H = 60;
+    var GAP_X = 20;
+    var GAP_Y = 50;
+    var PAD = 30;
+
+    // 1) 트리 빌드 + 정렬
     var map = {};
     data.forEach(function(n) { map[n.id] = Object.assign({}, n, { children: [] }); });
     var roots = [];
@@ -565,46 +572,140 @@ function _orgRenderCssTree(container, data, editable) {
     roots.sort(function(a,b){ return (parseInt(a.order)||999) - (parseInt(b.order)||999); });
     roots.forEach(sortC);
 
-    // 2) 중첩 <ul><li> 로 렌더
-    function renderNode(node) {
-        var isDept = !node.title;
-        var cls = isDept ? 'orgc-dept' : 'orgc-person';
-        var colorStyle = '';
-        if (node.color) {
-            var textColor = _orgContrastText(node.color);
-            colorStyle = ' style="background:'+node.color+' !important; background-image:none !important; color:'+textColor+' !important; border-color:'+node.color+' !important;"';
-        }
-        var editAttrs = editable
-            ? ' data-id="'+node.id+'" onclick="showEditNodeDialog(\''+node.id+'\')" title="클릭하여 편집"'
-            : '';
-        var box = '<div class="orgc-node '+cls+'"' + colorStyle + editAttrs + '>';
-        if (isDept) {
-            box += '<div class="orgc-dept-name">'+escapeHtml(node.name)+'</div>';
-            if (node.title) box += '<div class="orgc-dept-title">'+escapeHtml(node.title)+'</div>';
-        } else {
-            box += '<div class="orgc-p-name">'+escapeHtml(node.name)+'</div>';
-            box += '<div class="orgc-p-title">'+escapeHtml(node.title)+'</div>';
-        }
-        box += '</div>';
-
-        var html = '<li>' + box;
-        if (node.children.length > 0) {
-            html += '<ul>';
-            node.children.forEach(function(c) { html += renderNode(c); });
-            html += '</ul>';
-        }
-        html += '</li>';
-        return html;
+    // 2) 서브트리 너비 계산 (leaf=NODE_W, 부모=max(NODE_W, 자식 합))
+    function computeWidth(node) {
+        if (node.children.length === 0) { node._w = NODE_W; return NODE_W; }
+        var sum = 0;
+        node.children.forEach(function(c, i) {
+            if (i > 0) sum += GAP_X;
+            sum += computeWidth(c);
+        });
+        node._w = Math.max(NODE_W, sum);
+        return node._w;
     }
 
-    var treeHtml = '<ul class="orgc-tree' + (editable ? ' orgc-tree-editable' : '') + '">';
-    roots.forEach(function(r) { treeHtml += renderNode(r); });
-    treeHtml += '</ul>';
+    // 3) x, y 좌표 할당 (부모는 자식 중심점의 중점 위에 배치)
+    function assignXY(node, leftX, topY) {
+        node._y = topY;
+        var childTopY = topY + NODE_H + GAP_Y;
+        if (node.children.length === 0) {
+            node._x = leftX + (node._w - NODE_W) / 2;
+            return;
+        }
+        // 자식 배치
+        var cx = leftX;
+        var totalChildW = 0;
+        node.children.forEach(function(c, i) {
+            if (i > 0) totalChildW += GAP_X;
+            totalChildW += c._w;
+        });
+        var startX = leftX + (node._w - totalChildW) / 2;
+        cx = startX;
+        node.children.forEach(function(c, i) {
+            if (i > 0) cx += GAP_X;
+            assignXY(c, cx, childTopY);
+            cx += c._w;
+        });
+        // 부모 노드는 첫 자식 중심과 마지막 자식 중심의 중점 위에
+        var firstC = node.children[0];
+        var lastC = node.children[node.children.length - 1];
+        var firstCx = firstC._x + NODE_W / 2;
+        var lastCx  = lastC._x  + NODE_W / 2;
+        var midX = (firstCx + lastCx) / 2;
+        node._x = midX - NODE_W / 2;
+    }
 
-    container.style.width = '';
-    container.style.height = '';
-    container.style.position = '';
-    container.innerHTML = treeHtml;
+    // 멀티 루트 지원: 가상 루트처럼 나란히 배치
+    var rootOffsetX = PAD;
+    var rootTopY = PAD;
+    roots.forEach(function(r) {
+        computeWidth(r);
+        assignXY(r, rootOffsetX, rootTopY);
+        rootOffsetX += r._w + GAP_X * 2;
+    });
+
+    // 4) 평탄화
+    var all = [];
+    function walk(n) { all.push(n); n.children.forEach(walk); }
+    roots.forEach(walk);
+
+    // 5) 캔버스 크기
+    var maxX = 0, maxY = 0;
+    all.forEach(function(n) {
+        if (n._x + NODE_W > maxX) maxX = n._x + NODE_W;
+        if (n._y + NODE_H > maxY) maxY = n._y + NODE_H;
+    });
+    var totalW = maxX + PAD;
+    var totalH = maxY + PAD;
+
+    // 6) SVG 연결선 (직교 버스)
+    var lines = '';
+    function line(x1, y1, x2, y2) {
+        // 정수 좌표로 스냅 → 픽셀 경계 aliasing 방지
+        x1 = Math.round(x1) + 0.5; y1 = Math.round(y1) + 0.5;
+        x2 = Math.round(x2) + 0.5; y2 = Math.round(y2) + 0.5;
+        lines += '<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" stroke="#94a3b8" stroke-width="2"/>';
+    }
+    all.forEach(function(p) {
+        if (p.children.length === 0) return;
+        var pcx = p._x + NODE_W / 2;
+        var pby = p._y + NODE_H;
+        var busY = pby + GAP_Y / 2;
+        // 부모 하단 → 버스
+        line(pcx, pby, pcx, busY);
+        if (p.children.length === 1) {
+            // 단일 자식: 부모→버스→자식 (모두 같은 x)
+            var c = p.children[0];
+            var ccx = c._x + NODE_W / 2;
+            line(pcx, busY, ccx, busY);
+            line(ccx, busY, ccx, c._y);
+        } else {
+            // 다중 자식: 가로 버스 + 각 자식 드롭
+            var firstCx = p.children[0]._x + NODE_W / 2;
+            var lastCx  = p.children[p.children.length - 1]._x + NODE_W / 2;
+            line(firstCx, busY, lastCx, busY);
+            p.children.forEach(function(c) {
+                var ccx = c._x + NODE_W / 2;
+                line(ccx, busY, ccx, c._y);
+            });
+        }
+    });
+
+    // 7) 노드 HTML
+    var nodesHtml = '';
+    all.forEach(function(n) {
+        var isDept = !n.title;
+        var cls = isDept ? 'orgc-dept' : 'orgc-person';
+        var style = 'position:absolute; left:'+n._x+'px; top:'+n._y+'px; width:'+NODE_W+'px; height:'+NODE_H+'px;';
+        if (n.color) {
+            var textColor = _orgContrastText(n.color);
+            style += 'background:'+n.color+' !important; background-image:none !important; color:'+textColor+' !important; border-color:'+n.color+' !important;';
+        }
+        var editAttrs = editable
+            ? ' onclick="showEditNodeDialog(\''+n.id+'\')" title="클릭하여 편집"'
+            : '';
+        var box = '<div class="orgc-node '+cls+'" data-id="'+n.id+'" style="'+style+(editable?'cursor:pointer;':'')+'"' + editAttrs + '>';
+        if (isDept) {
+            box += '<div class="orgc-dept-name">'+escapeHtml(n.name)+'</div>';
+            if (n.title) box += '<div class="orgc-dept-title">'+escapeHtml(n.title)+'</div>';
+        } else {
+            box += '<div class="orgc-p-name">'+escapeHtml(n.name)+'</div>';
+            box += '<div class="orgc-p-title">'+escapeHtml(n.title)+'</div>';
+        }
+        box += '</div>';
+        nodesHtml += box;
+    });
+
+    container.style.position = 'relative';
+    container.style.width = totalW + 'px';
+    container.style.height = totalH + 'px';
+    container.style.minWidth = '0';
+    container.style.minHeight = '0';
+    container.innerHTML =
+        '<svg width="'+totalW+'" height="'+totalH+'" style="position:absolute; top:0; left:0; pointer-events:none;" shape-rendering="crispEdges">' +
+        lines +
+        '</svg>' +
+        nodesHtml;
 }
 
 async function loadOrgChart() {
