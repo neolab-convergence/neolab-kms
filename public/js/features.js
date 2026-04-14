@@ -351,19 +351,55 @@ function _orgAutoLayout(data) {
     return result;
 }
 
-// SVG 연결선 그리기
+// SVG 연결선 그리기 (버스 스타일: 부모→수평 트렁크→자식들)
 function _orgDrawLines(svgEl, data) {
     var html = '';
+    var stroke = '#64748b';
+    // 부모 id 기준으로 자식들 그룹핑
+    var groups = {};
     data.forEach(function(node) {
         if (!node.parentId) return;
-        var parent = data.find(function(p){ return p.id === node.parentId; });
+        if (!groups[node.parentId]) groups[node.parentId] = [];
+        groups[node.parentId].push(node);
+    });
+    Object.keys(groups).forEach(function(pid) {
+        var parent = data.find(function(p){ return p.id === pid; });
         if (!parent) return;
-        var px = parseInt(parent.x)||0, py = parseInt(parent.y)||0;
-        var cx = parseInt(node.x)||0, cy = parseInt(node.y)||0;
-        var x1 = px + NODE_W/2, y1 = py + NODE_H;
-        var x2 = cx + NODE_W/2, y2 = cy;
-        var midY = Math.round((y1 + y2) / 2);
-        html += '<path d="M'+x1+','+y1+' L'+x1+','+midY+' L'+x2+','+midY+' L'+x2+','+y2+'" fill="none" stroke="#94a3b8" stroke-width="1.5"/>';
+        var children = groups[pid];
+        var px = (parseInt(parent.x)||0) + NODE_W/2;
+        var py = (parseInt(parent.y)||0) + NODE_H;
+
+        // 자식 최소 top 기준으로 버스 Y 위치 결정
+        var minChildTop = Infinity;
+        children.forEach(function(c) {
+            var cy = parseInt(c.y)||0;
+            if (cy < minChildTop) minChildTop = cy;
+        });
+        var busY = Math.round((py + minChildTop) / 2);
+
+        // 1) 부모 수직선
+        html += '<path d="M'+px+','+py+' L'+px+','+busY+'" fill="none" stroke="'+stroke+'" stroke-width="1.5"/>';
+
+        // 2) 수평 트렁크 (자식이 여러개면)
+        if (children.length > 1) {
+            var xs = children.map(function(c){ return (parseInt(c.x)||0) + NODE_W/2; });
+            xs.push(px);
+            var minX = Math.min.apply(null, xs);
+            var maxX = Math.max.apply(null, xs);
+            html += '<path d="M'+minX+','+busY+' L'+maxX+','+busY+'" fill="none" stroke="'+stroke+'" stroke-width="1.5"/>';
+        }
+
+        // 3) 각 자식 수직선
+        children.forEach(function(c) {
+            var cx = (parseInt(c.x)||0) + NODE_W/2;
+            var cy = parseInt(c.y)||0;
+            if (children.length === 1) {
+                // 단일 자식: 부모 x에서 자식 x로 꺾은 후 내려감
+                html += '<path d="M'+px+','+busY+' L'+cx+','+busY+' L'+cx+','+cy+'" fill="none" stroke="'+stroke+'" stroke-width="1.5"/>';
+            } else {
+                html += '<path d="M'+cx+','+busY+' L'+cx+','+cy+'" fill="none" stroke="'+stroke+'" stroke-width="1.5"/>';
+            }
+        });
     });
     svgEl.innerHTML = html;
 }

@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { writeLog } = require('../lib/logger');
 const { requireAuth, requireAdmin } = require('../lib/auth');
-const { getCached, getSheetData, appendRow, updateRow, deleteRow, invalidateCache, getSheetsClient, getSheetId, SHEET_HEADERS } = require('../lib/sheets');
+const { getCached, getSheetData, appendRow, updateRow, deleteRow, invalidateCache, ensureHeaders, getSheetsClient, getSheetId, SHEET_HEADERS } = require('../lib/sheets');
 
 router.get('/api/orgchart', requireAuth, async (req, res) => {
     try {
@@ -55,15 +55,15 @@ router.put('/api/orgchart/save-positions', requireAdmin, async (req, res) => {
     try {
         const { updates } = req.body;
         if (!Array.isArray(updates)) return res.status(400).json({ error: '잘못된 요청입니다.' });
+        await ensureHeaders('orgchart');
         const data = await getSheetData('orgchart');
         const promises = [];
         for (const upd of updates) {
             const row = data.find(r => r.id === upd.id);
             if (row) {
-                let changed = false;
-                if (upd.x !== undefined && row.x !== String(upd.x)) { row.x = String(upd.x); changed = true; }
-                if (upd.y !== undefined && row.y !== String(upd.y)) { row.y = String(upd.y); changed = true; }
-                if (changed) promises.push(updateRow('orgchart', row._rowIndex, row));
+                if (upd.x !== undefined) row.x = String(upd.x);
+                if (upd.y !== undefined) row.y = String(upd.y);
+                promises.push(updateRow('orgchart', row._rowIndex, row));
             }
         }
         if (promises.length > 0) await Promise.all(promises);
