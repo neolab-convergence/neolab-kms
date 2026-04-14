@@ -365,41 +365,76 @@ function _orgDrawLines(svgEl, data) {
     Object.keys(groups).forEach(function(pid) {
         var parent = data.find(function(p){ return p.id === pid; });
         if (!parent) return;
-        var children = groups[pid];
-        var px = (parseInt(parent.x)||0) + NODE_W/2;
-        var py = (parseInt(parent.y)||0) + NODE_H;
+        var allChildren = groups[pid];
+        var pxL = parseInt(parent.x)||0;
+        var pyT = parseInt(parent.y)||0;
+        var px = pxL + NODE_W/2;
+        var pyB = pyT + NODE_H;
+        var pyMid = pyT + NODE_H/2;
 
-        // 자식 최소 top 기준으로 버스 Y 위치 결정
-        var minChildTop = Infinity;
-        children.forEach(function(c) {
+        // 자식 분류: 부모 아래쪽에 있는 자식(below) vs 옆에 나란히 있는 자식(side, 보좌/자문 형태)
+        var belowChildren = [];
+        var sideChildren = [];
+        allChildren.forEach(function(c) {
             var cy = parseInt(c.y)||0;
-            if (cy < minChildTop) minChildTop = cy;
-        });
-        var busY = Math.round((py + minChildTop) / 2);
-
-        // 1) 부모 수직선
-        html += '<path d="M'+px+','+py+' L'+px+','+busY+'" fill="none" stroke="'+stroke+'" stroke-width="1.5"/>';
-
-        // 2) 수평 트렁크 (자식이 여러개면)
-        if (children.length > 1) {
-            var xs = children.map(function(c){ return (parseInt(c.x)||0) + NODE_W/2; });
-            xs.push(px);
-            var minX = Math.min.apply(null, xs);
-            var maxX = Math.max.apply(null, xs);
-            html += '<path d="M'+minX+','+busY+' L'+maxX+','+busY+'" fill="none" stroke="'+stroke+'" stroke-width="1.5"/>';
-        }
-
-        // 3) 각 자식 수직선
-        children.forEach(function(c) {
-            var cx = (parseInt(c.x)||0) + NODE_W/2;
-            var cy = parseInt(c.y)||0;
-            if (children.length === 1) {
-                // 단일 자식: 부모 x에서 자식 x로 꺾은 후 내려감
-                html += '<path d="M'+px+','+busY+' L'+cx+','+busY+' L'+cx+','+cy+'" fill="none" stroke="'+stroke+'" stroke-width="1.5"/>';
+            // 자식 상단이 부모 하단보다 위쪽이면 "옆" 배치로 판단 (부모와 수직 겹침)
+            if (cy + NODE_H/2 < pyB) {
+                sideChildren.push(c);
             } else {
-                html += '<path d="M'+cx+','+busY+' L'+cx+','+cy+'" fill="none" stroke="'+stroke+'" stroke-width="1.5"/>';
+                belowChildren.push(c);
             }
         });
+
+        // ─ 옆 배치 자식: 부모 측면 ↔ 자식 측면 직접 연결
+        sideChildren.forEach(function(c) {
+            var cxL = parseInt(c.x)||0;
+            var cyT = parseInt(c.y)||0;
+            var cyMid = cyT + NODE_H/2;
+            // 자식이 부모 오른쪽인지 왼쪽인지 판단
+            if (cxL >= pxL + NODE_W) {
+                // 오른쪽: 부모 우측 중앙 → 자식 좌측 중앙
+                var x1 = pxL + NODE_W, x2 = cxL;
+                html += '<path d="M'+x1+','+pyMid+' L'+x2+','+cyMid+'" fill="none" stroke="'+stroke+'" stroke-width="1.5"/>';
+            } else if (cxL + NODE_W <= pxL) {
+                // 왼쪽: 부모 좌측 중앙 → 자식 우측 중앙
+                var x1 = pxL, x2 = cxL + NODE_W;
+                html += '<path d="M'+x1+','+pyMid+' L'+x2+','+cyMid+'" fill="none" stroke="'+stroke+'" stroke-width="1.5"/>';
+            } else {
+                // 수평으로도 겹침 — 단순 직선
+                var cxC = cxL + NODE_W/2;
+                html += '<path d="M'+px+','+pyMid+' L'+cxC+','+cyMid+'" fill="none" stroke="'+stroke+'" stroke-width="1.5"/>';
+            }
+        });
+
+        // ─ 아래 배치 자식: 기존 버스 스타일
+        if (belowChildren.length > 0) {
+            var minChildTop = Infinity;
+            belowChildren.forEach(function(c) {
+                var cy = parseInt(c.y)||0;
+                if (cy < minChildTop) minChildTop = cy;
+            });
+            var busY = Math.round((pyB + minChildTop) / 2);
+
+            html += '<path d="M'+px+','+pyB+' L'+px+','+busY+'" fill="none" stroke="'+stroke+'" stroke-width="1.5"/>';
+
+            if (belowChildren.length > 1) {
+                var xs = belowChildren.map(function(c){ return (parseInt(c.x)||0) + NODE_W/2; });
+                xs.push(px);
+                var minX = Math.min.apply(null, xs);
+                var maxX = Math.max.apply(null, xs);
+                html += '<path d="M'+minX+','+busY+' L'+maxX+','+busY+'" fill="none" stroke="'+stroke+'" stroke-width="1.5"/>';
+            }
+
+            belowChildren.forEach(function(c) {
+                var cx = (parseInt(c.x)||0) + NODE_W/2;
+                var cy = parseInt(c.y)||0;
+                if (belowChildren.length === 1) {
+                    html += '<path d="M'+px+','+busY+' L'+cx+','+busY+' L'+cx+','+cy+'" fill="none" stroke="'+stroke+'" stroke-width="1.5"/>';
+                } else {
+                    html += '<path d="M'+cx+','+busY+' L'+cx+','+cy+'" fill="none" stroke="'+stroke+'" stroke-width="1.5"/>';
+                }
+            });
+        }
     });
     svgEl.innerHTML = html;
 }
