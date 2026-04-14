@@ -559,24 +559,60 @@ async function loadOrgChart() {
             return;
         }
 
-        // 좌표가 없으면 자동 레이아웃, 있으면 저장된 위치 사용 (관리자 모드와 동일한 모습)
-        var hasCoords = data.some(function(n){ return n.x && n.y; });
-        if (!hasCoords) data = _orgAutoLayout(data);
-        _orgResolveOverlap(data);
-        _orgNodes = data;
+        // ── CSS 기반 트리 렌더링 (좌표 계산 없음) ──
+        // 1) parent-child 트리 빌드
+        var map = {};
+        data.forEach(function(n) { map[n.id] = Object.assign({}, n, { children: [] }); });
+        var roots = [];
+        data.forEach(function(n) {
+            if (n.parentId && map[n.parentId]) map[n.parentId].children.push(map[n.id]);
+            else roots.push(map[n.id]);
+        });
+        function sortC(node) {
+            node.children.sort(function(a,b){ return (parseInt(a.order)||999) - (parseInt(b.order)||999); });
+            node.children.forEach(sortC);
+        }
+        roots.sort(function(a,b){ return (parseInt(a.order)||999) - (parseInt(b.order)||999); });
+        roots.forEach(sortC);
 
-        var size = _orgCalcCanvasSize(data);
-        canvas.style.width = size.w + 'px';
-        canvas.style.height = size.h + 'px';
-        canvas.style.position = 'relative';
+        // 2) 중첩 <ul><li> 로 렌더
+        function renderNode(node) {
+            var isDept = !node.title;
+            var cls = isDept ? 'orgc-dept' : 'orgc-person';
+            var colorStyle = '';
+            if (node.color) {
+                var textColor = _orgContrastText(node.color);
+                colorStyle = ' style="background:'+node.color+' !important; background-image:none !important; color:'+textColor+' !important; border-color:'+node.color+' !important;"';
+            }
+            var box = '<div class="orgc-node '+cls+'"' + colorStyle + '>';
+            if (isDept) {
+                box += '<div class="orgc-dept-name">'+escapeHtml(node.name)+'</div>';
+                if (node.title) box += '<div class="orgc-dept-title">'+escapeHtml(node.title)+'</div>';
+            } else {
+                box += '<div class="orgc-p-name">'+escapeHtml(node.name)+'</div>';
+                box += '<div class="orgc-p-title">'+escapeHtml(node.title)+'</div>';
+            }
+            box += '</div>';
 
-        // SVG 레이어 (연결선)
-        canvas.innerHTML = '<svg shape-rendering="crispEdges" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:0;"></svg>';
-        var svg = canvas.querySelector('svg');
-        _orgDrawLines(svg, data);
+            var html = '<li>' + box;
+            if (node.children.length > 0) {
+                html += '<ul>';
+                node.children.forEach(function(c) { html += renderNode(c); });
+                html += '</ul>';
+            }
+            html += '</li>';
+            return html;
+        }
 
-        // 노드 레이어
-        _orgRenderNodes(canvas, data, false);
+        var treeHtml = '<ul class="orgc-tree">';
+        roots.forEach(function(r) { treeHtml += renderNode(r); });
+        treeHtml += '</ul>';
+
+        // 기존 SVG 방식의 인라인 width/height 제거
+        canvas.style.width = '';
+        canvas.style.height = '';
+        canvas.style.position = '';
+        canvas.innerHTML = treeHtml;
     } catch(e) { console.error('조직도 로드 오류:', e); }
 }
 
