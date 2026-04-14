@@ -153,7 +153,15 @@
       "Bash(git checkout:*)",
       "Bash(ssh -p 22022 -i ~/.ssh/oci_key ubuntu@130.162.139.142 \"cd /opt/neolab-kms && git pull && pm2 restart kms\")",
       "Bash(ssh -p 22022 -i ~/.ssh/oci-deploy ubuntu@130.162.139.142 \"cd /opt/neolab-kms && git pull && pm2 restart kms\")",
-      "Bash(ssh -p 22022 -i ~/.ssh/deploy-key-infra-kms ubuntu@130.162.139.142 \"cd /opt/neolab-kms && git pull && pm2 restart kms\")"
+      "Bash(ssh -p 22022 -i ~/.ssh/deploy-key-infra-kms ubuntu@130.162.139.142 \"cd /opt/neolab-kms && git pull && pm2 restart kms\")",
+      "Bash(ssh -p 22022 -i ~/.ssh/deploy-key-infra-kms ubuntu@130.162.139.142 \"cd /opt/neolab-kms && pm2 logs kms --lines 80 --nostream\")",
+      "Bash(ssh -p 22022 -i ~/.ssh/deploy-key-infra-kms ubuntu@130.162.139.142 \"tail -120 /home/ubuntu/.pm2/logs/kms-error.log\")",
+      "Bash(ssh -p 22022 -i ~/.ssh/deploy-key-infra-kms ubuntu@130.162.139.142 \"tail -200 /home/ubuntu/.pm2/logs/kms-out.log | grep -E 'ERROR|posts' | tail -40\")",
+      "Bash(ssh -p 22022 -i ~/.ssh/deploy-key-infra-kms ubuntu@130.162.139.142 \"tail -500 /home/ubuntu/.pm2/logs/kms-out.log | grep -iE 'error|fail|put /api/posts' | tail -60\")",
+      "Bash(ssh -p 22022 -i ~/.ssh/deploy-key-infra-kms ubuntu@130.162.139.142 \"tail -300 /home/ubuntu/.pm2/logs/kms-error.log\")",
+      "Bash(ssh -p 22022 -i ~/.ssh/deploy-key-infra-kms ubuntu@130.162.139.142 \"pm2 logs kms --lines 30 --nostream --err\")",
+      "Bash(ssh -p 22022 -i '~/.ssh/deploy-key-infra-kms' ubuntu@130.162.139.142 'cd /opt/neolab-kms && node -e \":*)",
+      "Bash(ssh -p:*)"
     ]
   }
 }

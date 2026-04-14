@@ -1679,6 +1679,7 @@ if (addPostBtnEl) addPostBtnEl.addEventListener('click', async function() {
         }
     }
 
+    // 1) 실제 저장 — 이 블록 실패만 "저장 실패"로 표시
     try {
         if (editPostId) {
             await api.put('/api/posts/' + editPostId, postData);
@@ -1687,7 +1688,14 @@ if (addPostBtnEl) addPostBtnEl.addEventListener('click', async function() {
         } else {
             await api.post('/api/posts', postData);
         }
-        alert('게시물이 저장되었습니다!');
+    } catch(err) {
+        console.error('[게시물 저장 실패]', err);
+        alert('저장 실패: ' + (err && err.message ? err.message : err));
+        return;
+    }
+    // 2) 폼 리셋 + 화면 갱신 — 여기서 난 오류는 저장과 무관, 콘솔에만 기록
+    alert('게시물이 저장되었습니다!');
+    try {
         document.getElementById('postTitle').value = ''; document.getElementById('postContent').value = ''; document.getElementById('postUrl').value = '';
         document.getElementById('postFileName').value = ''; document.getElementById('postPdfFileName').textContent = '';
         var _pii = document.getElementById('postIconImage'); if (_pii) _pii.value = '';
@@ -1695,8 +1703,12 @@ if (addPostBtnEl) addPostBtnEl.addEventListener('click', async function() {
         var postImgEl = document.getElementById('postImages'); if (postImgEl) postImgEl.value = '';
         var postImgPrev = document.getElementById('postImagesPreview'); if (postImgPrev) postImgPrev.innerHTML = '';
         var postImgStat = document.getElementById('postImagesStatus'); if (postImgStat) postImgStat.textContent = '';
-        invalidateAll(); await loadAdminPosts(); await updateDashboardStats(); await loadDashboardWidgets();
-    } catch(err) { alert('저장 실패: ' + err.message); }
+        if (typeof orderedImageFiles !== 'undefined') orderedImageFiles['postImages'] = [];
+        invalidateAll();
+        await loadAdminPosts();
+        if (typeof updateDashboardStats === 'function') await updateDashboardStats();
+        if (typeof loadDashboardWidgets === 'function') await loadDashboardWidgets();
+    } catch(e) { console.warn('저장 후 화면 갱신 경고:', e); }
 });
 
 // editPost는 openWriteModal로 통합 (라인 162에서 정의됨)

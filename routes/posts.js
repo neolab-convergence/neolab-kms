@@ -132,15 +132,19 @@ router.put('/api/posts/:id', requireAdmin, async (req, res) => {
         const data = await getSheetData('posts');
         const row = data.find(p => p.id === req.params.id);
         if (!row) return res.status(404).json({ error: '게시물을 찾을 수 없습니다.' });
-        const updated = { ...row, ...req.body, date: new Date().toISOString().split('T')[0] };
-        const newFiles = [req.body.thumbnail, req.body.detailImage, req.body.fileName].join('|');
-        const oldFiles = [row.thumbnail, row.detailImage, row.fileName].join('|');
+        // _rowIndex는 업데이트 대상에서 제외 (시트에 쓰이면 안 됨)
+        const { _rowIndex, ...rowClean } = row;
+        const updated = { ...rowClean, ...req.body, date: new Date().toISOString().split('T')[0] };
+        const newFiles = [req.body.thumbnail || '', req.body.detailImage || '', req.body.fileName || ''].join('|');
+        const oldFiles = [row.thumbnail || '', row.detailImage || '', row.fileName || ''].join('|');
         filesChanged = newFiles !== oldFiles;
         bgData = { id: req.params.id, title: updated.title, thumbnail: updated.thumbnail, detailImage: updated.detailImage, fileName: updated.fileName };
         await updateRow('posts', row._rowIndex, updated);
         invalidateCache('posts');
+        writeLog('ADMIN', `게시물 수정: ${updated.title}`, `id=${req.params.id} by=${req.user.email}`);
         res.json({ success: true });
     } catch (err) {
+        writeLog('ERROR', `게시물 수정 실패: id=${req.params.id}`, err.message + ' | ' + (err.stack||'').split('\n')[1]);
         return res.status(500).json({ error: err.message });
     }
 
