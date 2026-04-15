@@ -476,8 +476,14 @@ function _orgDrawLines(svgEl, data) {
             // 1) 부모 하단 → 버스 (수직)
             html += '<path d="M'+px+','+pyB+' L'+px+','+busY+'" fill="none" stroke="'+stroke+'" stroke-width="1.5"/>';
 
+            // 자식 cx 계산 — 부모 cx와 6px 이내로 가까우면 부모 cx로 스냅(직선 드롭)
+            var childXs = belowChildren.map(function(c){
+                var cxRaw = (parseInt(c.x)||0) + NODE_W/2;
+                return Math.abs(cxRaw - px) <= 6 ? px : cxRaw;
+            });
+
             // 2) 가로 버스: 부모 cx와 모든 자식 cx를 포함하는 구간
-            var xs = belowChildren.map(function(c){ return (parseInt(c.x)||0) + NODE_W/2; });
+            var xs = childXs.slice();
             xs.push(px);
             var minX = Math.min.apply(null, xs);
             var maxX = Math.max.apply(null, xs);
@@ -486,8 +492,8 @@ function _orgDrawLines(svgEl, data) {
             }
 
             // 3) 각 자식: 버스 → 자식 상단 (수직 드롭)
-            belowChildren.forEach(function(c) {
-                var cx = (parseInt(c.x)||0) + NODE_W/2;
+            belowChildren.forEach(function(c, i) {
+                var cx = childXs[i];
                 var cy = parseInt(c.y)||0;
                 if (cy > busY) {
                     html += '<path d="M'+cx+','+busY+' L'+cx+','+cy+'" fill="none" stroke="'+stroke+'" stroke-width="1.5"/>';
