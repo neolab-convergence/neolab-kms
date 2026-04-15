@@ -33,12 +33,29 @@ router.post('/api/categories', requireAdmin, async (req, res) => {
 router.put('/api/categories/:boardId/:catId', requireAdmin, async (req, res) => {
     try {
         const data = await getSheetData('categories');
-        const row = data.find(r => r.boardId === req.params.boardId && r.id === req.params.catId);
-        if (!row) return res.status(404).json({ error: '카테고리를 찾을 수 없습니다.' });
-        const updated = { ...row, ...req.body };
-        await updateRow('categories', row._rowIndex, updated);
+        const { _rowIndex, ...rowClean } = data.find(r => r.boardId === req.params.boardId && r.id === req.params.catId) || {};
+        if (!rowClean.id) return res.status(404).json({ error: '카테고리를 찾을 수 없습니다.' });
+        const oldBoardId = req.params.boardId;
+        const updated = { ...rowClean, ...req.body };
+        const newBoardId = updated.boardId || oldBoardId;
+        const target = data.find(r => r.boardId === req.params.boardId && r.id === req.params.catId);
+        await updateRow('categories', target._rowIndex, updated);
+
+        // 소속 메뉴가 바뀌면 해당 카테고리 소속 게시물의 boardId도 함께 갱신
+        let movedPosts = 0;
+        if (newBoardId !== oldBoardId) {
+            const posts = await getSheetData('posts');
+            for (const p of posts) {
+                if (p.categoryId === req.params.catId && p.boardId === oldBoardId) {
+                    const { _rowIndex: pIdx, ...pClean } = p;
+                    await updateRow('posts', pIdx, { ...pClean, boardId: newBoardId });
+                    movedPosts++;
+                }
+            }
+            invalidateCache('posts');
+        }
         invalidateCache('categories');
-        res.json({ success: true });
+        res.json({ success: true, movedPosts });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 

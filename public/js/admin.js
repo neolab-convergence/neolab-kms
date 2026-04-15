@@ -1286,6 +1286,8 @@ window.showEditBoardDialog = function(boardId, currentName, currentViewType) {
     document.getElementById('editMenuModalTitle').textContent = '메뉴 수정';
     document.getElementById('editMenuName').value = currentName;
     selectEditMenuView(currentViewType || 'list');
+    var grp = document.getElementById('editMenuBoardGroup');
+    if (grp) grp.style.display = 'none';
     document.getElementById('editMenuModal').classList.add('show');
     document.getElementById('editMenuName').focus();
 };
@@ -1333,11 +1335,23 @@ window.showAddCatDialog = function(boardId) {
 };
 
 // 카테고리 수정 다이얼로그
-window.showEditCatDialog = function(boardId, catId, currentName, currentViewType) {
+window.showEditCatDialog = async function(boardId, catId, currentName, currentViewType) {
     editMenuState = { type: 'category', boardId: boardId, catId: catId, viewType: currentViewType || 'list' };
     document.getElementById('editMenuModalTitle').textContent = '카테고리 수정';
     document.getElementById('editMenuName').value = currentName;
     selectEditMenuView(currentViewType || 'list');
+    // 소속 메뉴 드롭다운 (카테고리 수정에만 표시)
+    var grp = document.getElementById('editMenuBoardGroup');
+    var sel = document.getElementById('editMenuBoardSel');
+    if (grp && sel) {
+        grp.style.display = 'block';
+        try {
+            var boards = sortByOrder(await api.get('/api/boards'));
+            sel.innerHTML = boards.map(function(b) {
+                return '<option value="'+b.id+'"'+(b.id===boardId?' selected':'')+'>'+escapeHtml(b.name)+' (ID: '+b.id+')</option>';
+            }).join('');
+        } catch(e) { console.error('메뉴 목록 로드 실패:', e); }
+    }
     document.getElementById('editMenuModal').classList.add('show');
     document.getElementById('editMenuName').focus();
 };
@@ -1349,7 +1363,18 @@ window.submitEditMenu = async function() {
         if (editMenuState.type === 'board') {
             await api.put('/api/boards/' + editMenuState.boardId, { name: name, viewType: editMenuState.viewType });
         } else if (editMenuState.type === 'category') {
-            await api.put('/api/categories/' + editMenuState.boardId + '/' + editMenuState.catId, { name: name, viewType: editMenuState.viewType });
+            var newBoardId = editMenuState.boardId;
+            var sel = document.getElementById('editMenuBoardSel');
+            if (sel && sel.value) newBoardId = sel.value;
+            var moved = newBoardId !== editMenuState.boardId;
+            if (moved) {
+                if (!confirm('소속 메뉴를 변경하시겠습니까?\n이 카테고리에 속한 모든 게시물도 함께 이동됩니다.')) return;
+            }
+            await api.put('/api/categories/' + editMenuState.boardId + '/' + editMenuState.catId, {
+                name: name,
+                viewType: editMenuState.viewType,
+                boardId: newBoardId
+            });
         }
         invalidateAll();
         await renderMenuTree();
