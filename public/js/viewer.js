@@ -204,7 +204,13 @@ async function renderGalleryView(boardId, categoryId) {
             thumbHtml = '<div class="gallery-thumb" style="background:' + bg + ';">' + icon + '</div>';
         }
 
-        html += '<div class="gallery-card" onclick="openGalleryPreview(\'' + post.id + '\')">' +
+        // 인프라 카테고리는 썸네일 클릭 시 URL로 바로 이동 (새 탭)
+        var isInfra = catName === '인프라' && post.url;
+        var clickHandler = isInfra
+            ? 'window.open(\'' + (post.url || '').replace(/'/g, "\\'") + '\', \'_blank\', \'noopener\')'
+            : 'openGalleryPreview(\'' + post.id + '\')';
+
+        html += '<div class="gallery-card" onclick="' + clickHandler + '">' +
             thumbHtml +
             '<div class="gallery-info">' +
             '<div class="gallery-title" title="' + post.title + '">' + post.title + '</div>' +
