@@ -5,7 +5,7 @@ const { requireAuth, isAdminEmail } = require('../lib/auth');
 const { getCached } = require('../lib/sheets');
 
 // 기본 모델: env로 덮어쓰기 가능. OpenRouter 무료 모델 중 컨텍스트 넓고 안정적인 것 선택.
-const DEFAULT_MODEL = process.env.OPENROUTER_MODEL || 'google/gemini-2.0-flash-exp:free';
+const DEFAULT_MODEL = process.env.OPENROUTER_MODEL || 'google/gemini-3-flash-preview';
 
 // ─── 사용자별 Rate Limit (10초 5회) ───
 const rateMap = new Map();
