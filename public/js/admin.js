@@ -176,6 +176,12 @@ window.openWriteModal = async function(postId) {
     if (currentFilter && currentFilter.value !== 'all') boardSelect.value = currentFilter.value;
     updateWriteCategories();
 
+    // 드롭존/진행바 초기화
+    var droppedInfo = document.getElementById('writeDroppedInfo');
+    if (droppedInfo) { droppedInfo.style.display = 'none'; droppedInfo.innerHTML = ''; }
+    var progressEl = document.getElementById('writeProgress');
+    if (progressEl) progressEl.style.display = 'none';
+
     if (postId) {
         title.textContent = '게시물 수정';
         const post = await api.get('/api/posts/' + postId);
@@ -206,6 +212,11 @@ window.openWriteModal = async function(postId) {
                 return '<div style="position:relative; display:inline-block;"><img src="/api/files/' + f + '" style="max-height:80px; border-radius:6px; border:1px solid var(--border-color);"></div>';
             }).join('') + (existingDetails.length ? '<div style="font-size:12px; color:var(--text-light); margin-top:4px;">기존 제품설명 이미지 ' + existingDetails.length + '장 (새로 선택하면 교체됩니다)</div>' : '');
         }
+        // 수정 시 추가 설정 열기
+        var advSection = document.getElementById('writeAdvancedSection');
+        var advArrow = document.getElementById('writeAdvancedArrow');
+        if (advSection) advSection.classList.add('open');
+        if (advArrow) advArrow.innerHTML = '&#9650;';
     } else {
         title.textContent = '글쓰기';
         document.getElementById('writeTitle').value = '';
@@ -227,6 +238,12 @@ window.openWriteModal = async function(postId) {
         if (thumbPreview2) thumbPreview2.innerHTML = '';
         var detailPreview2 = document.getElementById('writeDetailPreview');
         if (detailPreview2) detailPreview2.innerHTML = '';
+        // 새 글 작성 시 추가 설정 닫기
+        var advSection2 = document.getElementById('writeAdvancedSection');
+        var advArrow2 = document.getElementById('writeAdvancedArrow');
+        if (advSection2) advSection2.classList.remove('open');
+        if (advArrow2) advArrow2.innerHTML = '&#9660;';
+        if (document.getElementById('writeBgColor')) document.getElementById('writeBgColor').value = '#ffffff';
     }
     toggleWriteFields();
     modal.classList.add('show');
@@ -310,9 +327,114 @@ window.toggleWriteFields = function() {
     var type = document.getElementById('writeType').value;
     document.getElementById('writeUrlGroup').style.display = (['url','link'].includes(type)) ? 'block' : 'none';
     document.getElementById('writeFileGroup').style.display = (['pdf','docx','xlsx','pptx'].includes(type)) ? 'block' : 'none';
-    document.getElementById('writeContentGroup').style.display = (type === 'text') ? 'block' : 'none';
+    var contentGroup = document.getElementById('writeContentGroup');
+    if (contentGroup) contentGroup.style.display = (type === 'text') ? 'block' : 'none';
     var imagesGroup = document.getElementById('writeImagesGroup');
     if (imagesGroup) imagesGroup.style.display = (type === 'images') ? 'block' : 'none';
+    // 파일 유형이면 드롭존 텍스트 업데이트
+    var dropText = document.querySelector('.write-dropzone-text');
+    if (dropText) {
+        if (['pdf','docx','xlsx','pptx'].includes(type)) {
+            dropText.textContent = type.toUpperCase() + ' 파일을 여기에 끌어다 놓으세요';
+        } else if (type === 'images') {
+            dropText.textContent = '이미지 파일을 여기에 끌어다 놓으세요';
+        } else {
+            dropText.textContent = '파일을 여기에 끌어다 놓으세요';
+        }
+    }
+};
+
+window.toggleWriteAdvanced = function() {
+    var section = document.getElementById('writeAdvancedSection');
+    var arrow = document.getElementById('writeAdvancedArrow');
+    if (section.classList.contains('open')) {
+        section.classList.remove('open');
+        arrow.innerHTML = '&#9660;';
+    } else {
+        section.classList.add('open');
+        arrow.innerHTML = '&#9650;';
+    }
+};
+
+window.handleWriteDrop = function(e) {
+    e.preventDefault();
+    var dropzone = document.getElementById('writeDropzone');
+    dropzone.classList.remove('dragover');
+    var files = e.dataTransfer.files;
+    if (!files || files.length === 0) return;
+
+    var file = files[0];
+    var ext = file.name.split('.').pop().toLowerCase();
+    var typeSelect = document.getElementById('writeType');
+    var droppedInfo = document.getElementById('writeDroppedInfo');
+
+    // 확장자로 유형 자동 감지
+    var typeMap = { 'pdf': 'pdf', 'doc': 'docx', 'docx': 'docx', 'xls': 'xlsx', 'xlsx': 'xlsx', 'ppt': 'pptx', 'pptx': 'pptx' };
+    var imageExts = ['png', 'jpg', 'jpeg', 'gif', 'webp'];
+
+    if (typeMap[ext]) {
+        typeSelect.value = typeMap[ext];
+        toggleWriteFields();
+        // 파일 input에 세팅
+        var fileInput = document.getElementById('writeFile');
+        if (fileInput) {
+            var dt = new DataTransfer();
+            dt.items.add(file);
+            fileInput.files = dt.files;
+        }
+        // 드롭 정보 표시
+        var iconSvg = ext === 'pdf'
+            ? '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg>'
+            : '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
+        droppedInfo.style.display = 'flex';
+        droppedInfo.style.alignItems = 'center';
+        droppedInfo.style.gap = '10px';
+        droppedInfo.style.justifyContent = 'center';
+        droppedInfo.innerHTML = iconSvg + '<span style="font-size:14px; font-weight:600; color:var(--text-primary);">' + file.name + '</span><span style="font-size:12px; color:var(--text-light);">(' + (file.size / 1024).toFixed(1) + ' KB)</span>';
+    } else if (imageExts.includes(ext)) {
+        // 이미지 한 장이면 단일 파일, 여러 장이면 images 모드
+        if (files.length > 1) {
+            typeSelect.value = 'images';
+            toggleWriteFields();
+            var imgInput = document.getElementById('writeImages');
+            if (imgInput) {
+                var dt2 = new DataTransfer();
+                for (var i = 0; i < files.length; i++) dt2.items.add(files[i]);
+                imgInput.files = dt2.files;
+                if (typeof initSortableImagePreview === 'function') initSortableImagePreview('writeImages');
+            }
+        } else {
+            typeSelect.value = 'images';
+            toggleWriteFields();
+            var imgInput2 = document.getElementById('writeImages');
+            if (imgInput2) {
+                var dt3 = new DataTransfer();
+                dt3.items.add(file);
+                imgInput2.files = dt3.files;
+                if (typeof initSortableImagePreview === 'function') initSortableImagePreview('writeImages');
+            }
+        }
+        // 이미지 미리보기
+        droppedInfo.style.display = 'flex';
+        droppedInfo.style.alignItems = 'center';
+        droppedInfo.style.gap = '10px';
+        droppedInfo.style.justifyContent = 'center';
+        droppedInfo.style.flexWrap = 'wrap';
+        var previewHtml = '';
+        var maxPreviews = Math.min(files.length, 5);
+        for (var pi = 0; pi < maxPreviews; pi++) {
+            previewHtml += '<div style="width:56px; height:56px; border-radius:8px; overflow:hidden; border:1px solid var(--border-color); background:#f0f0f0;"><img src="' + URL.createObjectURL(files[pi]) + '" style="width:100%; height:100%; object-fit:cover;"></div>';
+        }
+        if (files.length > 5) previewHtml += '<span style="font-size:13px; color:var(--text-light);">+' + (files.length - 5) + '장</span>';
+        droppedInfo.innerHTML = previewHtml;
+    }
+};
+
+window.handleWriteDropzoneSelect = function(input) {
+    if (!input.files || input.files.length === 0) return;
+    // Simulate a drop event with the selected files
+    var fakeEvent = { preventDefault: function(){}, dataTransfer: { files: input.files } };
+    handleWriteDrop(fakeEvent);
 };
 
 window.submitWriteForm = async function() {
@@ -327,25 +449,40 @@ window.submitWriteForm = async function() {
     if (!title) return alert('제목을 입력해주세요.');
     if (!boardId) return alert('게시판을 선택해주세요.');
 
+    // 진행바 표시
+    var progressEl = document.getElementById('writeProgress');
+    var progressBar = document.getElementById('writeProgressBar');
+    var totalSteps = 1; // 최종 저장
+    var currentStep = 0;
+    var fileInput = document.getElementById('writeFile');
+    var thumbInput = document.getElementById('writeThumb');
+    var orderedFiles = orderedImageFiles['writeImages'] || [];
+    if (fileInput && fileInput.files.length > 0) totalSteps++;
+    if (thumbInput && thumbInput.files.length > 0) totalSteps++;
+    for (var ci = 1; ci <= 3; ci++) { var cInput = document.getElementById('writeDetailImage' + ci); if (cInput && cInput.files.length > 0) totalSteps++; }
+    if (type === 'images' && orderedFiles.length > 0) totalSteps += orderedFiles.length;
+    if (progressEl) { progressEl.style.display = 'block'; progressBar.style.width = '0%'; }
+    function updateProgress() { currentStep++; if (progressBar) progressBar.style.width = Math.min(100, Math.round((currentStep / totalSteps) * 100)) + '%'; }
+
     let fileName = '';
-    const fileInput = document.getElementById('writeFile');
     if (fileInput && fileInput.files.length > 0) {
         const formData = new FormData();
         formData.append('file', fileInput.files[0]);
         const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData });
         const uploadData = await uploadRes.json();
-        if (uploadData.error) return alert('파일 업로드 실패: ' + uploadData.error);
+        if (uploadData.error) { if (progressEl) progressEl.style.display = 'none'; return alert('파일 업로드 실패: ' + uploadData.error); }
         fileName = uploadData.fileName;
+        updateProgress();
     }
 
     let thumbnail = '';
-    const thumbInput = document.getElementById('writeThumb');
     if (thumbInput && thumbInput.files.length > 0) {
         const formData2 = new FormData();
         formData2.append('file', thumbInput.files[0]);
         const thumbRes = await fetch('/api/upload', { method: 'POST', body: formData2 });
         const thumbData = await thumbRes.json();
         if (!thumbData.error) thumbnail = thumbData.fileName;
+        updateProgress();
     }
 
     var detailImages = [];
@@ -357,12 +494,12 @@ window.submitWriteForm = async function() {
             var dRes = await fetch('/api/upload', { method: 'POST', body: fd });
             var dData = await dRes.json();
             if (!dData.error) detailImages.push(dData.fileName);
+            updateProgress();
         }
     }
     var detailImage = detailImages.length > 0 ? detailImages.join('|') : '';
 
     // 이미지 복수 업로드 (type === 'images') — 순서 관리된 파일 사용
-    var orderedFiles = orderedImageFiles['writeImages'] || [];
     if (type === 'images' && orderedFiles.length > 0) {
         var imgNames = [];
         var statusEl = document.getElementById('writeImagesStatus');
@@ -373,6 +510,7 @@ window.submitWriteForm = async function() {
             var imgRes = await fetch('/api/upload', { method: 'POST', body: imgFd });
             var imgData = await imgRes.json();
             if (!imgData.error) imgNames.push(imgData.fileName);
+            updateProgress();
         }
         if (statusEl) statusEl.textContent = '업로드 완료! ' + imgNames.length + '장';
         if (imgNames.length > 0 && !thumbnail) thumbnail = imgNames[0];
@@ -393,12 +531,17 @@ window.submitWriteForm = async function() {
     if (thumbnail) postData.thumbnail = thumbnail;
     if (detailImage) postData.detailImage = detailImage;
 
+    updateProgress();
     if (adminEditPostId) {
         await api.put('/api/posts/' + adminEditPostId, postData);
         window._writeEditOriginal = null;
     } else {
         await api.post('/api/posts', postData);
     }
+
+    // 진행바 완료 표시 후 숨김
+    if (progressBar) progressBar.style.width = '100%';
+    setTimeout(function() { if (progressEl) progressEl.style.display = 'none'; }, 500);
 
     invalidateAll();
     closeWriteModal();
@@ -1250,16 +1393,14 @@ async function renderMenuTree() {
 
 // 메뉴 추가 다이얼로그
 window.showAddBoardDialog = function() {
-    const name = prompt('새 메뉴 이름을 입력하세요:');
-    if (!name || !name.trim()) return;
-    const id = name.trim().toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 20) || 'menu' + Date.now();
-    const viewType = confirm('이 메뉴를 갤러리(이미지) 보기로 설정할까요?\n\n확인 = 갤러리 보기\n취소 = 리스트 보기') ? 'gallery' : 'list';
-    (async () => {
-        try {
-            await api.post('/api/boards', { id: id, name: name.trim(), viewType: viewType });
-            invalidateAll(); await renderMenuTree(); await renderSidebarMenus();
-        } catch(e) { alert(e.message || '메뉴 추가 실패'); }
-    })();
+    editMenuState = { type: 'addBoard', boardId: '', catId: '', viewType: 'list' };
+    document.getElementById('editMenuModalTitle').textContent = '새 메뉴 추가';
+    document.getElementById('editMenuName').value = '';
+    selectEditMenuView('list');
+    var grp = document.getElementById('editMenuBoardGroup');
+    if (grp) grp.style.display = 'none';
+    document.getElementById('editMenuModal').classList.add('show');
+    document.getElementById('editMenuName').focus();
 };
 
 // 메뉴 수정 다이얼로그
@@ -1323,15 +1464,14 @@ window.deleteBoard = async function(boardId) {
 
 // 카테고리 추가 다이얼로그
 window.showAddCatDialog = function(boardId) {
-    const name = prompt('새 카테고리 이름을 입력하세요:');
-    if (!name || !name.trim()) return;
-    const id = name.trim().toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 20) || 'cat' + Date.now();
-    (async () => {
-        try {
-            await api.post('/api/categories', { id: id, boardId: boardId, name: name.trim() });
-            invalidateAll(); await renderMenuTree(); await renderSidebarMenus();
-        } catch(e) { alert(e.message || '카테고리 추가 실패'); }
-    })();
+    editMenuState = { type: 'addCategory', boardId: boardId, catId: '', viewType: 'list' };
+    document.getElementById('editMenuModalTitle').textContent = '새 카테고리 추가';
+    document.getElementById('editMenuName').value = '';
+    selectEditMenuView('list');
+    var grp = document.getElementById('editMenuBoardGroup');
+    if (grp) grp.style.display = 'none';
+    document.getElementById('editMenuModal').classList.add('show');
+    document.getElementById('editMenuName').focus();
 };
 
 // 카테고리 수정 다이얼로그
@@ -1360,7 +1500,13 @@ window.submitEditMenu = async function() {
     var name = document.getElementById('editMenuName').value.trim();
     if (!name) return alert('이름을 입력해주세요.');
     try {
-        if (editMenuState.type === 'board') {
+        if (editMenuState.type === 'addBoard') {
+            var id = name.toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 20) || 'menu' + Date.now();
+            await api.post('/api/boards', { id: id, name: name, viewType: editMenuState.viewType });
+        } else if (editMenuState.type === 'addCategory') {
+            var catId = name.toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 20) || 'cat' + Date.now();
+            await api.post('/api/categories', { id: catId, boardId: editMenuState.boardId, name: name });
+        } else if (editMenuState.type === 'board') {
             await api.put('/api/boards/' + editMenuState.boardId, { name: name, viewType: editMenuState.viewType });
         } else if (editMenuState.type === 'category') {
             var newBoardId = editMenuState.boardId;
@@ -1380,7 +1526,7 @@ window.submitEditMenu = async function() {
         await renderMenuTree();
         await renderSidebarMenus();
         closeEditMenuModal();
-    } catch(e) { alert(e.message || '수정 실패'); }
+    } catch(e) { alert(e.message || '저장 실패'); }
 };
 
 // 카테고리 삭제
