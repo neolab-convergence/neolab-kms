@@ -72,6 +72,10 @@ router.post('/api/posts', requireAdmin, async (req, res) => {
             fileName: req.body.fileName || '',
             views: '0',
             date: new Date().toISOString().split('T')[0],
+            order: req.body.order || '',
+            thumbnail: req.body.thumbnail || '',
+            bgColor: req.body.bgColor || '',
+            detailImage: req.body.detailImage || '',
             ocrText: ''
         };
         await appendRow('posts', post);
