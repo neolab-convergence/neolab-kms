@@ -8,12 +8,16 @@ router.get('/api/categories', requireAuth, async (req, res) => {
         const data = await getCached('categories');
         const clean = data.map(({ _rowIndex, ...r }) => r);
         if (req.query.boardId) {
-            res.json(clean.filter(c => c.boardId === req.query.boardId));
+            res.json(clean.filter(c => c.boardId === req.query.boardId).sort((a, b) => (parseInt(a.order) || 999) - (parseInt(b.order) || 999)));
         } else {
             const grouped = {};
             clean.forEach(c => {
                 if (!grouped[c.boardId]) grouped[c.boardId] = [];
                 grouped[c.boardId].push({ id: c.id, name: c.name, order: c.order || '', viewType: c.viewType || '' });
+            });
+            // 각 보드별 카테고리를 order 순으로 정렬
+            Object.keys(grouped).forEach(k => {
+                grouped[k].sort((a, b) => (parseInt(a.order) || 999) - (parseInt(b.order) || 999));
             });
             res.json(grouped);
         }

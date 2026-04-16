@@ -14,7 +14,7 @@ async function renderDynamicBoardContent(boardId, targetCatId = null) {
     document.getElementById('boardMainTitle').textContent = `📄 ${board.name}`;
 
     const filterContainer = document.getElementById('boardFilterContainer');
-    const cats = categories[boardId] || [];
+    const cats = (categories[boardId] || []).slice().sort(function(a, b) { return (parseInt(a.order) || 999) - (parseInt(b.order) || 999); });
     let filterHtml = `<button type="button" class="filter-btn active" data-category="all">전체</button>`;
     cats.forEach(c => { filterHtml += `<button type="button" class="filter-btn" data-category="${c.id}">${c.name}</button>`; });
     filterContainer.innerHTML = filterHtml;
