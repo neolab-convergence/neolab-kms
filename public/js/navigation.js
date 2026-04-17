@@ -10,8 +10,10 @@ async function renderSidebarMenus() {
     var dynamicArea = document.getElementById('dynamicSidebarArea');
     var html = '';
 
-    // "인사 및 채용" 보드에 연락처/조직도를 자동 주입 (기존 카테고리와 나란히 노출)
-    var HR_HOST_BOARD = '인사 및 채용';
+    // 인사/채용/HR 관련 보드에 연락처/조직도를 자동 주입 (메뉴 이름 변경에도 유지)
+    // "인사", "채용", "HR", "인재" 중 하나라도 포함된 메뉴에 고정 (대소문자 무시)
+    var HR_HOST_KEYWORDS = ['인사', '채용', 'hr', '인재'];
+    var hrHostAttached = false; // 첫 번째 매칭 보드에만 부착
 
     // 보드명 키워드 → Heroicons(outline) SVG path 매핑 (테마 일관성 유지)
     // 다중 path는 '||'로 구분하여 여러 <path>를 렌더링
@@ -49,7 +51,11 @@ async function renderSidebarMenus() {
 
     boards.forEach(function(board) {
         pageNames[board.id] = '📋 ' + board.name;
-        var isHrHost = (board.name || '').trim() === HR_HOST_BOARD;
+        var boardNameLower = (board.name || '').trim().toLowerCase();
+        var isHrHost = !hrHostAttached && HR_HOST_KEYWORDS.some(function(kw) {
+            return boardNameLower.indexOf(kw.toLowerCase()) !== -1;
+        });
+        if (isHrHost) hrHostAttached = true;
         var innerItems = '';
         if (categories[board.id] && categories[board.id].length > 0) {
             categories[board.id].forEach(function(cat) {
