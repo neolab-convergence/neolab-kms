@@ -784,37 +784,82 @@
            핵심: 리스트뷰 숨김→갤러리 가로 카드, 하단 FAB, safe-area
            ═══════════════════════════════════════════════ */
 
-        /* 하단 플로팅 메뉴 버튼 (FAB) - 엄지 접근성 */
-        .mobile-fab { display: none; }
+        /* 모바일 하단 탭바 - iOS 네이티브 스타일 */
+        .mobile-tabbar { display: none; }
         @media (max-width: 768px) {
-            .mobile-fab {
-                display: flex;
+            .mobile-tabbar {
+                display: grid;
+                grid-template-columns: repeat(5, 1fr);
                 position: fixed;
-                bottom: calc(20px + env(safe-area-inset-bottom, 0px));
-                left: 16px;
-                width: 54px;
-                height: 54px;
-                border-radius: 50%;
+                bottom: 0; left: 0; right: 0;
+                background: rgba(255,255,255,0.92);
+                -webkit-backdrop-filter: saturate(180%) blur(20px);
+                backdrop-filter: saturate(180%) blur(20px);
+                border-top: 0.5px solid rgba(0,0,0,0.1);
+                padding: 6px 0 calc(4px + env(safe-area-inset-bottom, 0px));
+                z-index: 998;
+            }
+            body.dark-mode .mobile-tabbar {
+                background: rgba(26,27,30,0.92);
+                border-top-color: rgba(255,255,255,0.1);
+            }
+            .tabbar-item {
+                display: flex; flex-direction: column; align-items: center; justify-content: center;
+                gap: 2px; padding: 6px 0; background: none; border: none; cursor: pointer;
+                color: var(--text-light); font-size: 10px; font-weight: 500;
+                -webkit-tap-highlight-color: transparent;
+                transition: color 0.15s;
+            }
+            .tabbar-item svg { width: 24px; height: 24px; }
+            .tabbar-item.active { color: var(--primary); }
+            .tabbar-item:active { opacity: 0.6; }
+
+            /* 중앙 AI 버튼 - 플로팅 원형 */
+            .tabbar-center { position: relative; }
+            .tabbar-fab {
+                position: absolute; top: -22px; left: 50%; transform: translateX(-50%);
+                width: 48px; height: 48px; border-radius: 50%;
                 background: linear-gradient(135deg, var(--primary), var(--primary-light));
                 color: white;
-                border: none;
-                cursor: pointer;
-                align-items: center;
-                justify-content: center;
-                box-shadow: 0 6px 20px rgba(255, 103, 32, 0.5);
-                z-index: 998;
-                transition: transform 0.2s;
+                display: flex; align-items: center; justify-content: center;
+                box-shadow: 0 4px 12px rgba(255,103,32,0.4);
             }
-            .mobile-fab:active { transform: scale(0.92); }
-            .mobile-fab svg { width: 26px; height: 26px; }
+            .tabbar-fab svg { width: 22px; height: 22px; }
+            .tabbar-center > span:last-child { margin-top: 24px; }
         }
 
         @media (max-width: 768px) {
             /* iOS 자동 줌 방지: 입력 필드 폰트 크기 16px 이상 */
             input, select, textarea { font-size: 16px !important; }
 
-            /* 본문 베이스 폰트 확대 */
-            body { font-size: 15px; -webkit-text-size-adjust: 100%; }
+            /* 🍎 시스템 폰트 사용 (iOS/Android 네이티브 느낌) */
+            html, body, button, input, select, textarea {
+                font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text',
+                             'Segoe UI', 'Noto Sans KR', Roboto, sans-serif;
+                -webkit-font-smoothing: antialiased;
+            }
+
+            /* 본문 베이스 폰트 + 스크롤 동작 */
+            body {
+                font-size: 15px;
+                -webkit-text-size-adjust: 100%;
+                -webkit-tap-highlight-color: transparent;
+                overscroll-behavior-y: contain;
+                background: #f2f2f7; /* iOS 그룹 배경 */
+            }
+            body.dark-mode { background: #000 !important; }
+
+            /* 모든 스크롤바 숨김 (모바일 네이티브 느낌) */
+            ::-webkit-scrollbar { display: none !important; width: 0; height: 0; }
+            * { scrollbar-width: none; }
+
+            /* 모든 탭 하이라이트 제거 */
+            a, button, div[onclick], .menu-item, .submenu-item, .gallery-card, .tab, .filter-btn {
+                -webkit-tap-highlight-color: transparent;
+            }
+
+            /* 링크 밑줄 제거 */
+            a { -webkit-touch-callout: none; }
 
             /* 상단바: 검색창 보이게 + 가독성 */
             .topbar { padding: 10px 12px !important; gap: 8px !important; flex-wrap: nowrap; }
@@ -978,8 +1023,89 @@
             /* 인쇄 버튼 숨김 (모바일에선 불필요) */
             .print-btn { display: none !important; }
 
-            /* 콘텐츠 하단에 FAB 공간 확보 */
+            /* 콘텐츠 하단에 탭바 공간 확보 */
             .content { padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px)) !important; }
+
+            /* AI 챗봇 버튼 숨김 (하단 탭바로 통합됨) */
+            #chatbotToggle { display: none !important; }
+
+            /* 챗봇 패널 위치 조정 (탭바 위에) */
+            #chatbotPanel {
+                bottom: calc(80px + env(safe-area-inset-bottom, 0px)) !important;
+                height: calc(70vh - env(safe-area-inset-bottom, 0px)) !important;
+            }
+
+            /* 네이티브 느낌: 상단바 반투명 블러 + 축소 */
+            .topbar {
+                position: sticky !important; top: 0;
+                background: rgba(255,255,255,0.85) !important;
+                -webkit-backdrop-filter: saturate(180%) blur(20px);
+                backdrop-filter: saturate(180%) blur(20px);
+                border-bottom: 0.5px solid rgba(0,0,0,0.1) !important;
+                padding: 8px 12px !important;
+                padding-top: calc(8px + env(safe-area-inset-top, 0px)) !important;
+                min-height: 50px;
+                z-index: 100;
+            }
+            body.dark-mode .topbar {
+                background: rgba(26,27,30,0.85) !important;
+                border-bottom-color: rgba(255,255,255,0.1) !important;
+            }
+
+            /* 카드에 그룹 리스트 스타일 (iOS 설정 앱) */
+            .gallery-card {
+                box-shadow: none !important;
+                border: none !important;
+                background: #ffffff !important;
+            }
+            body.dark-mode .gallery-card { background: #1c1c1e !important; }
+
+            /* 갤러리 컨테이너를 iOS 그룹 리스트처럼 */
+            #boardGalleryContainer {
+                background: var(--card-bg);
+                border-radius: 14px;
+                overflow: hidden;
+                box-shadow: 0 0 0 0.5px rgba(0,0,0,0.08);
+                gap: 0 !important;
+                margin: 0 !important;
+            }
+            .gallery-card + .gallery-card {
+                border-top: 0.5px solid rgba(0,0,0,0.08) !important;
+                border-radius: 0 !important;
+            }
+            .gallery-card:first-child { border-radius: 14px 14px 0 0 !important; }
+            .gallery-card:last-child { border-radius: 0 0 14px 14px !important; }
+            .gallery-card:only-child { border-radius: 14px !important; }
+
+            /* 페이지 섹션 헤더 - iOS 큰 타이틀 느낌 */
+            #boardMainTitle {
+                font-size: 28px !important;
+                font-weight: 800 !important;
+                letter-spacing: -0.6px !important;
+                margin: 8px 0 14px !important;
+                padding: 0 !important;
+                color: var(--text-primary) !important;
+            }
+
+            /* 섹션 타이틀 공통 */
+            .section-title, .card-title, h2, h3 {
+                letter-spacing: -0.3px;
+            }
+
+            /* 부드러운 스크롤 */
+            html { scroll-behavior: smooth; }
+            .content { -webkit-overflow-scrolling: touch; scroll-behavior: smooth; }
+
+            /* 카드 터치 효과 */
+            .gallery-card:active, .notice-card:active, .stat-card:active, .menu-item:active, .submenu-item:active {
+                background-color: rgba(0,0,0,0.04) !important;
+                transform: scale(0.995);
+            }
+            body.dark-mode .gallery-card:active,
+            body.dark-mode .notice-card:active,
+            body.dark-mode .stat-card:active {
+                background-color: rgba(255,255,255,0.05) !important;
+            }
 
             /* 인라인 뷰어 */
             #inlineViewer iframe { height: 70vh !important; }
