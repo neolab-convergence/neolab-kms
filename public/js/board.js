@@ -24,6 +24,10 @@ async function renderDynamicBoardContent(boardId, targetCatId = null) {
         btn.addEventListener('click', function() {
             filterBtns.forEach(b => b.classList.remove('active'));
             this.classList.add('active');
+            // 모바일: 활성 버튼을 중앙으로 스크롤
+            if (window.innerWidth <= 768) {
+                this.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            }
             const catId = this.getAttribute('data-category');
             currentCategoryId = catId;
 

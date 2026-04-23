@@ -891,37 +891,51 @@
             .grid-2-1 { gap: 14px; margin-bottom: 18px; }
 
             /* 🎯 카테고리 필터 - iOS 세그먼트 컨트롤 스타일 (가로 스와이프) */
-            /* 부모 flex 래퍼 한 줄 강제 & 인라인스타일 오버라이드 */
-            #dynamicBoardSection > div[style*="display:flex"] {
-                display: block !important;
-                margin-bottom: 12px !important;
-                flex-wrap: nowrap !important;
+            /* 부모 flex 래퍼를 display:contents로 투명화 → 필터가 직접 상위 자식 */
+            #dynamicBoardSection > div:has(> #boardFilterContainer) {
+                display: contents !important;
             }
+            /* display:contents 미지원 브라우저용 fallback */
+            @supports not (display: contents) {
+                #dynamicBoardSection > div[style*="display:flex"] {
+                    display: block !important;
+                    margin: 0 !important;
+                    padding: 0 !important;
+                }
+            }
+
             #boardFilterContainer, .category-filter {
                 display: flex !important;
                 flex-direction: row !important;
                 flex-wrap: nowrap !important;
+                align-items: center !important;
                 gap: 8px !important;
                 overflow-x: auto !important;
                 overflow-y: hidden !important;
                 -webkit-overflow-scrolling: touch !important;
                 scrollbar-width: none !important;
                 scroll-snap-type: x proximity;
-                /* 좌우 패딩 & 전체 폭 사용 */
-                margin: 0 -14px 14px !important;
+                /* 좌우 확장 (전체 뷰포트 너비) */
+                margin-left: -14px !important;
+                margin-right: -14px !important;
+                margin-bottom: 14px !important;
+                margin-top: 0 !important;
                 padding: 12px 14px !important;
+                width: calc(100% + 28px) !important;
+                max-width: calc(100vw) !important;
+                box-sizing: border-box !important;
                 /* 스티키 고정 (상단바 아래) */
                 position: sticky !important;
-                top: calc(50px + env(safe-area-inset-top, 0px));
-                z-index: 60;
+                top: calc(50px + env(safe-area-inset-top, 0px)) !important;
+                z-index: 60 !important;
                 /* 반투명 블러 배경 */
                 background: rgba(242,242,247,0.92) !important;
                 -webkit-backdrop-filter: saturate(180%) blur(18px);
                 backdrop-filter: saturate(180%) blur(18px);
                 border-bottom: 0.5px solid rgba(0,0,0,0.06);
                 flex: none !important;
-                width: auto !important;
-                max-width: none !important;
+                /* 인라인 flex:1 오버라이드 보증 */
+                min-width: 0 !important;
             }
             body.dark-mode #boardFilterContainer,
             body.dark-mode .category-filter {
