@@ -890,18 +890,81 @@
             .card-title { font-size: 16px; }
             .grid-2-1 { gap: 14px; margin-bottom: 18px; }
 
-            /* 카테고리 필터 - 스티키 + 가로 스크롤 */
+            /* 🎯 카테고리 필터 - iOS 세그먼트 컨트롤 스타일 (가로 스와이프) */
+            /* 부모 flex 래퍼 한 줄 강제 & 인라인스타일 오버라이드 */
+            #dynamicBoardSection > div[style*="display:flex"] {
+                display: block !important;
+                margin-bottom: 12px !important;
+                flex-wrap: nowrap !important;
+            }
             #boardFilterContainer, .category-filter {
-                gap: 6px; overflow-x: auto; flex-wrap: nowrap; padding: 8px 2px;
-                -webkit-overflow-scrolling: touch; scrollbar-width: none;
-                position: sticky; top: 58px; background: var(--main-bg);
-                z-index: 50; margin: 0 -14px 8px; padding-left: 14px; padding-right: 14px;
+                display: flex !important;
+                flex-direction: row !important;
+                flex-wrap: nowrap !important;
+                gap: 8px !important;
+                overflow-x: auto !important;
+                overflow-y: hidden !important;
+                -webkit-overflow-scrolling: touch !important;
+                scrollbar-width: none !important;
+                scroll-snap-type: x proximity;
+                /* 좌우 패딩 & 전체 폭 사용 */
+                margin: 0 -14px 14px !important;
+                padding: 12px 14px !important;
+                /* 스티키 고정 (상단바 아래) */
+                position: sticky !important;
+                top: calc(50px + env(safe-area-inset-top, 0px));
+                z-index: 60;
+                /* 반투명 블러 배경 */
+                background: rgba(242,242,247,0.92) !important;
+                -webkit-backdrop-filter: saturate(180%) blur(18px);
+                backdrop-filter: saturate(180%) blur(18px);
+                border-bottom: 0.5px solid rgba(0,0,0,0.06);
+                flex: none !important;
+                width: auto !important;
+                max-width: none !important;
             }
-            .category-filter::-webkit-scrollbar, #boardFilterContainer::-webkit-scrollbar { display: none; }
+            body.dark-mode #boardFilterContainer,
+            body.dark-mode .category-filter {
+                background: rgba(26,27,30,0.92) !important;
+                border-bottom-color: rgba(255,255,255,0.08);
+            }
+            .category-filter::-webkit-scrollbar,
+            #boardFilterContainer::-webkit-scrollbar { display: none !important; height: 0; }
+
+            /* 필터 버튼 = iOS 필 스타일 */
             .filter-btn {
-                padding: 9px 16px; font-size: 14px; min-height: 40px; flex-shrink: 0;
-                white-space: nowrap; border-radius: 20px; font-weight: 600;
+                padding: 8px 18px !important;
+                font-size: 14px !important;
+                min-height: 36px !important;
+                flex-shrink: 0 !important;
+                white-space: nowrap !important;
+                border-radius: 18px !important;
+                font-weight: 600 !important;
+                border: none !important;
+                background: rgba(120,120,128,0.12) !important;
+                color: var(--text-primary) !important;
+                scroll-snap-align: start;
+                transition: all 0.2s;
+                -webkit-tap-highlight-color: transparent;
             }
+            .filter-btn:active { transform: scale(0.94); opacity: 0.7; }
+            .filter-btn.active {
+                background: var(--primary) !important;
+                color: white !important;
+                box-shadow: 0 2px 6px rgba(255,103,32,0.3);
+            }
+            body.dark-mode .filter-btn {
+                background: rgba(255,255,255,0.1) !important;
+                color: #e2e8f0 !important;
+            }
+            body.dark-mode .filter-btn.active {
+                background: var(--primary) !important;
+                color: white !important;
+            }
+
+            /* 필터 바 양 끝에 페이드 그라데이션 (스크롤 가능 힌트) */
+            #boardFilterContainer::before,
+            #boardFilterContainer::after { content: none; }
 
             /* 📋 리스트 뷰 숨김 → 갤러리만 사용 */
             #boardGridContainer { display: none !important; }
