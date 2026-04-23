@@ -908,30 +908,28 @@
             #boardGalleryContainer { display: flex !important; flex-direction: column !important; gap: 10px !important; }
             #viewToggle { display: none !important; }
 
-            /* 🎨 갤러리 카드 → 아이폰 네이티브 가로 리스트 */
+            /* 🎨 갤러리 카드 → 썸네일 없이 심플 텍스트 리스트 */
             .gallery-card {
-                display: flex !important;
-                flex-direction: row !important;
+                display: block !important;
+                position: relative !important;
                 border-radius: 14px !important;
-                box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 0 0 1px rgba(0,0,0,0.04) !important;
+                box-shadow: none !important;
                 background: var(--card-bg);
                 overflow: hidden;
-                min-height: 88px;
+                min-height: 70px;
                 transition: background 0.15s;
             }
             .gallery-card:active { background: var(--main-bg); }
-            .gallery-card:hover { transform: none !important; box-shadow: 0 2px 8px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04) !important; }
+            .gallery-card:hover { transform: none !important; }
 
-            .gallery-thumb {
-                width: 88px !important;
-                height: 88px !important;
-                min-width: 88px !important;
-                flex-shrink: 0 !important;
-                border-radius: 0 !important;
-                font-size: 36px !important;
-                position: relative;
+            /* 썸네일 완전 숨김 (모바일) */
+            .gallery-thumb { display: none !important; }
+
+            /* 정보 영역 전체 너비 사용 */
+            .gallery-info {
+                padding: 14px 36px 14px 16px !important;
+                flex: 1;
             }
-            .gallery-thumb img { padding: 8px !important; }
 
             .gallery-info {
                 padding: 12px 14px !important;
@@ -1106,6 +1104,41 @@
             body.dark-mode .stat-card:active {
                 background-color: rgba(255,255,255,0.05) !important;
             }
+
+            /* 📱 홈 화면 가로 스크롤 제거 → 세로 스택 */
+            .quick-list {
+                display: flex !important;
+                flex-direction: column !important;
+                gap: 8px !important;
+                overflow-x: visible !important;
+                overflow-y: visible !important;
+                padding: 0 !important;
+            }
+            .quick-item {
+                flex-shrink: 1 !important;
+                min-width: 0 !important;
+                max-width: none !important;
+                width: 100% !important;
+                padding: 12px 14px !important;
+                border-radius: 12px !important;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
+            }
+            .quick-item-title {
+                white-space: normal !important;
+                overflow: visible !important;
+                text-overflow: unset !important;
+                font-size: 14px !important;
+                line-height: 1.4 !important;
+                display: -webkit-box !important;
+                -webkit-line-clamp: 2 !important;
+                -webkit-box-orient: vertical !important;
+                max-height: 2.8em !important;
+            }
+
+            /* 문서 리스트류 가로 스크롤 방지 */
+            body, html { overflow-x: hidden; }
+            .content { overflow-x: hidden; }
+            .page-section { overflow-x: hidden; }
 
             /* 📱 인라인 아코디언 확장 패널 */
             .gallery-card.expanded {
