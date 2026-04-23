@@ -463,7 +463,7 @@ var _orgNodes = []; // 현재 로드된 노드 데이터
 var _orgIsAdmin = false;
 var _orgDragNode = null, _orgDragOffX = 0, _orgDragOffY = 0;
 var _orgSaveTimer = null;
-var NODE_W = 128, NODE_H = 46;
+var NODE_W = 160, NODE_H = 40;
 
 function escapeHtml(str) {
     if (!str) return '';
@@ -703,8 +703,11 @@ function _orgRenderNodes(container, data, editable) {
         if (isDept) {
             html += '<div class="orgc-dept-name">' + escapeHtml(node.name) + '</div>';
         } else {
+            // 이름 + 직책 한 줄 표기
             html += '<div class="orgc-p-name">' + escapeHtml(node.name) + '</div>';
-            html += '<div class="orgc-p-title"' + (node.color ? ' style="color:' + _orgContrastText(node.color) + '; opacity:0.85;"' : '') + '>' + escapeHtml(node.title) + '</div>';
+            if (node.title) {
+                html += '<div class="orgc-p-title"' + (node.color ? ' style="color:' + _orgContrastText(node.color) + '; opacity:0.85;"' : '') + '>' + escapeHtml(node.title) + '</div>';
+            }
         }
         html += '</div>';
     });
