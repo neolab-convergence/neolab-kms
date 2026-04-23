@@ -2,12 +2,15 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#ff6720">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>NeoLab KMS - 사내 지식포탈</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=85">
+    <link rel="stylesheet" href="css/style.css?v=86">
     <!-- CSS is loaded from css/style.css -->
 </head>
 <body>
@@ -1071,14 +1074,22 @@
         </div>
     </div>
 
+    <!-- 📱 모바일 하단 플로팅 메뉴 버튼 (엄지 접근) -->
+    <button type="button" class="mobile-fab" id="mobileFab" aria-label="메뉴 열기"
+            onclick="document.getElementById('sidebar').classList.toggle('mobile-show')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+    </button>
+
 <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
-<script src="js/core.js?v=84"></script>
-<script src="js/navigation.js?v=84"></script>
-<script src="js/search.js?v=84"></script>
-<script src="js/viewer.js?v=84"></script>
-<script src="js/board.js?v=84"></script>
-<script src="js/features.js?v=84"></script>
-<script src="js/app.js?v=84"></script>
-<script src="js/admin.js?v=84"></script>
+<script src="js/core.js?v=86"></script>
+<script src="js/navigation.js?v=86"></script>
+<script src="js/search.js?v=86"></script>
+<script src="js/viewer.js?v=86"></script>
+<script src="js/board.js?v=86"></script>
+<script src="js/features.js?v=86"></script>
+<script src="js/app.js?v=86"></script>
+<script src="js/admin.js?v=86"></script>
 </body>
 </html>
