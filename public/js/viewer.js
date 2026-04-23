@@ -6,8 +6,162 @@ let currentViewerPost = null;
 
 // ─── 갤러리 라이트박스 ───
 window.openGalleryPreview = async function(id) {
-    // 갤러리에서도 openPost와 동일하게 상세 페이지로 이동
+    // 📱 모바일: 인라인 아코디언 확장 (현재 리스트 위치에서 바로 펼침)
+    if (window.innerWidth <= 768) {
+        await toggleInlineExpand(id);
+        return;
+    }
+    // 💻 데스크톱: 기존대로 상세 페이지 이동
     await openPost(id);
+};
+
+// 📱 모바일 전용 인라인 확장 (아코디언)
+async function toggleInlineExpand(id) {
+    var card = document.querySelector('.gallery-card[data-post-id="' + id + '"]');
+    if (!card) {
+        // data-post-id 속성이 없는 경우 onclick 속성에서 찾기
+        var cards = document.querySelectorAll('.gallery-card');
+        for (var i = 0; i < cards.length; i++) {
+            var oc = cards[i].getAttribute('onclick') || '';
+            if (oc.indexOf("'" + id + "'") !== -1) { card = cards[i]; break; }
+        }
+    }
+    if (!card) return;
+
+    // 이미 펼쳐진 동일 카드 → 닫기
+    var existing = card.nextElementSibling;
+    if (existing && existing.classList.contains('mobile-inline-expand') && existing.getAttribute('data-for') === id) {
+        existing.remove();
+        card.classList.remove('expanded');
+        return;
+    }
+
+    // 다른 카드가 펼쳐져 있으면 먼저 닫기
+    document.querySelectorAll('.mobile-inline-expand').forEach(function(el) { el.remove(); });
+    document.querySelectorAll('.gallery-card.expanded').forEach(function(el) { el.classList.remove('expanded'); });
+
+    // 로딩 표시
+    var loader = document.createElement('div');
+    loader.className = 'mobile-inline-expand';
+    loader.setAttribute('data-for', id);
+    loader.innerHTML = '<div style="padding:30px; text-align:center; color:var(--text-light);"><div class="loading-spinner" style="margin:0 auto 12px;"></div>불러오는 중...</div>';
+    card.insertAdjacentElement('afterend', loader);
+    card.classList.add('expanded');
+
+    try {
+        addRecentViewed(id);
+        api.post('/api/posts/' + id + '/view').catch(function(){});
+        var post = await api.get('/api/posts/' + id);
+
+        // 링크 타입은 새창으로 (인라인 불가)
+        if ((post.type === 'link' || post.boardId === 'infra') && post.url) {
+            var linkUrl = post.url.trim();
+            if (!linkUrl.startsWith('http://') && !linkUrl.startsWith('https://')) linkUrl = 'https://' + linkUrl;
+            window.open(linkUrl, '_blank');
+            loader.remove();
+            card.classList.remove('expanded');
+            return;
+        }
+
+        // 콘텐츠 생성
+        var html = '<div class="mobile-inline-body">';
+        var images = [];
+        if (post.detailImage) images = post.detailImage.split('|').filter(Boolean);
+        else if (post.thumbnail) images = [post.thumbnail];
+
+        // PRODUCT_DESC
+        if (post.content && post.content.indexOf('[PRODUCT_DESC]') === 0) {
+            images.forEach(function(img) {
+                html += '<img src="/api/files/' + encodeURIComponent(img) + '" alt="' + post.title + '" onclick="openLightbox(this.src, \'' + post.title.replace(/'/g, "\\'") + '\')" />';
+            });
+            var descFiles = post.content.replace('[PRODUCT_DESC]', '').split('|').filter(function(f){return f.trim();});
+            descFiles.forEach(function(f) {
+                html += '<img src="/api/files/' + encodeURIComponent(f.trim()) + '" alt="설명" onclick="openLightbox(this.src, \'' + post.title.replace(/'/g, "\\'") + '\')" />';
+            });
+        }
+        // PDF
+        else if (post.type === 'pdf' && post.fileName) {
+            try {
+                var tokenRes = await api.post('/api/files/' + encodeURIComponent(post.fileName) + '/token');
+                var pdfUrl = '/api/public-files/' + tokenRes.token + '/' + encodeURIComponent(post.fileName);
+                html += '<iframe src="' + pdfUrl + '#toolbar=1&view=FitH" loading="lazy"></iframe>';
+                html += '<div class="mobile-inline-actions">';
+                html += '<a href="' + pdfUrl + '" download>⬇ 다운로드</a>';
+                html += '<a href="' + pdfUrl + '" target="_blank">↗ 전체화면</a>';
+                html += '</div>';
+            } catch(e) {
+                html += '<p style="color:var(--text-light);padding:20px;text-align:center;">PDF 로드 실패</p>';
+            }
+        }
+        // URL iframe
+        else if (post.url && post.url.trim()) {
+            var url = post.url.trim();
+            var driveMatch = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+            if (driveMatch) {
+                html += '<iframe src="https://drive.google.com/file/d/' + driveMatch[1] + '/preview" loading="lazy"></iframe>';
+            } else if (url.match(/docs\.google\.com\/(document|spreadsheets|presentation)/)) {
+                var vurl = url.replace(/\/edit.*$/, '/preview').replace(/\/view.*$/, '/preview');
+                if (vurl.indexOf('/preview') === -1) vurl += '/preview';
+                html += '<iframe src="' + vurl + '" loading="lazy"></iframe>';
+            } else {
+                var finalUrl = url;
+                if (!finalUrl.startsWith('http://') && !finalUrl.startsWith('https://')) finalUrl = 'https://' + finalUrl;
+                html += '<div style="padding:24px;text-align:center;"><a href="' + finalUrl + '" target="_blank" style="padding:12px 24px;background:var(--primary);color:#fff;border-radius:8px;text-decoration:none;font-weight:600;">🔗 바로가기</a></div>';
+            }
+        }
+        // 이미지들
+        else if (images.length > 0) {
+            images.forEach(function(img) {
+                html += '<img src="/api/files/' + encodeURIComponent(img) + '" alt="' + post.title + '" onclick="openLightbox(this.src, \'' + post.title.replace(/'/g, "\\'") + '\')" />';
+            });
+        }
+        // 텍스트
+        else if (post.content) {
+            html += '<div class="mobile-inline-text">' + post.content + '</div>';
+        }
+        else {
+            html += '<p style="color:var(--text-light);padding:20px;text-align:center;">등록된 내용이 없습니다.</p>';
+        }
+
+        // 부가 정보
+        if (post.subInfo) {
+            html = '<div class="mobile-inline-subinfo">' + post.subInfo + '</div>' + html;
+        }
+
+        // 닫기 버튼
+        html += '<button type="button" class="mobile-inline-close" onclick="closeInlineExpand(\'' + id + '\')">▲ 접기</button>';
+        html += '</div>';
+
+        loader.innerHTML = html;
+
+        // 살짝 스크롤해서 확장된 내용이 잘 보이게
+        setTimeout(function() {
+            var rect = loader.getBoundingClientRect();
+            if (rect.top < 60) {
+                window.scrollBy({ top: rect.top - 60, behavior: 'smooth' });
+            }
+        }, 100);
+
+        loadDashboardWidgets();
+    } catch(e) {
+        loader.innerHTML = '<div style="padding:20px;text-align:center;color:var(--red);">로드 실패: ' + e.message + '</div>';
+    }
+}
+
+window.closeInlineExpand = function(id) {
+    var panel = document.querySelector('.mobile-inline-expand[data-for="' + id + '"]');
+    if (panel) panel.remove();
+    document.querySelectorAll('.gallery-card.expanded').forEach(function(el) { el.classList.remove('expanded'); });
+};
+
+window.openLightbox = function(src, title) {
+    var overlay = document.getElementById('lightboxOverlay');
+    var content = document.getElementById('lightboxContent');
+    var titleEl = document.getElementById('lightboxTitle');
+    if (!overlay || !content) return;
+    content.innerHTML = '<img src="' + src + '" alt="' + (title||'') + '">';
+    if (titleEl) titleEl.textContent = title || '';
+    overlay.classList.add('show');
 };
 
 // ─── 게시물 상세 페이지 (범용) ───
