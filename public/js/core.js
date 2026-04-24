@@ -19,8 +19,19 @@ async function _fetch(path, opts) {
     try {
         var res = await fetch(path, opts);
         if (res.status === 401) { window.location.href = '/login.html'; throw new Error('Unauthorized'); }
-        if (res.status === 503) { var msg = '현재 시스템 점검 중입니다. 잠시 후 다시 이용해주세요.'; alert(msg); throw new Error(msg); }
-        if (!res.ok) throw new Error(await res.text());
+        if (res.status === 503) { var msg = '현재 시스템 점검 중입니다. 잠시 후 다시 이용해주세요.'; alert(msg); throw new Error('503: ' + msg); }
+        if (!res.ok) {
+            // 에러 응답을 JSON 우선, 실패 시 텍스트로 파싱
+            var body = await res.text();
+            var errMsg = body;
+            try {
+                var parsed = JSON.parse(body);
+                if (parsed && parsed.error) errMsg = parsed.error;
+            } catch(e) { /* JSON 아니면 그대로 텍스트 사용 */ }
+            // HTML 응답은 잘라냄 (너무 김)
+            if (errMsg && errMsg.length > 300) errMsg = errMsg.substring(0, 300);
+            throw new Error(res.status + ': ' + errMsg);
+        }
         return res.json();
     } finally { hideLoading(); }
 }

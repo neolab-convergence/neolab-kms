@@ -133,9 +133,14 @@ router.put('/api/posts/:id', requireAdmin, async (req, res) => {
     let filesChanged = false;
     let bgData = {};
     try {
+        // 🔒 항상 시트에서 최신 데이터 조회 (캐시 사용 안 함, 경쟁 조건 방지)
         const data = await getSheetData('posts');
         const row = data.find(p => p.id === req.params.id);
-        if (!row) return res.status(404).json({ error: '게시물을 찾을 수 없습니다.' });
+        if (!row) return res.status(404).json({ error: '게시물을 찾을 수 없습니다. 이미 삭제되었거나 ID가 변경되었을 수 있습니다.' });
+        if (!row._rowIndex || row._rowIndex < 2) {
+            writeLog('ERROR', `게시물 수정: 잘못된 rowIndex`, `id=${req.params.id}, rowIndex=${row._rowIndex}`);
+            return res.status(500).json({ error: '시트 데이터 인덱스 오류. 관리자에게 문의하세요.' });
+        }
         // _rowIndex는 업데이트 대상에서 제외 (시트에 쓰이면 안 됨)
         const { _rowIndex, ...rowClean } = row;
         const updated = { ...rowClean, ...req.body, date: new Date().toISOString().split('T')[0] };
@@ -149,7 +154,12 @@ router.put('/api/posts/:id', requireAdmin, async (req, res) => {
         res.json({ success: true });
     } catch (err) {
         writeLog('ERROR', `게시물 수정 실패: id=${req.params.id}`, err.message + ' | ' + (err.stack||'').split('\n')[1]);
-        return res.status(500).json({ error: err.message });
+        // 사용자에게 보여줄 에러 메시지를 친화적으로
+        let userMsg = err.message || '알 수 없는 오류';
+        if (/quota|rateLimit|429/i.test(userMsg)) userMsg = 'Google Sheets API 사용량 한도에 도달했습니다. 1분 후 다시 시도해 주세요.';
+        else if (/timeout|ECONN/i.test(userMsg)) userMsg = '서버 응답이 지연되고 있습니다. 잠시 후 다시 시도해 주세요.';
+        else if (/Missing required parameters/i.test(userMsg)) userMsg = 'Google Sheets 연결이 일시적으로 끊어졌습니다. 서버 재시작이 필요할 수 있습니다.';
+        return res.status(500).json({ error: userMsg, detail: err.message });
     }
 
     // 이미지/파일 변경 시 백그라운드에서 OCR 재추출 (try-catch 밖)

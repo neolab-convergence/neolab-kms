@@ -532,11 +532,27 @@ window.submitWriteForm = async function() {
     if (detailImage) postData.detailImage = detailImage;
 
     updateProgress();
-    if (adminEditPostId) {
-        await api.put('/api/posts/' + adminEditPostId, postData);
-        window._writeEditOriginal = null;
-    } else {
-        await api.post('/api/posts', postData);
+    // 🔄 최종 저장 (재시도 내장): Google Sheets 일시 오류에 강건하게
+    try {
+        if (adminEditPostId) {
+            await _saveWithRetry(function() { return api.put('/api/posts/' + adminEditPostId, postData); });
+            window._writeEditOriginal = null;
+        } else {
+            await _saveWithRetry(function() { return api.post('/api/posts', postData); });
+        }
+    } catch (err) {
+        // 진행바 숨기기
+        if (progressEl) progressEl.style.display = 'none';
+        if (progressBar) progressBar.style.width = '0%';
+        var msg = (err && err.message) ? err.message : '알 수 없는 오류';
+        // HTML 응답이면 파싱 시도
+        try {
+            var parsed = JSON.parse(msg);
+            if (parsed && parsed.error) msg = parsed.error;
+        } catch(e) {}
+        if (msg.length > 200) msg = msg.substring(0, 200) + '...';
+        alert('저장에 실패했습니다.\n\n원인: ' + msg + '\n\n잠시 후 다시 시도해 주세요. 문제가 반복되면 관리자에게 문의하세요.');
+        return; // 모달 유지, 사용자가 재시도 가능
     }
 
     // 진행바 완료 표시 후 숨김
@@ -548,6 +564,26 @@ window.submitWriteForm = async function() {
     loadAdminPostTable();
     alert(adminEditPostId ? '수정되었습니다.' : '등록되었습니다.');
 };
+
+// 저장 재시도 헬퍼 (Google Sheets 일시 오류 대응)
+async function _saveWithRetry(fn, maxRetries) {
+    maxRetries = maxRetries || 2;
+    var lastErr;
+    for (var attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+            return await fn();
+        } catch (e) {
+            lastErr = e;
+            var msg = (e && e.message) || '';
+            // 재시도 가능한 에러만 다시 시도: 500/429/503/네트워크 관련
+            var retriable = /\b(500|502|503|504|429|ECONN|timeout|fetch)/i.test(msg);
+            if (!retriable || attempt === maxRetries) throw e;
+            // 지수 백오프: 0.5s, 1s, 2s
+            await new Promise(function(r) { setTimeout(r, 500 * Math.pow(2, attempt)); });
+        }
+    }
+    throw lastErr;
+}
 
 
 // ═══ 조직도 관리 (Excel 업로드/다운로드 + 트리 편집) ═══
