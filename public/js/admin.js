@@ -1886,18 +1886,27 @@ if (addPostBtnEl) addPostBtnEl.addEventListener('click', async function() {
         }
     }
 
-    // 1) 실제 저장 — 이 블록 실패만 "저장 실패"로 표시
+    // 1) 실제 저장 — 재시도 내장, 네트워크 일시 오류에 강건하게
     try {
         if (editPostId) {
-            await api.put('/api/posts/' + editPostId, postData);
+            await _saveWithRetry(function() { return api.put('/api/posts/' + editPostId, postData); });
             editPostId = null; window._editPostOriginal = null; this.textContent = '게시물 등록'; this.classList.replace('admin-btn-primary', 'admin-btn-success');
             document.getElementById('editPostIndicator').style.display = 'none';
         } else {
-            await api.post('/api/posts', postData);
+            await _saveWithRetry(function() { return api.post('/api/posts', postData); });
         }
     } catch(err) {
         console.error('[게시물 저장 실패]', err);
-        alert('저장 실패: ' + (err && err.message ? err.message : err));
+        var msg = (err && err.message) ? err.message : String(err);
+        // 친화적 메시지 변환
+        if (/Failed to fetch|NetworkError|fetch failed/i.test(msg)) {
+            msg = '서버와 연결이 끊어졌습니다.\n\n- 네트워크 상태를 확인해 주세요\n- 페이지를 새로고침하고 다시 시도해 주세요\n- 로그인이 만료되었을 수 있습니다';
+        } else if (/401|Unauthorized/i.test(msg)) {
+            msg = '로그인이 만료되었습니다. 다시 로그인 후 시도해 주세요.';
+        } else if (/500/i.test(msg)) {
+            msg = '서버 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.\n(' + msg.substring(0, 100) + ')';
+        }
+        alert('저장 실패: ' + msg);
         return;
     }
     // 2) 폼 리셋 + 화면 갱신 — 여기서 난 오류는 저장과 무관, 콘솔에만 기록
