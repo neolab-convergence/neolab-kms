@@ -54,7 +54,7 @@ router.post('/api/upload', requireAdmin, upload.single('file'), async (req, res)
     });
 });
 
-// 인증된 파일 접근
+// 인증된 파일 접근 (UUID 파일명은 영구 캐시 가능)
 router.get('/api/files/:filename', requireAuth, (req, res) => {
     const filename = path.basename(req.params.filename);
     const filePath = path.join(uploadsDir, filename);
@@ -64,6 +64,14 @@ router.get('/api/files/:filename', requireAuth, (req, res) => {
     res.setHeader('Content-Type', mimeTypes[ext] || 'application/octet-stream');
     res.setHeader('Content-Disposition', 'inline');
     res.setHeader('X-Content-Type-Options', 'nosniff');
+    // 🚀 UUID 파일명이라 내용 변경되지 않음 → 7일 캐시 (private: 인증 필요)
+    // 일반 파일명도 1시간 캐시
+    const isUuid = /^[0-9a-f-]{30,}\./i.test(filename);
+    if (isUuid) {
+        res.setHeader('Cache-Control', 'private, max-age=604800, immutable');
+    } else {
+        res.setHeader('Cache-Control', 'private, max-age=3600');
+    }
     res.sendFile(filePath);
 });
 
@@ -98,6 +106,8 @@ router.get('/api/public-files/:token/:filename', (req, res) => {
     const ext = path.extname(req.params.filename).toLowerCase();
     res.setHeader('Content-Type', mimeTypes[ext] || 'application/octet-stream');
     res.setHeader('Content-Disposition', 'inline');
+    // 🚀 토큰 자체가 unique URL이라 안전하게 캐시 가능
+    res.setHeader('Cache-Control', 'public, max-age=3600, immutable');
     res.sendFile(filePath);
 });
 

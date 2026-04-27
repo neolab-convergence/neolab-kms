@@ -79,19 +79,14 @@ async function toggleInlineExpand(id) {
                 html += '<img src="/api/files/' + encodeURIComponent(f.trim()) + '" alt="설명" onclick="openLightbox(this.src, \'' + post.title.replace(/'/g, "\\'") + '\')" />';
             });
         }
-        // PDF
+        // PDF - 🚀 토큰 라운드트립 제거, 쿠키 인증으로 직접 로드 (1RTT 절약)
         else if (post.type === 'pdf' && post.fileName) {
-            try {
-                var tokenRes = await api.post('/api/files/' + encodeURIComponent(post.fileName) + '/token');
-                var pdfUrl = '/api/public-files/' + tokenRes.token + '/' + encodeURIComponent(post.fileName);
-                html += '<iframe src="' + pdfUrl + '#toolbar=1&view=FitH" loading="lazy"></iframe>';
-                html += '<div class="mobile-inline-actions">';
-                html += '<a href="' + pdfUrl + '" download>⬇ 다운로드</a>';
-                html += '<a href="' + pdfUrl + '" target="_blank">↗ 전체화면</a>';
-                html += '</div>';
-            } catch(e) {
-                html += '<p style="color:var(--text-light);padding:20px;text-align:center;">PDF 로드 실패</p>';
-            }
+            var pdfUrl = '/api/files/' + encodeURIComponent(post.fileName);
+            html += '<iframe src="' + pdfUrl + '#toolbar=1&view=FitH" loading="lazy"></iframe>';
+            html += '<div class="mobile-inline-actions">';
+            html += '<a href="' + pdfUrl + '" download>⬇ 다운로드</a>';
+            html += '<a href="' + pdfUrl + '" target="_blank">↗ 전체화면</a>';
+            html += '</div>';
         }
         // URL iframe
         else if (post.url && post.url.trim()) {
@@ -204,19 +199,14 @@ async function openProductDetail(post, catName) {
             }
         });
     }
-    // 2. PDF 파일
+    // 2. PDF 파일 - 🚀 토큰 라운드트립 제거 (쿠키 인증으로 직접 로드)
     else if (post.type === 'pdf' && post.fileName) {
-        try {
-            var tokenRes = await api.post('/api/files/' + encodeURIComponent(post.fileName) + '/token');
-            var pdfUrl = '/api/public-files/' + tokenRes.token + '/' + encodeURIComponent(post.fileName);
-            html += '<iframe src="' + pdfUrl + '#toolbar=1&navpanes=0&view=Fit" style="width:100%; height:85vh; border:none; border-radius:12px; background:#fff;"></iframe>';
-            html += '<div style="margin-top:12px; display:flex; gap:12px; justify-content:center;">';
-            html += '<a href="' + pdfUrl + '" download style="padding:10px 24px; background:var(--primary); color:#fff; border-radius:8px; text-decoration:none; font-weight:600;">⬇ 다운로드</a>';
-            html += '<a href="' + pdfUrl + '" target="_blank" style="padding:10px 24px; background:var(--brand-gray); color:#fff; border-radius:8px; text-decoration:none; font-weight:600;">↗ 새창에서 열기</a>';
-            html += '</div>';
-        } catch(e) {
-            html += '<p style="color:var(--text-light);">PDF 로드에 실패했습니다.</p>';
-        }
+        var pdfUrl = '/api/files/' + encodeURIComponent(post.fileName);
+        html += '<iframe src="' + pdfUrl + '#toolbar=1&navpanes=0&view=Fit" style="width:100%; height:85vh; border:none; border-radius:12px; background:#fff;" loading="lazy"></iframe>';
+        html += '<div style="margin-top:12px; display:flex; gap:12px; justify-content:center;">';
+        html += '<a href="' + pdfUrl + '" download style="padding:10px 24px; background:var(--primary); color:#fff; border-radius:8px; text-decoration:none; font-weight:600;">⬇ 다운로드</a>';
+        html += '<a href="' + pdfUrl + '" target="_blank" style="padding:10px 24px; background:var(--brand-gray); color:#fff; border-radius:8px; text-decoration:none; font-weight:600;">↗ 새창에서 열기</a>';
+        html += '</div>';
     }
     // 3. URL 링크 (Google Drive/Docs 등 임베드 가능)
     else if (post.url && post.url.trim()) {
@@ -436,8 +426,8 @@ window.copyShareLink = function(postId) {
 window.openPost = async function(id) {
     try {
         addRecentViewed(id);
-        await api.post(`/api/posts/${id}/view`);
-        invalidate('/api/posts');
+        // 🚀 조회수 업데이트는 fire-and-forget, 캐시 무효화도 안 함 (사용자 응답 차단 방지)
+        api.post(`/api/posts/${id}/view`).catch(function(){});
         const post = await api.get(`/api/posts/${id}`);
         currentViewerPost = post;
 

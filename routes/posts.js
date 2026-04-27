@@ -31,13 +31,22 @@ async function extractOcrFromFiles(fileFields, title) {
 router.get('/api/posts', requireAuth, async (req, res) => {
     try {
         let data = await getCached('posts');
-        data = data.map(({ _rowIndex, ...r }) => r);
+        const isSearch = !!req.query.search;
         if (req.query.boardId) data = data.filter(p => p.boardId === req.query.boardId);
         if (req.query.categoryId) data = data.filter(p => p.categoryId === req.query.categoryId);
-        if (req.query.search) {
+        if (isSearch) {
             const q = req.query.search.toLowerCase();
             data = data.filter(p => p.title.toLowerCase().includes(q) || (p.content && p.content.toLowerCase().includes(q)) || (p.ocrText && p.ocrText.toLowerCase().includes(q)));
         }
+        // 🚀 목록에서는 ocrText/content 등 큰 필드 제거 (응답 크기 90% 감소)
+        // 검색 시에도 결과만 보여주면 되므로 본문 제외
+        data = data.map(({ _rowIndex, ocrText, content, ...rest }) => {
+            // content는 [PRODUCT_DESC] 같은 메타 정보가 필요할 수 있어 짧게 유지
+            const shortContent = content && content.startsWith('[') ? content.substring(0, 200) : '';
+            return { ...rest, content: shortContent };
+        });
+        // HTTP 캐시: 목록은 30초 캐시 (private)
+        res.setHeader('Cache-Control', 'private, max-age=30');
         res.json(data);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -199,16 +208,43 @@ router.delete('/api/posts/:id', requireAdmin, async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.post('/api/posts/:id/view', requireAuth, async (req, res) => {
+// 🚀 조회수 배치 누적 (인메모리) - 30초마다 시트에 일괄 반영
+const viewBuffer = new Map(); // postId → 누적 카운트
+let viewFlushScheduled = false;
+
+async function flushViewCounts() {
+    if (viewBuffer.size === 0) return;
+    const snapshot = new Map(viewBuffer);
+    viewBuffer.clear();
     try {
         const data = await getSheetData('posts');
-        const row = data.find(p => p.id === req.params.id);
-        if (!row) return res.status(404).json({ error: '게시물을 찾을 수 없습니다.' });
-        row.views = String((parseInt(row.views) || 0) + 1);
-        await updateRow('posts', row._rowIndex, row);
-        invalidateCache('posts');
-        res.json({ views: row.views });
-    } catch (err) { res.status(500).json({ error: err.message }); }
+        let updated = 0;
+        for (const [postId, count] of snapshot) {
+            const row = data.find(p => p.id === postId);
+            if (!row) continue;
+            row.views = String((parseInt(row.views) || 0) + count);
+            await updateRow('posts', row._rowIndex, row);
+            updated++;
+        }
+        if (updated > 0) invalidateCache('posts');
+    } catch (e) {
+        // 실패 시 카운트 다시 누적 (다음 flush 때 재시도)
+        for (const [postId, count] of snapshot) {
+            viewBuffer.set(postId, (viewBuffer.get(postId) || 0) + count);
+        }
+    }
+}
+// 30초마다 자동 flush
+setInterval(flushViewCounts, 30000);
+// 종료 시 flush
+process.on('SIGTERM', flushViewCounts);
+process.on('SIGINT', flushViewCounts);
+
+router.post('/api/posts/:id/view', requireAuth, async (req, res) => {
+    // 🚀 즉시 응답 (시트 업데이트는 백그라운드 배치)
+    const id = req.params.id;
+    viewBuffer.set(id, (viewBuffer.get(id) || 0) + 1);
+    res.json({ ok: true });
 });
 
 // 기존 게시물의 이미지/PDF OCR 일괄 추출 (관리자 전용)
