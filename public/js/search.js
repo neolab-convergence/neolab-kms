@@ -59,34 +59,43 @@ function renderSearchResults(posts, query) {
     grid.innerHTML = html;
 }
 
-document.getElementById('globalSearch').addEventListener('keypress', async function(e) {
-    if (e.key === 'Enter') {
-        _searchQuery = this.value.trim().toLowerCase();
-        if (!_searchQuery) return;
+// 검색 실행 함수 (어디서든 호출 가능)
+async function performGlobalSearch(rawQuery) {
+    var q = (rawQuery || '').trim().toLowerCase();
+    if (!q) return;
+    _searchQuery = q;
 
-        navigateTo('search-results');
-        document.getElementById('searchKeywordDisplay').innerHTML = '<strong>"' + _searchQuery + '"</strong>에 대한 통합 검색 결과입니다.';
+    navigateTo('search-results');
+    document.getElementById('searchKeywordDisplay').innerHTML = '<strong>"' + _searchQuery + '"</strong>에 대한 통합 검색 결과입니다.';
 
-        var posts = await api.get('/api/posts?search=' + encodeURIComponent(_searchQuery));
-        var boards = await cachedGet('/api/boards');
-        var boardsMap = {};
-        boards.forEach(function(b) { boardsMap[b.id] = b.name; });
-        posts.forEach(function(p) { p._boardName = boardsMap[p.boardId] || '문서'; });
-        _searchAllPosts = posts;
+    var posts = await api.get('/api/posts?search=' + encodeURIComponent(_searchQuery));
+    var boards = await cachedGet('/api/boards');
+    var boardsMap = {};
+    boards.forEach(function(b) { boardsMap[b.id] = b.name; });
+    posts.forEach(function(p) { p._boardName = boardsMap[p.boardId] || '문서'; });
+    _searchAllPosts = posts;
 
-        // 게시판 필터 옵션 동적 생성
-        var boardSelect = document.getElementById('searchBoardFilter');
-        var boardIds = {};
-        posts.forEach(function(p) { if (p.boardId) boardIds[p.boardId] = boardsMap[p.boardId] || p.boardId; });
-        boardSelect.innerHTML = '<option value="all">전체 게시판</option>';
-        Object.keys(boardIds).forEach(function(id) {
-            boardSelect.innerHTML += '<option value="' + id + '">' + boardIds[id] + '</option>';
-        });
+    // 게시판 필터 옵션 동적 생성
+    var boardSelect = document.getElementById('searchBoardFilter');
+    var boardIds = {};
+    posts.forEach(function(p) { if (p.boardId) boardIds[p.boardId] = boardsMap[p.boardId] || p.boardId; });
+    boardSelect.innerHTML = '<option value="all">전체 게시판</option>';
+    Object.keys(boardIds).forEach(function(id) {
+        boardSelect.innerHTML += '<option value="' + id + '">' + boardIds[id] + '</option>';
+    });
 
-        document.getElementById('searchTypeFilter').value = 'all';
-        renderSearchResults(posts, _searchQuery);
-    }
-});
+    document.getElementById('searchTypeFilter').value = 'all';
+    renderSearchResults(posts, _searchQuery);
+}
+window.performGlobalSearch = performGlobalSearch;
+
+// heroSearch (홈 화면 메인 검색바) Enter 핸들러
+var _heroSearchEl = document.getElementById('heroSearch');
+if (_heroSearchEl) {
+    _heroSearchEl.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') performGlobalSearch(this.value);
+    });
+}
 
 // 필터 변경 시 재렌더링
 document.getElementById('searchBoardFilter').addEventListener('change', function() {

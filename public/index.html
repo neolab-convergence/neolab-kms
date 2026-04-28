@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=108">
+    <link rel="stylesheet" href="css/style.css?v=109">
     <!-- CSS is loaded from css/style.css -->
 </head>
 <body>
@@ -85,11 +85,7 @@
                 </button>
                 
                 <div class="breadcrumb" id="breadcrumb"><span>🏠 홈</span></div>
-                
-                <div class="search-box">
-                    <svg class="search-icon" width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                    <input type="text" class="search-input" id="globalSearch" placeholder="문서, 규정, 양식 검색 후 Enter를 누르세요...">
-                </div>
+                <div style="flex:1;"></div>
                 <button type="button" class="icon-btn dark-toggle" id="darkModeToggle" title="다크모드 전환">🌙</button>
             </header>
             
@@ -1129,8 +1125,12 @@
         }
         function mobileOpenSearch() {
             mobileTabSelect('search');
-            var inp = document.getElementById('globalSearch');
-            if (inp) { inp.scrollIntoView({behavior:'smooth', block:'center'}); setTimeout(function(){ inp.focus(); }, 300); }
+            // 홈 화면의 hero 검색바로 이동 후 포커스
+            if (typeof navigateTo === 'function') navigateTo('dashboard');
+            setTimeout(function(){
+                var inp = document.getElementById('heroSearch');
+                if (inp) { inp.scrollIntoView({behavior:'smooth', block:'center'}); setTimeout(function(){ inp.focus(); }, 200); }
+            }, 100);
         }
         function mobileScrollFavorites() {
             mobileTabSelect('fav');
@@ -1150,7 +1150,7 @@
 <script src="js/core.js?v=86"></script>
 <script src="js/navigation.js?v=86"></script>
 <script src="js/search.js?v=86"></script>
-<script src="js/viewer.js?v=108"></script>
+<script src="js/viewer.js?v=109"></script>
 <script src="js/board.js?v=86"></script>
 <script src="js/features.js?v=86"></script>
 <script src="js/app.js?v=86"></script>

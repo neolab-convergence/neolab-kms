@@ -93,33 +93,44 @@ async function renderCategoryBoard(posts, boardsMap) {
         return '';
     }
 
-    container.innerHTML = boards.map(function(b) {
+    // 인사 관련 보드는 클릭 시 hr 페이지(전체 인원 현황)로 이동
+    function isHrBoard(name) {
+        return /인사|채용|hr|인재/i.test(name || '');
+    }
+
+    var html = boards.map(function(b) {
         var count = counts[b.id] || 0;
         var icon = pickIcon(b.name);
         var desc = pickDesc(b.name);
-        return '<div class="cat-board-card" onclick="navigateTo(\'' + b.id + '\')">' +
+        var clickAction = isHrBoard(b.name)
+            ? "goToHrContacts()"
+            : "navigateTo('" + b.id + "')";
+        var displayCount = isHrBoard(b.name) ? '인원 현황' : (count + '개 문서');
+        return '<div class="cat-board-card" onclick="' + clickAction + '">' +
             '<div class="cat-board-icon">' + icon + '</div>' +
             '<div class="cat-board-name">' + b.name + '</div>' +
             (desc ? '<div class="cat-board-desc">' + desc + '</div>' : '<div class="cat-board-desc">바로가기</div>') +
             '<div class="cat-board-meta">' +
-            '<span class="cat-board-count">' + count + '개 문서</span>' +
+            '<span class="cat-board-count">' + displayCount + '</span>' +
             '<svg class="cat-board-arrow" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>' +
             '</div></div>';
     }).join('');
+    container.innerHTML = html;
 }
 
-// 🔍 히어로 검색바: Enter 시 글로벌 검색으로 위임
-function bindHeroSearch() {
-    var hero = document.getElementById('heroSearch');
-    var globalInput = document.getElementById('globalSearch');
-    if (!hero || !globalInput) return;
-    hero.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            globalInput.value = hero.value;
-            globalInput.dispatchEvent(new KeyboardEvent('keypress', { key: 'Enter' }));
-        }
-    });
+// 🧑‍💼 인사정보 카드 클릭 → hr 페이지의 연락처 탭(전체 인원 현황)으로 이동
+window.goToHrContacts = function() {
+    navigateTo('hr');
+    setTimeout(function() {
+        var contactsTab = document.querySelector('#hr .tab[data-tab="contacts"]');
+        if (contactsTab && !contactsTab.classList.contains('active')) contactsTab.click();
+        // 인원 목록을 다시 로드
+        if (typeof loadContacts === 'function') loadContacts();
+    }, 50);
+};
 }
+
+// (heroSearch 핸들러는 search.js로 이동됨)
 
 /* ==========================================
    앱 초기화
@@ -142,7 +153,6 @@ window.addEventListener('DOMContentLoaded', async function() {
     await renderRecentViewed();
     await updateDashboardStats();
     await loadDashboardWidgets();
-    bindHeroSearch();
     await loadNoticeCards();
     await loadContacts();
     await loadOrgChart();
