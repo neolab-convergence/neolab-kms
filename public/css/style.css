@@ -82,9 +82,132 @@
         .page-section.active { display: block; }
         
         .welcome-banner { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%); color: white; padding: 48px; border-radius: 16px; margin-bottom: 32px; display: flex; align-items: center; justify-content: space-between; position: relative; overflow: hidden; box-shadow: 0 10px 20px rgba(255, 103, 32, 0.2); }
-        .welcome-content { position: relative; z-index: 1; }
-        .welcome-title { font-size: 32px; font-weight: 800; margin-bottom: 8px; }
+        .welcome-content { position: relative; z-index: 1; flex: 1; }
+        .welcome-title { font-size: 32px; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.5px; }
         .welcome-subtitle { font-size: 16px; opacity: 0.9; }
+
+        /* 🎨 환영 배너 v2: 통계 통합 + 빛나는 원형 효과 */
+        .welcome-banner-v2 { padding: 32px 40px; margin-bottom: 28px; gap: 32px; }
+        .welcome-banner-v2 .welcome-title { font-size: 28px; }
+        .welcome-banner-v2 .welcome-subtitle { font-size: 14px; max-width: 600px; line-height: 1.6; }
+        .welcome-banner-v2::before {
+            content: '';
+            position: absolute;
+            right: -80px; top: -80px;
+            width: 280px; height: 280px;
+            background: radial-gradient(circle, rgba(255,255,255,0.18) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        .welcome-stats {
+            display: flex; align-items: center; gap: 24px;
+            position: relative; z-index: 1;
+            background: rgba(255,255,255,0.15);
+            -webkit-backdrop-filter: blur(8px);
+            backdrop-filter: blur(8px);
+            padding: 18px 26px;
+            border-radius: 14px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .welcome-stat-item { display: flex; flex-direction: column; align-items: center; min-width: 60px; }
+        .welcome-stat-value { font-size: 26px; font-weight: 800; line-height: 1; margin-bottom: 4px; }
+        .welcome-stat-label { font-size: 11px; opacity: 0.9; font-weight: 500; white-space: nowrap; }
+        .welcome-stat-divider { width: 1px; height: 36px; background: rgba(255,255,255,0.3); }
+        @media (max-width: 768px) {
+            .welcome-banner-v2 { padding: 22px 20px !important; flex-direction: column; align-items: flex-start; gap: 18px; }
+            .welcome-banner-v2 .welcome-title { font-size: 22px !important; }
+            .welcome-stats { align-self: stretch; justify-content: space-around; padding: 14px 12px; }
+            .welcome-stat-value { font-size: 22px; }
+            .welcome-stat-divider { display: none; }
+        }
+
+        /* 🏷️ 섹션 라벨 */
+        .section-label {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            letter-spacing: -0.2px;
+        }
+
+        /* 📂 카테고리 카드 보드 */
+        .category-board {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 14px;
+            margin-bottom: 32px;
+        }
+        .cat-board-card {
+            background: var(--card-bg);
+            border-radius: 14px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            border: 1.5px solid var(--border-color);
+        }
+        .cat-board-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--primary-light));
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.3s;
+        }
+        .cat-board-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 28px rgba(255,103,32,0.12);
+            border-color: rgba(255,103,32,0.4);
+        }
+        .cat-board-card:hover::before { transform: scaleX(1); }
+        .cat-board-icon {
+            width: 48px; height: 48px;
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 26px;
+            margin-bottom: 12px;
+            background: linear-gradient(135deg, rgba(255,103,32,0.12), rgba(255,136,77,0.18));
+        }
+        .cat-board-name {
+            font-size: 16px; font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+            letter-spacing: -0.3px;
+        }
+        .cat-board-desc {
+            font-size: 12px; color: var(--text-light);
+            margin-bottom: 12px;
+            line-height: 1.4;
+            min-height: 17px;
+        }
+        .cat-board-meta {
+            display: flex; align-items: center; justify-content: space-between;
+            font-size: 12px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border-color);
+        }
+        .cat-board-count {
+            font-weight: 700; color: var(--primary);
+            font-size: 13px;
+        }
+        .cat-board-arrow {
+            color: var(--text-light);
+            transition: transform 0.2s, color 0.2s;
+        }
+        .cat-board-card:hover .cat-board-arrow {
+            transform: translateX(4px);
+            color: var(--primary);
+        }
+        @media (max-width: 768px) {
+            .category-board { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+            .cat-board-card { padding: 14px; border-radius: 12px; }
+            .cat-board-icon { width: 40px; height: 40px; font-size: 22px; margin-bottom: 8px; }
+            .cat-board-name { font-size: 14px; }
+            .cat-board-desc { display: none; }
+        }
         
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 24px; margin-bottom: 32px; }
         .stat-card { background: var(--card-bg); border-radius: 12px; padding: 24px; box-shadow: var(--shadow); position: relative; overflow: hidden; transition: all 0.3s; }

@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=107">
+    <link rel="stylesheet" href="css/style.css?v=110">
     <!-- CSS is loaded from css/style.css -->
 </head>
 <body>
@@ -95,19 +95,43 @@
             
             <div class="content">
                 <section class="page-section active" id="dashboard">
-                    <div class="welcome-banner">
+                    <!-- 🎨 환영 배너 (통계 통합) -->
+                    <div class="welcome-banner welcome-banner-v2">
                         <div class="welcome-content">
                             <h1 class="welcome-title">NeoLAB Guidebook</h1>
                             <p class="welcome-subtitle">회사정보, 사내규정, 업무 가이드 등 다양한 업무 지식과 정보를 통합 제공하는 공간입니다.</p>
                         </div>
+                        <div class="welcome-stats">
+                            <div class="welcome-stat-item">
+                                <span class="welcome-stat-value" id="count-total">0</span>
+                                <span class="welcome-stat-label">총 문서</span>
+                            </div>
+                            <div class="welcome-stat-divider"></div>
+                            <div class="welcome-stat-item">
+                                <span class="welcome-stat-value" id="count-reg">0</span>
+                                <span class="welcome-stat-label">사내규정</span>
+                            </div>
+                            <div class="welcome-stat-divider"></div>
+                            <div class="welcome-stat-item">
+                                <span class="welcome-stat-value" id="count-emp">0</span>
+                                <span class="welcome-stat-label">임직원</span>
+                            </div>
+                        </div>
                     </div>
-                    
+
+                    <!-- 📂 카테고리 카드 보드 -->
+                    <div class="section-label">📚 카테고리 바로가기</div>
+                    <div class="category-board" id="categoryBoard"></div>
+
+                    <!-- ⭐ 즐겨찾기 -->
                     <div class="quick-section" id="favoritesSection" style="display:none;">
                         <div class="quick-section-header">
                             <div class="quick-section-title">⭐ 즐겨찾기</div>
                         </div>
                         <div class="quick-list" id="favoritesList"></div>
                     </div>
+
+                    <!-- 🕐 최근 본 문서 -->
                     <div class="quick-section" id="recentSection" style="display:none;">
                         <div class="quick-section-header">
                             <div class="quick-section-title">🕐 최근 본 문서</div>
@@ -115,40 +139,19 @@
                         <div class="quick-list" id="recentList"></div>
                     </div>
 
-                    <div class="stats-grid">
-                        <div class="stat-card" style="--stat-color: var(--primary); cursor:pointer;" onclick="navigateTo(Object.keys(pageNames).find(k => k !== 'dashboard' && k !== 'hr' && k !== 'notices' && k !== 'search-results') || 'dashboard')">
-                            <div class="stat-header">
-                                <div class="stat-icon" style="background: rgba(255,103,32,0.1); color: var(--primary)">📄</div>
-                            </div>
-                            <div class="stat-value" id="count-total">0</div>
-                            <div class="stat-label">총 문서</div>
-                        </div>
-                        <div class="stat-card" style="--stat-color: var(--cyan); cursor:pointer;" onclick="navigateTo('rule')">
-                            <div class="stat-header">
-                                <div class="stat-icon" style="background: rgba(255,133,71,0.1); color: var(--cyan)">📋</div>
-                            </div>
-                            <div class="stat-value" id="count-reg">0</div>
-                            <div class="stat-label">사내규정</div>
-                        </div>
-                        <div class="stat-card" style="--stat-color: var(--amber); cursor:pointer;" onclick="navigateTo('hr')">
-                            <div class="stat-header">
-                                <div class="stat-icon" style="background: rgba(245,158,11,0.1); color: var(--amber)">👥</div>
-                            </div>
-                            <div class="stat-value" id="count-emp">0</div>
-                            <div class="stat-label">임직원</div>
-                        </div>
-                    </div>
-                    
+                    <!-- 📰 새 소식 + 🔥 인기 문서 -->
                     <div class="grid-2-1">
                         <div class="card">
                             <div class="card-header">
-                                <h2 class="card-title">최근 업데이트 문서</h2>
+                                <h2 class="card-title">📰 새 소식</h2>
+                                <span style="font-size:12px; color:var(--text-light);">최근 등록 문서</span>
                             </div>
                             <div class="update-list" id="dashboardUpdateList"></div>
                         </div>
                         <div class="card">
                             <div class="card-header">
-                                <h2 class="card-title">자주 찾는 문서 📊</h2>
+                                <h2 class="card-title">🔥 인기 문서</h2>
+                                <span style="font-size:12px; color:var(--text-light);">조회수 TOP 5</span>
                             </div>
                             <div class="popular-list" id="dashboardPopularList"></div>
                         </div>
@@ -1136,13 +1139,13 @@
     </script>
 
 <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
-<script src="js/core.js?v=86"></script>
-<script src="js/navigation.js?v=86"></script>
-<script src="js/search.js?v=86"></script>
-<script src="js/viewer.js?v=107"></script>
-<script src="js/board.js?v=86"></script>
-<script src="js/features.js?v=86"></script>
-<script src="js/app.js?v=86"></script>
-<script src="js/admin.js?v=86"></script>
+<script src="js/core.js?v=110"></script>
+<script src="js/navigation.js?v=110"></script>
+<script src="js/search.js?v=110"></script>
+<script src="js/viewer.js?v=110"></script>
+<script src="js/board.js?v=110"></script>
+<script src="js/features.js?v=110"></script>
+<script src="js/app.js?v=110"></script>
+<script src="js/admin.js?v=110"></script>
 </body>
 </html>
