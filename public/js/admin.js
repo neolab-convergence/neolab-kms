@@ -76,10 +76,33 @@ async function loadAdminPostTable() {
     if (pagePosts.length === 0) {
         tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:40px; color:var(--text-light);">등록된 게시물이 없습니다.</td></tr>';
     } else {
-        tbody.innerHTML = pagePosts.map((p, i) =>
-            `<tr>
+        // 🔢 그룹별 위치 맵: 같은 보드+카테고리 내 idx와 group size 계산
+        // (정렬이 order 모드일 때만 ▲▼ 활성화)
+        const isOrderMode = adminPostSortField === 'order';
+        const groupCache = {};
+        function getGroupInfo(p) {
+            const key = (p.boardId||'') + '|' + (p.categoryId||'');
+            if (!groupCache[key]) {
+                groupCache[key] = posts.filter(x => x.boardId === p.boardId && x.categoryId === p.categoryId);
+            }
+            const group = groupCache[key];
+            const idx = group.findIndex(x => x.id === p.id);
+            return { idx, total: group.length };
+        }
+
+        tbody.innerHTML = pagePosts.map((p, i) => {
+            const gi = getGroupInfo(p);
+            const canUp = isOrderMode && gi.idx > 0;
+            const canDown = isOrderMode && gi.idx < gi.total - 1;
+            const orderBtns = isOrderMode
+                ? `<div style="display:flex; flex-direction:column; gap:2px; margin-left:6px;">
+                       <button type="button" onclick="moveAdminPost('${p.id}', -1)" ${canUp?'':'disabled'} title="위로" style="background:${canUp?'var(--card-bg)':'transparent'}; border:1px solid ${canUp?'var(--border-color)':'transparent'}; border-radius:3px; cursor:${canUp?'pointer':'default'}; padding:1px 5px; font-size:9px; color:${canUp?'var(--text-secondary)':'var(--text-light)'}; opacity:${canUp?1:0.3}; line-height:1;">▲</button>
+                       <button type="button" onclick="moveAdminPost('${p.id}', 1)" ${canDown?'':'disabled'} title="아래로" style="background:${canDown?'var(--card-bg)':'transparent'}; border:1px solid ${canDown?'var(--border-color)':'transparent'}; border-radius:3px; cursor:${canDown?'pointer':'default'}; padding:1px 5px; font-size:9px; color:${canDown?'var(--text-secondary)':'var(--text-light)'}; opacity:${canDown?1:0.3}; line-height:1;">▼</button>
+                   </div>`
+                : '';
+            return `<tr>
                 <td class="td-check"><input type="checkbox" class="post-check" value="${p.id}"></td>
-                <td class="td-num">${startIdx + i + 1}</td>
+                <td class="td-num"><div style="display:flex; align-items:center; justify-content:center;"><span>${startIdx + i + 1}</span>${orderBtns}</div></td>
                 <td><span class="td-badge badge-cat">${boardMap[p.boardId]||''}</span></td>
                 <td><span class="td-badge badge-cat">${catMap[p.categoryId]||''}</span></td>
                 <td class="td-title-link" onclick="editPost('${p.id}')">${p.title}</td>
@@ -90,8 +113,19 @@ async function loadAdminPostTable() {
                     <button type="button" onclick="editPost('${p.id}')" style="background:none; border:1px solid var(--primary); color:var(--primary); padding:4px 10px; border-radius:4px; cursor:pointer; font-size:12px; margin-right:4px;">수정</button>
                     <button type="button" onclick="deleteOnePost('${p.id}')" style="background:none; border:1px solid #ef4444; color:#ef4444; padding:4px 10px; border-radius:4px; cursor:pointer; font-size:12px;">삭제</button>
                 </td>
-            </tr>`
-        ).join('');
+            </tr>`;
+        }).join('');
+
+        // 정렬 모드 안내 표시
+        const hint = document.getElementById('adminPostOrderHint');
+        if (hint) {
+            if (!isOrderMode) {
+                hint.innerHTML = '⚠️ 순서 변경(▲▼)은 <b>번호 정렬</b> 상태에서만 가능합니다. <a href="#" onclick="setAdminPostSort(\'order\'); return false;" style="color:var(--primary); font-weight:600;">번호 정렬로 변경</a>';
+                hint.style.display = 'block';
+            } else {
+                hint.style.display = 'none';
+            }
+        }
     }
 
     const pagDiv = document.getElementById('adminPostPagination');
@@ -125,6 +159,34 @@ window.deleteOnePost = async function(id) {
     if (!confirm('이 게시물을 삭제하시겠습니까?')) return;
     await api.del('/api/posts/' + id);
     invalidateAll(); loadAdminPostTable();
+};
+
+// 🔼🔽 게시물 순서 변경 (같은 게시판+카테고리 그룹 내에서만)
+window.moveAdminPost = async function(postId, direction) {
+    try {
+        let posts = await api.get('/api/posts');
+        posts = sortByOrder(posts);
+        const target = posts.find(p => p.id === postId);
+        if (!target) return;
+        // 같은 보드+카테고리 그룹만 추출 (순서가 의미있는 단위)
+        const group = posts.filter(p => p.boardId === target.boardId && p.categoryId === target.categoryId);
+        const idx = group.findIndex(p => p.id === postId);
+        if (idx === -1) return;
+        const swapIdx = idx + direction;
+        if (swapIdx < 0 || swapIdx >= group.length) return;
+        await moveItem('posts', group, idx, direction);
+        invalidateAll();
+        await loadAdminPostTable();
+    } catch (e) {
+        alert('순서 변경 실패: ' + (e.message || e));
+    }
+};
+
+// 정렬을 order 모드로 강제 (안내 링크에서 호출)
+window.setAdminPostSort = function(field) {
+    adminPostSortField = field;
+    adminPostSortDir = 1;
+    loadAdminPostTable();
 };
 
 // ═══ 일괄 이동 ═══
