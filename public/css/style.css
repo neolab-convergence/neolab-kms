@@ -41,9 +41,9 @@
         .layout { display: flex; min-height: 100vh; }
         .sidebar { width: 260px; background: var(--sidebar-bg); color: var(--sidebar-text); position: fixed; height: 100vh; overflow-y: auto; transition: width 0.3s; z-index: 1000; border-right: 1px solid rgba(0,0,0,0.1); }
         .sidebar.collapsed { width: 70px; }
-        .sidebar-logo { padding: 24px 20px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); }
-        .logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, var(--primary), var(--primary-light)); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-        .logo-text { font-size: 20px; font-weight: 800; color: white; white-space: nowrap; }
+        .sidebar-logo { padding: 24px 16px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .logo-icon { width: 32px; height: 32px; background: linear-gradient(135deg, var(--primary), var(--primary-light)); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .logo-text { font-size: 17px; font-weight: 800; color: white; white-space: nowrap; letter-spacing: -0.4px; }
         .sidebar.collapsed .logo-text, .sidebar.collapsed .menu-text, .sidebar.collapsed .submenu { display: none; }
         .sidebar-menu { padding: 20px 0; }
         .menu-section { margin-bottom: 8px; }
