@@ -45,8 +45,9 @@ router.get('/api/posts', requireAuth, async (req, res) => {
             const shortContent = content && content.startsWith('[') ? content.substring(0, 200) : '';
             return { ...rest, content: shortContent };
         });
-        // HTTP 캐시: 목록은 30초 캐시 (private)
-        res.setHeader('Cache-Control', 'private, max-age=30');
+        // 🚫 HTTP 캐시 비활성화: 관리자 수정/순서변경이 즉시 반영되어야 함
+        // (서버 측 getCached가 30초 캐시를 처리하므로 성능 영향은 적음)
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
         res.json(data);
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
