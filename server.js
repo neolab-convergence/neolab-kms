@@ -15,8 +15,8 @@ const { getMaintenanceMode, isAdminEmail } = require('./lib/auth');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Cloudflare/ngrok 프록시 신뢰
-app.set('trust proxy', true);
+// nginx 리버스 프록시만 신뢰 (호스트 헤더 위조 방지)
+app.set('trust proxy', 'loopback');
 
 // ─── 미들웨어 ───
 app.use(express.json({ limit: '50mb' }));
@@ -30,12 +30,16 @@ app.use(session({
     store: new FileStore({
         path: sessionsDir,
         ttl: 86400,
-        retries: 0,
-        cleanupInterval: 3600
+        retries: 1,                      // 1회 재시도 (read 실패 견고성)
+        reapInterval: 1800,              // 30분마다 만료 세션 정리
+        reapAsync: true,                 // 비동기 정리 (서버 영향 최소화)
+        logFn: () => {},                 // session-file-store 자체 로그 억제
+        fallbackSessionFn: () => null    // 세션 read 실패 시 null 반환 (에러 던지지 않음)
     }),
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
+    rolling: true,                       // 활동 시 세션 만료 갱신 (사용자 끊김 방지)
     cookie: {
         maxAge: 24 * 60 * 60 * 1000,
         secure: 'auto',
@@ -78,6 +82,21 @@ app.use(require('./routes/suggestions'));
 // ─── 점검 상태 확인 API (인증 불필요) ───
 app.get('/api/maintenance-status', (req, res) => {
     res.json({ maintenance: getMaintenanceMode() });
+});
+
+// ─── 헬스체크 (모니터링/오픈 점검용) ───
+app.get('/health', (req, res) => {
+    const mem = process.memoryUsage();
+    res.json({
+        status: 'ok',
+        uptime: Math.round(process.uptime()),
+        memory: {
+            heapUsedMB: Math.round(mem.heapUsed / 1024 / 1024),
+            heapTotalMB: Math.round(mem.heapTotal / 1024 / 1024),
+            rssMB: Math.round(mem.rss / 1024 / 1024)
+        },
+        timestamp: new Date().toISOString()
+    });
 });
 
 // ─── 정적 파일 서빙 ───
