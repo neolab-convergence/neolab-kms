@@ -137,40 +137,37 @@ router.post('/api/chat', requireAuth, async (req, res) => {
             .map(p => ({ post: p, score: scorePost(p, keywords) }))
             .filter(x => x.score > 0)
             .sort((a, b) => b.score - a.score)
-            .slice(0, 7);  // 15 → 7로 축소 (토큰 한도 대응)
+            .slice(0, 5);  // 7 → 5 (무료 모델 토큰 한도 안정 확보)
 
         // 점수 0인 경우 규정/가이드 게시물 우선, 없으면 최근 게시물
         let topPosts = scored.map(x => x.post);
         if (topPosts.length === 0) {
-            // 규정/가이드 관련 게시물 우선 포함
             const regPosts = posts.filter(p => {
                 const t = (p.title || '').toLowerCase();
                 return t.includes('규정') || t.includes('가이드') || t.includes('규칙') || t.includes('제도') || t.includes('정책');
             });
-            topPosts = regPosts.length > 0 ? regPosts.slice(0, 5) : posts.slice(-5);
+            topPosts = regPosts.length > 0 ? regPosts.slice(0, 3) : posts.slice(-3);
         }
 
-        // ─── 1) 전체 문서 목록 (제목+카테고리만) — AI가 관련 문서를 추론할 수 있도록 ───
-        let context = '=== 전체 등록 문서 목록 (제목 인덱스) ===\n';
-        posts.forEach(p => {
-            context += `[DOC:${p.id}] ${p.title} (${boardMap[p.boardId] || ''} > ${catMap[p.categoryId] || ''})\n`;
-        });
-        context += '\n';
+        // ─── 1) 매칭 문서 ID + 키워드만 가벼운 인덱스로 (전체 157개 인덱스 → 매칭 ID만) ───
+        // 이전: 전체 문서 목록 5,000+ 토큰 → 현재: 50토큰 이하
+        const matchedIds = topPosts.map(p => p.id).join(',');
+        let context = `=== 관련 문서 ID: ${matchedIds} ===\n\n`;
 
-        // ─── 2) 키워드 매칭 상위 문서 (본문 포함) — 토큰 한도 대응으로 길이 축소 ───
+        // ─── 2) 키워드 매칭 상위 문서 (본문 포함) ───
         context += '=== 관련 문서 상세 내용 ===\n';
         topPosts.forEach((p, idx) => {
-            // 상위 2개 문서는 2500자, 나머지는 1200자 (이전 5000/3000 → 한도 대응)
-            const limit = idx < 2 ? 2500 : 1200;
+            // 상위 2개는 2000자, 나머지 3개는 1000자
+            const limit = idx < 2 ? 2000 : 1000;
             let doc = (p.content || '').substring(0, limit);
-            if (p.ocrText) doc += '\n[OCR] ' + p.ocrText.substring(0, 800);  // 2000 → 800
+            if (p.ocrText) doc += '\n[OCR] ' + p.ocrText.substring(0, 500);
             context += `[DOC:${p.id}] 제목: ${p.title} | 게시판: ${boardMap[p.boardId] || ''} | 카테고리: ${catMap[p.categoryId] || ''} | 유형: ${p.type || 'text'} | 부가정보: ${p.subInfo || ''}\n내용: ${doc}\n\n`;
         });
 
         if (notices.length > 0) {
             context += '=== 공지사항 ===\n';
-            notices.slice(0, 5).forEach(n => {  // 10 → 5
-                context += `- ${n.title}: ${(n.content || '').substring(0, 150)}\n`;  // 200 → 150
+            notices.slice(0, 3).forEach(n => {
+                context += `- ${n.title}: ${(n.content || '').substring(0, 100)}\n`;
             });
             context += '\n';
         }
@@ -201,29 +198,23 @@ router.post('/api/chat', requireAuth, async (req, res) => {
             context += '\n';
         }
 
-        const systemPrompt = `당신은 NeoLab 사내 지식관리시스템(KMS)의 AI 도우미 "네오봇"입니다.
+        const systemPrompt = `당신은 NeoLab 사내 지식관리시스템의 AI 도우미 "네오봇"입니다.
 
 ## 핵심 규칙
-1. 아래 제공된 문서 데이터를 기반으로 답변하세요.
-2. 답변에 참고한 문서는 반드시 [DOC:문서ID] 형태로 본문 안에 포함하세요. 예: "출장비 정산은... [DOC:3]"
-3. 제공된 상세 내용에 없더라도, **전체 문서 목록**에서 관련 있을 만한 문서를 찾아 안내해주세요.
-4. 어떤 문서에도 관련 내용이 없을 때만 "등록된 문서에서 해당 정보를 찾을 수 없습니다"라고 답변하세요.
-5. 한국어로 친절하고 간결하게, 마크다운 형식(굵게, 목록, 표)을 적극 사용하세요.
+1. 아래 제공된 문서를 기반으로 답변하세요.
+2. 참고한 문서는 [DOC:문서ID] 형태로 본문 안에 포함하세요. 예: "출장비 정산은... [DOC:3]"
+3. 제공된 문서에 관련 내용이 없으면 "등록된 문서에서 해당 정보를 찾을 수 없습니다"라고 답변하세요.
+4. 한국어로 친절하고 간결하게, 마크다운(굵게/목록/표) 활용.
 
-## 질문 이해 (매우 중요!)
-사용자는 공식 용어 대신 일상 표현을 사용합니다. 반드시 유연하게 해석하세요:
-- "복지제도" = "복리후생" = "혜택" → 경비규정, 경조규정, 자기개발비 등
-- "돈 얼마까지" = "전결 금액" = "결재 한도"
-- "쉬는거" = "휴가" = "연차" = "반차"
-- "월급" = "급여" = "연봉" = "보수"
-- "물건 사려면" = "구매" = "자산" = "비품"
-- 질문의 의도를 파악하고, 관련된 모든 문서를 폭넓게 참조하세요.
+## 질문 이해 (유연하게 해석)
+- "복지제도"="복리후생"="혜택", "돈 얼마까지"="전결 금액"
+- "쉬는거"="휴가"="연차", "월급"="급여"
+- "물건 사려면"="구매"="자산"
 
 ## 답변 스타일
-- **결론 먼저**, 그다음 근거와 문서 참조.
-- 인사정보 답변은 표 형식(| 이름 | 직급 | 부서 | 연락처 |)으로.
-- 절차/방법은 번호 목록으로.
-- 관련 문서가 여러 개면 모두 안내하세요.
+- 결론 먼저, 그다음 근거.
+- 인사정보는 표(| 이름 | 직급 | 부서 | 연락처 |).
+- 절차는 번호 목록.
 
 ${context}`;
 
