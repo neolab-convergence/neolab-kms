@@ -137,7 +137,7 @@ router.post('/api/chat', requireAuth, async (req, res) => {
             .map(p => ({ post: p, score: scorePost(p, keywords) }))
             .filter(x => x.score > 0)
             .sort((a, b) => b.score - a.score)
-            .slice(0, 15);
+            .slice(0, 7);  // 15 → 7로 축소 (토큰 한도 대응)
 
         // 점수 0인 경우 규정/가이드 게시물 우선, 없으면 최근 게시물
         let topPosts = scored.map(x => x.post);
@@ -147,7 +147,7 @@ router.post('/api/chat', requireAuth, async (req, res) => {
                 const t = (p.title || '').toLowerCase();
                 return t.includes('규정') || t.includes('가이드') || t.includes('규칙') || t.includes('제도') || t.includes('정책');
             });
-            topPosts = regPosts.length > 0 ? regPosts.slice(0, 10) : posts.slice(-10);
+            topPosts = regPosts.length > 0 ? regPosts.slice(0, 5) : posts.slice(-5);
         }
 
         // ─── 1) 전체 문서 목록 (제목+카테고리만) — AI가 관련 문서를 추론할 수 있도록 ───
@@ -157,20 +157,20 @@ router.post('/api/chat', requireAuth, async (req, res) => {
         });
         context += '\n';
 
-        // ─── 2) 키워드 매칭 상위 문서 (본문 포함) ───
+        // ─── 2) 키워드 매칭 상위 문서 (본문 포함) — 토큰 한도 대응으로 길이 축소 ───
         context += '=== 관련 문서 상세 내용 ===\n';
         topPosts.forEach((p, idx) => {
-            // 상위 5개 문서는 전문(최대 5000자), 나머지는 3000자
-            const limit = idx < 5 ? 5000 : 3000;
+            // 상위 2개 문서는 2500자, 나머지는 1200자 (이전 5000/3000 → 한도 대응)
+            const limit = idx < 2 ? 2500 : 1200;
             let doc = (p.content || '').substring(0, limit);
-            if (p.ocrText) doc += '\n[OCR] ' + p.ocrText.substring(0, 2000);
+            if (p.ocrText) doc += '\n[OCR] ' + p.ocrText.substring(0, 800);  // 2000 → 800
             context += `[DOC:${p.id}] 제목: ${p.title} | 게시판: ${boardMap[p.boardId] || ''} | 카테고리: ${catMap[p.categoryId] || ''} | 유형: ${p.type || 'text'} | 부가정보: ${p.subInfo || ''}\n내용: ${doc}\n\n`;
         });
 
         if (notices.length > 0) {
             context += '=== 공지사항 ===\n';
-            notices.slice(0, 10).forEach(n => {
-                context += `- ${n.title}: ${(n.content || '').substring(0, 200)}\n`;
+            notices.slice(0, 5).forEach(n => {  // 10 → 5
+                context += `- ${n.title}: ${(n.content || '').substring(0, 150)}\n`;  // 200 → 150
             });
             context += '\n';
         }
@@ -241,7 +241,7 @@ ${context}`;
             stream: !!stream,
         };
 
-        const fetch = (await import('node-fetch')).default;
+        // Node 18+ 내장 fetch 사용 (node-fetch 모듈 의존성 제거)
         const upstream = await fetch('https://openrouter.ai/api/v1/chat/completions', {
             method: 'POST',
             headers: {
