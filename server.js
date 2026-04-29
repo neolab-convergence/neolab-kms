@@ -124,6 +124,12 @@ app.use(express.static(path.join(__dirname, 'public'), {
 // ─── 글로벌 에러 핸들러 ───
 app.use((err, req, res, next) => {
     writeLog('ERROR', `서버 에러: ${err.message}`, err.stack?.split('\n')[1]?.trim());
+    // 세션 파일 누락(ENOENT) 등은 무시하고 다음 요청에서 새 세션 발급되도록
+    if (err.code === 'ENOENT' && /sessions/.test(err.path || '')) {
+        if (res.headersSent) return; // 이미 응답 갔으면 종료
+        return res.redirect('/login.html'); // 새 로그인 유도
+    }
+    if (res.headersSent) return next(err); // 응답 중복 방지 (ERR_HTTP_HEADERS_SENT)
     res.status(500).json({ error: '서버 내부 오류가 발생했습니다.' });
 });
 
