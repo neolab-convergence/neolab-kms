@@ -262,7 +262,7 @@ ${context}`;
             });
         }
 
-        // ─── 스트리밍 모드: SSE passthrough + 참조문서는 끝에 meta 이벤트로 전달 ───
+        // ─── 스트리밍 모드: SSE passthrough (Web Streams API 기반, Node 18+ 내장 fetch 호환) ───
         if (stream) {
             res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
             res.setHeader('Cache-Control', 'no-cache, no-transform');
@@ -271,37 +271,43 @@ ${context}`;
 
             let fullAnswer = '';
             let buf = '';
-            upstream.body.on('data', chunk => {
-                buf += chunk.toString('utf8');
-                // OpenRouter SSE: 각 이벤트는 \n\n 로 구분
-                const parts = buf.split('\n\n');
-                buf = parts.pop();
-                for (const part of parts) {
-                    const line = part.split('\n').find(l => l.startsWith('data:'));
-                    if (!line) continue;
-                    const payload = line.slice(5).trim();
-                    if (payload === '[DONE]') continue;
-                    try {
-                        const j = JSON.parse(payload);
-                        const delta = j.choices?.[0]?.delta?.content || '';
-                        if (delta) {
-                            fullAnswer += delta;
-                            res.write(`data: ${JSON.stringify({ delta })}\n\n`);
-                        }
-                    } catch (e) { /* ignore */ }
+            try {
+                const reader = upstream.body.getReader();
+                const decoder = new TextDecoder('utf-8');
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    buf += decoder.decode(value, { stream: true });
+                    // OpenRouter SSE: 각 이벤트는 \n\n 로 구분
+                    const parts = buf.split('\n\n');
+                    buf = parts.pop();
+                    for (const part of parts) {
+                        const line = part.split('\n').find(l => l.startsWith('data:'));
+                        if (!line) continue;
+                        const payload = line.slice(5).trim();
+                        if (payload === '[DONE]') continue;
+                        try {
+                            const j = JSON.parse(payload);
+                            const delta = j.choices?.[0]?.delta?.content || '';
+                            if (delta) {
+                                fullAnswer += delta;
+                                res.write(`data: ${JSON.stringify({ delta })}\n\n`);
+                            }
+                        } catch (e) { /* ignore */ }
+                    }
                 }
-            });
-            upstream.body.on('end', () => {
                 const refs = extractRefs(fullAnswer, posts);
                 const clean = fullAnswer.replace(/\[DOC:[^\]]+\]/g, '').trim();
                 res.write(`data: ${JSON.stringify({ done: true, references: refs, fullAnswer: clean })}\n\n`);
                 res.end();
                 writeLog('CHAT', `스트림질문: ${message.substring(0, 50)}`, `user=${req.user.email}, len=${fullAnswer.length}, refs=${refs.length}`);
-            });
-            upstream.body.on('error', err => {
-                res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`);
-                res.end();
-            });
+            } catch (streamErr) {
+                writeLog('ERROR', '챗봇 스트림 오류', streamErr.message);
+                if (!res.writableEnded) {
+                    res.write(`data: ${JSON.stringify({ error: streamErr.message })}\n\n`);
+                    res.end();
+                }
+            }
             return;
         }
 
@@ -323,6 +329,14 @@ ${context}`;
 
     } catch (err) {
         writeLog('ERROR', '챗봇 오류', (err && err.message) || String(err));
+        // 스트리밍 모드에서 헤더 이미 보내진 경우 ERR_HTTP_HEADERS_SENT 방지
+        if (res.headersSent) {
+            if (!res.writableEnded) {
+                try { res.write(`data: ${JSON.stringify({ error: 'AI 응답 생성 중 오류' })}\n\n`); } catch(e) {}
+                res.end();
+            }
+            return;
+        }
         res.status(500).json({ error: 'AI 응답 생성 중 오류가 발생했습니다.', detail: err.message });
     }
 });
