@@ -251,9 +251,17 @@ window.openWriteModal = async function(postId) {
         window._writeEditOriginal = {
             thumbnail: post.thumbnail || '',
             detailImage: post.detailImage || '',
+            detailImageLinks: post.detailImageLinks || '',
             bgColor: post.bgColor || '',
             fileName: post.fileName || ''
         };
+        // 이미지 게시물: 기존 이미지를 미리보기에 채워 URL 입력칸을 노출
+        if (post.type === 'images' && post.detailImage) {
+            loadExistingImages('writeImages', 'writeImagesPreview', 'writeImagesStatus', post.detailImage, post.detailImageLinks);
+        } else {
+            orderedImageFiles['writeImages'] = [];
+            imageClickLinks['writeImages'] = [];
+        }
         boardSelect.value = post.boardId;
         updateWriteCategories();
         document.getElementById('writeCat').value = post.categoryId;
@@ -296,6 +304,8 @@ window.openWriteModal = async function(postId) {
         if (imgPreview) imgPreview.innerHTML = '';
         var imgStatus = document.getElementById('writeImagesStatus');
         if (imgStatus) imgStatus.textContent = '';
+        orderedImageFiles['writeImages'] = [];
+        imageClickLinks['writeImages'] = [];
         var thumbPreview2 = document.getElementById('writeThumbPreview');
         if (thumbPreview2) thumbPreview2.innerHTML = '';
         var detailPreview2 = document.getElementById('writeDetailPreview');
@@ -311,7 +321,16 @@ window.openWriteModal = async function(postId) {
     modal.classList.add('show');
 };
 
-window.closeWriteModal = function() { document.getElementById('writeModalOverlay').classList.remove('show'); adminEditPostId = null; window._writeEditOriginal = null; };
+window.closeWriteModal = function() {
+    document.getElementById('writeModalOverlay').classList.remove('show');
+    adminEditPostId = null;
+    window._writeEditOriginal = null;
+    orderedImageFiles['writeImages'] = [];
+    imageClickLinks['writeImages'] = [];
+    var wPrev = document.getElementById('writeImagesPreview'); if (wPrev) wPrev.innerHTML = '';
+    var wStat = document.getElementById('writeImagesStatus'); if (wStat) wStat.textContent = '';
+    var wInp = document.getElementById('writeImages'); if (wInp) wInp.value = '';
+};
 window.editPost = async function(id) {
     // postWrite 탭으로 전환
     document.querySelectorAll('.admin-nav-item').forEach(function(n) { n.classList.remove('active'); });
@@ -332,6 +351,7 @@ window.editPost = async function(id) {
     window._editPostOriginal = {
         thumbnail: post.thumbnail || '',
         detailImage: post.detailImage || '',
+        detailImageLinks: post.detailImageLinks || '',
         bgColor: post.bgColor || ''
     };
     document.getElementById('postBoardSel').value = post.boardId;
@@ -351,6 +371,18 @@ window.editPost = async function(id) {
     document.getElementById('postContent').value = post.content || '';
     document.getElementById('postUrl').value = post.url || '';
     if (post.fileName) document.getElementById('postFileName').value = post.fileName;
+
+    // 이미지 게시물: 기존 이미지를 미리보기에 채워 URL 입력칸을 노출
+    if (post.type === 'images' && post.detailImage) {
+        loadExistingImages('postImages', 'postImagesPreview', 'postImagesStatus', post.detailImage, post.detailImageLinks);
+    } else {
+        orderedImageFiles['postImages'] = [];
+        imageClickLinks['postImages'] = [];
+        var prevEl = document.getElementById('postImagesPreview');
+        if (prevEl) prevEl.innerHTML = '';
+        var statEl = document.getElementById('postImagesStatus');
+        if (statEl) statEl.textContent = '';
+    }
 
     // 수정 중 표시
     document.getElementById('editPostIndicator').style.display = 'block';
@@ -373,6 +405,12 @@ window.cancelEditPostForm = function() {
     document.getElementById('postFileName').value = '';
     var _iconImg = document.getElementById('postIconImage'); if (_iconImg) _iconImg.value = '';
     var _iconPrev = document.getElementById('postIconImagePreview'); if (_iconPrev) _iconPrev.innerHTML = '';
+    // 이미지 항목 초기화
+    var pImgInput = document.getElementById('postImages'); if (pImgInput) pImgInput.value = '';
+    var pImgPrev = document.getElementById('postImagesPreview'); if (pImgPrev) pImgPrev.innerHTML = '';
+    var pImgStat = document.getElementById('postImagesStatus'); if (pImgStat) pImgStat.textContent = '';
+    orderedImageFiles['postImages'] = [];
+    imageClickLinks['postImages'] = [];
     var btn = document.getElementById('addPostBtn');
     if (btn) { btn.textContent = '게시물 등록'; btn.classList.replace('admin-btn-primary', 'admin-btn-success'); }
 };
@@ -561,23 +599,34 @@ window.submitWriteForm = async function() {
     }
     var detailImage = detailImages.length > 0 ? detailImages.join('|') : '';
 
-    // 이미지 복수 업로드 (type === 'images') — 순서 관리된 파일 사용
+    // 이미지 복수 업로드 (type === 'images') — 순서 관리된 항목(기존+신규) 사용
     var detailImageLinks = '';
-    if (type === 'images' && orderedFiles.length > 0) {
+    var imagesAuthored = false; // type='images' 사용자가 의도적으로 이미지를 관리했는지
+    if (type === 'images') {
+        imagesAuthored = true;
         var imgNames = [];
         var statusEl = document.getElementById('writeImagesStatus');
+        var newCount = orderedFiles.filter(function(it){ return it && it.kind === 'file'; }).length;
+        var newDone = 0;
         for (var ii = 0; ii < orderedFiles.length; ii++) {
-            if (statusEl) statusEl.textContent = '업로드 중... (' + (ii+1) + '/' + orderedFiles.length + ')';
-            var imgFd = new FormData();
-            imgFd.append('file', orderedFiles[ii]);
-            var imgRes = await fetch('/api/upload', { method: 'POST', body: imgFd });
-            var imgData = await imgRes.json();
-            if (!imgData.error) imgNames.push(imgData.fileName);
-            updateProgress();
+            var item = orderedFiles[ii];
+            if (!item) continue;
+            if (item.kind === 'existing') {
+                imgNames.push(item.fileName);
+            } else { // 'file'
+                newDone++;
+                if (statusEl) statusEl.textContent = '업로드 중... (' + newDone + '/' + newCount + ')';
+                var imgFd = new FormData();
+                imgFd.append('file', item.file);
+                var imgRes = await fetch('/api/upload', { method: 'POST', body: imgFd });
+                var imgData = await imgRes.json();
+                if (!imgData.error) imgNames.push(imgData.fileName);
+                updateProgress();
+            }
         }
-        if (statusEl) statusEl.textContent = '업로드 완료! ' + imgNames.length + '장';
+        if (statusEl) statusEl.textContent = imgNames.length > 0 ? '저장 준비 완료 (' + imgNames.length + '장)' : '';
         if (imgNames.length > 0 && !thumbnail) thumbnail = imgNames[0];
-        if (imgNames.length > 0) detailImage = imgNames.join('|');
+        detailImage = imgNames.join('|');
         // 각 이미지의 클릭 URL (인덱스 평행)
         var writeLinks = (imageClickLinks['writeImages'] || []).slice(0, imgNames.length);
         while (writeLinks.length < imgNames.length) writeLinks.push('');
@@ -591,14 +640,23 @@ window.submitWriteForm = async function() {
     if (adminEditPostId && window._writeEditOriginal) {
         if (!fileName && window._writeEditOriginal.fileName) postData.fileName = window._writeEditOriginal.fileName;
         if (!thumbnail && window._writeEditOriginal.thumbnail) postData.thumbnail = window._writeEditOriginal.thumbnail;
-        if (!detailImage && window._writeEditOriginal.detailImage) postData.detailImage = window._writeEditOriginal.detailImage;
-        if (!detailImageLinks && window._writeEditOriginal.detailImageLinks) postData.detailImageLinks = window._writeEditOriginal.detailImageLinks;
+        // type='images'에서는 사용자가 명시적으로 관리한 결과(빈 값 포함)를 그대로 반영
+        if (!imagesAuthored) {
+            if (window._writeEditOriginal.detailImage) postData.detailImage = window._writeEditOriginal.detailImage;
+            if (window._writeEditOriginal.detailImageLinks) postData.detailImageLinks = window._writeEditOriginal.detailImageLinks;
+        }
     }
 
     if (fileName) postData.fileName = fileName;
     if (thumbnail) postData.thumbnail = thumbnail;
-    if (detailImage) postData.detailImage = detailImage;
-    if (detailImageLinks) postData.detailImageLinks = detailImageLinks;
+    // images 모드에서는 빈 값도 명시적으로 전송 (전체 삭제 가능)
+    if (imagesAuthored) {
+        postData.detailImage = detailImage;
+        postData.detailImageLinks = detailImageLinks;
+    } else {
+        if (detailImage) postData.detailImage = detailImage;
+        if (detailImageLinks) postData.detailImageLinks = detailImageLinks;
+    }
 
     updateProgress();
     // 🔄 최종 저장 (재시도 내장): Google Sheets 일시 오류에 강건하게
@@ -1927,37 +1985,45 @@ if (addPostBtnEl) addPostBtnEl.addEventListener('click', async function() {
     }
 
     // 수정 시 기존 이미지 정보 보존 (아이콘을 새로 올리지 않았을 때만)
+    // type='images'에서는 아래에서 사용자가 관리한 결과를 직접 반영하므로 여기서는 보존 안 함
     if (editPostId && window._editPostOriginal) {
         if (!postData.thumbnail && window._editPostOriginal.thumbnail) postData.thumbnail = window._editPostOriginal.thumbnail;
-        if (window._editPostOriginal.detailImage) postData.detailImage = window._editPostOriginal.detailImage;
-        if (window._editPostOriginal.detailImageLinks) postData.detailImageLinks = window._editPostOriginal.detailImageLinks;
+        if (type !== 'images') {
+            if (window._editPostOriginal.detailImage) postData.detailImage = window._editPostOriginal.detailImage;
+            if (window._editPostOriginal.detailImageLinks) postData.detailImageLinks = window._editPostOriginal.detailImageLinks;
+        }
         if (window._editPostOriginal.bgColor) postData.bgColor = window._editPostOriginal.bgColor;
     }
 
-    // 이미지 복수 업로드 처리
+    // 이미지 복수 업로드 처리 (기존 + 신규 항목 혼합 지원)
     if (type === 'images') {
         var postOrderedFiles = orderedImageFiles['postImages'] || [];
-        if (postOrderedFiles.length > 0) {
-            var imgNames = [];
-            var statusEl = document.getElementById('postImagesStatus');
-            for (var ii = 0; ii < postOrderedFiles.length; ii++) {
-                if (statusEl) statusEl.textContent = '업로드 중... (' + (ii+1) + '/' + postOrderedFiles.length + ')';
+        var imgNames = [];
+        var statusEl = document.getElementById('postImagesStatus');
+        var newCount = postOrderedFiles.filter(function(it){ return it && it.kind === 'file'; }).length;
+        var newDone = 0;
+        for (var ii = 0; ii < postOrderedFiles.length; ii++) {
+            var item = postOrderedFiles[ii];
+            if (!item) continue;
+            if (item.kind === 'existing') {
+                imgNames.push(item.fileName);
+            } else {
+                newDone++;
+                if (statusEl) statusEl.textContent = '업로드 중... (' + newDone + '/' + newCount + ')';
                 var imgFd = new FormData();
-                imgFd.append('file', postOrderedFiles[ii]);
+                imgFd.append('file', item.file);
                 var imgRes = await fetch('/api/upload', { method: 'POST', body: imgFd });
                 var imgData = await imgRes.json();
                 if (!imgData.error) imgNames.push(imgData.fileName);
             }
-            if (statusEl) statusEl.textContent = '업로드 완료! ' + imgNames.length + '장';
-            if (imgNames.length > 0) {
-                postData.thumbnail = imgNames[0];
-                postData.detailImage = imgNames.join('|');
-                // 각 이미지의 클릭 URL (인덱스 평행)
-                var postLinks = (imageClickLinks['postImages'] || []).slice(0, imgNames.length);
-                while (postLinks.length < imgNames.length) postLinks.push('');
-                postData.detailImageLinks = postLinks.join('|');
-            }
         }
+        if (statusEl) statusEl.textContent = imgNames.length > 0 ? '저장 준비 완료 (' + imgNames.length + '장)' : '';
+        // images 모드에선 사용자 관리 결과를 명시적으로 반영 (빈 값=전체 삭제)
+        postData.thumbnail = imgNames.length > 0 ? imgNames[0] : '';
+        postData.detailImage = imgNames.join('|');
+        var postLinks = (imageClickLinks['postImages'] || []).slice(0, imgNames.length);
+        while (postLinks.length < imgNames.length) postLinks.push('');
+        postData.detailImageLinks = postLinks.join('|');
     }
 
     // 1) 실제 저장 — 재시도 내장, 네트워크 일시 오류에 강건하게
@@ -1994,6 +2060,7 @@ if (addPostBtnEl) addPostBtnEl.addEventListener('click', async function() {
         var postImgPrev = document.getElementById('postImagesPreview'); if (postImgPrev) postImgPrev.innerHTML = '';
         var postImgStat = document.getElementById('postImagesStatus'); if (postImgStat) postImgStat.textContent = '';
         if (typeof orderedImageFiles !== 'undefined') orderedImageFiles['postImages'] = [];
+        if (typeof imageClickLinks !== 'undefined') imageClickLinks['postImages'] = [];
         invalidateAll();
         await loadAdminPosts();
         if (typeof updateDashboardStats === 'function') await updateDashboardStats();
@@ -2669,9 +2736,10 @@ window.deleteInfra = async function(id) {
     } catch(e) { alert('삭제 실패: ' + e.message); }
 };
 
-// 이미지 복수 선택 시 미리보기
-// 이미지 복수 선택 미리보기 (글쓰기 모달 + 게시물 등록/수정 탭 공통)
-// 이미지 순서 관리용 전역 변수
+// 이미지 복수 선택 시 미리보기 (글쓰기 모달 + 게시물 등록/수정 탭 공통)
+// 항목 형태:
+//   { kind: 'file', file: File }       — 새로 선택한 파일 (업로드 필요)
+//   { kind: 'existing', fileName: 'xxx.jpg' } — 이미 서버에 저장된 이미지 (수정 모드에서 미리 채워짐)
 var orderedImageFiles = { writeImages: [], postImages: [] };
 // 각 이미지에 연결할 클릭 URL (인덱스 평행)
 var imageClickLinks = { writeImages: [], postImages: [] };
@@ -2681,50 +2749,70 @@ function setupImagePreview(inputId, previewId, statusId) {
     if (!el) return;
     el.addEventListener('change', function() {
         var files = Array.from(this.files);
-        if (files.length > 20) {
+        var current = orderedImageFiles[inputId] || [];
+        if (current.length + files.length > 20) {
             alert('최대 20장까지 선택할 수 있습니다.');
             this.value = '';
             return;
         }
-        orderedImageFiles[inputId] = files.slice();
-        // 새 파일 선택 시 링크 배열도 동일 길이의 빈 문자열로 초기화
-        imageClickLinks[inputId] = files.map(function() { return ''; });
+        // 기존 항목 유지 + 새 파일을 끝에 APPEND (수정 모드에서 기존 이미지 보존)
+        files.forEach(function(f) { current.push({ kind: 'file', file: f }); });
+        orderedImageFiles[inputId] = current;
+        // 링크 배열도 동일 길이로 보정 (새로 추가한 칸은 빈 문자열)
+        var links = imageClickLinks[inputId] || [];
+        while (links.length < current.length) links.push('');
+        imageClickLinks[inputId] = links;
+        // input value 비우기 → 같은 파일을 다시 선택해도 change 이벤트 발생
+        this.value = '';
         renderImageOrder(inputId, previewId, statusId);
     });
 }
 
-// 외부에서 카드의 URL 입력 변경 시 호출 — input의 onchange로 호출됨
+// 외부에서 카드의 URL 입력 변경 시 호출 — input의 oninput으로 호출됨
 window.updateImageLink = function(inputId, idx, value) {
     if (!imageClickLinks[inputId]) imageClickLinks[inputId] = [];
     imageClickLinks[inputId][idx] = String(value || '').trim();
 };
 
+// 수정 모드에서 기존 이미지로 미리보기 채우기 (editPost / loadEditPostForm에서 호출)
+function loadExistingImages(inputId, previewId, statusId, detailImage, detailImageLinks) {
+    var fileNames = (detailImage || '').split('|').filter(Boolean);
+    var links = (detailImageLinks || '').split('|');
+    orderedImageFiles[inputId] = fileNames.map(function(fn) { return { kind: 'existing', fileName: fn }; });
+    imageClickLinks[inputId] = fileNames.map(function(_, i) { return (links[i] || '').trim(); });
+    renderImageOrder(inputId, previewId, statusId);
+}
+
 function renderImageOrder(inputId, previewId, statusId) {
     var preview = document.getElementById(previewId);
     if (!preview) return;
-    var files = orderedImageFiles[inputId] || [];
+    var items = orderedImageFiles[inputId] || [];
     var stat = document.getElementById(statusId);
-    if (stat) stat.textContent = files.length > 0 ? files.length + '장 선택됨 (각 이미지 아래에 클릭 URL을 선택 입력)' : '';
+    if (stat) stat.textContent = items.length > 0 ? items.length + '장 선택됨 (각 이미지 아래에 클릭 URL을 선택 입력)' : '';
 
-    if (files.length === 0) { preview.innerHTML = ''; return; }
+    if (items.length === 0) { preview.innerHTML = ''; return; }
 
     // 링크 배열 길이 보정
     if (!imageClickLinks[inputId]) imageClickLinks[inputId] = [];
-    while (imageClickLinks[inputId].length < files.length) imageClickLinks[inputId].push('');
-    while (imageClickLinks[inputId].length > files.length) imageClickLinks[inputId].pop();
+    while (imageClickLinks[inputId].length < items.length) imageClickLinks[inputId].push('');
+    while (imageClickLinks[inputId].length > items.length) imageClickLinks[inputId].pop();
 
     preview.innerHTML = '';
-    files.forEach(function(file, idx) {
+    items.forEach(function(item, idx) {
         var card = document.createElement('div');
         card.className = 'img-order-card';
         card.setAttribute('draggable', 'true');
         card.setAttribute('data-idx', idx);
 
         var numBadge = '<div class="img-order-num">' + (idx + 1) + '</div>';
+        // "기존" 항목 표시용 작은 라벨
+        var existingBadge = item.kind === 'existing'
+            ? '<div style="position:absolute; top:4px; right:4px; background:rgba(16,185,129,0.9); color:#fff; font-size:10px; padding:2px 6px; border-radius:4px;">기존</div>'
+            : '';
         var btnHtml = '<div class="img-order-btns">' +
             '<button type="button" onclick="moveImage(\'' + inputId + '\',\'' + previewId + '\',\'' + statusId + '\',' + idx + ',-1)" ' + (idx === 0 ? 'disabled' : '') + '>◀</button>' +
             '<button type="button" onclick="removeImage(\'' + inputId + '\',\'' + previewId + '\',\'' + statusId + '\',' + idx + ')">✕</button>' +
-            '<button type="button" onclick="moveImage(\'' + inputId + '\',\'' + previewId + '\',\'' + statusId + '\',' + idx + ',1)" ' + (idx === files.length - 1 ? 'disabled' : '') + '>▶</button>' +
+            '<button type="button" onclick="moveImage(\'' + inputId + '\',\'' + previewId + '\',\'' + statusId + '\',' + idx + ',1)" ' + (idx === items.length - 1 ? 'disabled' : '') + '>▶</button>' +
             '</div>';
 
         var linkVal = (imageClickLinks[inputId][idx] || '').replace(/"/g, '&quot;');
@@ -2735,15 +2823,24 @@ function renderImageOrder(inputId, previewId, statusId) {
 
         var img = document.createElement('img');
         img.className = 'img-order-thumb';
-        var reader = new FileReader();
-        reader.onload = function(e) { img.src = e.target.result; };
-        reader.readAsDataURL(file);
 
         var nameEl = document.createElement('div');
         nameEl.className = 'img-order-name';
-        nameEl.textContent = file.name.length > 12 ? file.name.substring(0, 12) + '...' : file.name;
 
-        card.innerHTML = numBadge;
+        if (item.kind === 'file') {
+            var reader = new FileReader();
+            reader.onload = function(e) { img.src = e.target.result; };
+            reader.readAsDataURL(item.file);
+            nameEl.textContent = item.file.name.length > 12 ? item.file.name.substring(0, 12) + '...' : item.file.name;
+        } else {
+            // 기존 이미지는 서버에서 직접 로드
+            img.src = '/api/files/' + encodeURIComponent(item.fileName);
+            var shortName = item.fileName.length > 12 ? item.fileName.substring(0, 8) + '...' : item.fileName;
+            nameEl.textContent = shortName;
+        }
+
+        card.style.position = 'relative';
+        card.innerHTML = numBadge + existingBadge;
         card.appendChild(img);
         card.innerHTML += nameEl.outerHTML + btnHtml + linkHtml;
 
