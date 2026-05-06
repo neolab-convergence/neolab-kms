@@ -86,6 +86,7 @@ router.post('/api/posts', requireAdmin, async (req, res) => {
             thumbnail: req.body.thumbnail || '',
             bgColor: req.body.bgColor || '',
             detailImage: req.body.detailImage || '',
+            detailImageLinks: req.body.detailImageLinks || '',
             ocrText: ''
         };
         await appendRow('posts', post);

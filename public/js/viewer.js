@@ -104,10 +104,18 @@ async function toggleInlineExpand(id) {
                 html += '<div style="padding:24px;text-align:center;"><a href="' + finalUrl + '" target="_blank" style="padding:12px 24px;background:var(--primary);color:#fff;border-radius:8px;text-decoration:none;font-weight:600;">🔗 바로가기</a></div>';
             }
         }
-        // 이미지들
+        // 이미지들 (각 이미지에 detailImageLinks가 있으면 클릭 시 외부 링크로 이동)
         else if (images.length > 0) {
-            images.forEach(function(img) {
-                html += '<img src="/api/files/' + encodeURIComponent(img) + '" alt="' + post.title + '" onclick="openLightbox(this.src, \'' + post.title.replace(/'/g, "\\'") + '\')" />';
+            var mLinks = (post.detailImageLinks || '').split('|');
+            images.forEach(function(img, i) {
+                var imgTag = '<img src="/api/files/' + encodeURIComponent(img) + '" alt="' + post.title + '" />';
+                var u = (mLinks[i] || '').trim();
+                if (u) {
+                    if (!/^https?:\/\//i.test(u)) u = 'https://' + u;
+                    html += '<a href="' + encodeURI(u) + '" target="_blank" rel="noopener" style="display:block;">' + imgTag + '</a>';
+                } else {
+                    html += imgTag.replace('<img ', '<img onclick="openLightbox(this.src, \'' + post.title.replace(/'/g, "\\'") + '\')" ');
+                }
             });
         }
         // 텍스트
@@ -230,8 +238,17 @@ async function openProductDetail(post, catName) {
     // 4. 상세 이미지가 있는 경우 (detailImage, 파이프 구분 복수)
     else if (post.detailImage) {
         var detailImgs = post.detailImage.split('|').filter(Boolean);
-        detailImgs.forEach(function(img) {
-            html += '<img src="/api/files/' + encodeURIComponent(img) + '" alt="' + post.title + '" style="max-width:100%; border-radius:12px; box-shadow:0 2px 12px rgba(0,0,0,0.1); background:#fff; margin-bottom:16px;">';
+        var dLinks = (post.detailImageLinks || '').split('|');
+        detailImgs.forEach(function(img, i) {
+            var imgStyle = 'max-width:100%; border-radius:12px; box-shadow:0 2px 12px rgba(0,0,0,0.1); background:#fff; margin-bottom:16px;';
+            var imgTag = '<img src="/api/files/' + encodeURIComponent(img) + '" alt="' + post.title + '" style="' + imgStyle + '">';
+            var u = (dLinks[i] || '').trim();
+            if (u) {
+                if (!/^https?:\/\//i.test(u)) u = 'https://' + u;
+                html += '<a href="' + encodeURI(u) + '" target="_blank" rel="noopener" style="display:block; cursor:pointer;">' + imgTag + '</a>';
+            } else {
+                html += imgTag;
+            }
         });
     }
     // 5. 썸네일 이미지만 있는 경우
