@@ -719,7 +719,6 @@
             .filter-btn { padding: 6px 14px; font-size: 12px; }
             .gallery-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
             .gallery-card { border-radius: 10px; }
-            #chatbotPanel { width: calc(100vw - 20px) !important; right: 10px !important; left: 10px !important; bottom: 70px !important; height: 60vh !important; }
             .menu-item { padding: 14px 20px; min-height: 44px; }
             .submenu-item { padding: 12px 20px 12px 52px; min-height: 44px; }
         }
@@ -1223,15 +1222,6 @@
 
             /* 콘텐츠 하단에 탭바 공간 확보 */
             .content { padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px)) !important; }
-
-            /* AI 챗봇 버튼 숨김 (하단 탭바로 통합됨) */
-            #chatbotToggle { display: none !important; }
-
-            /* 챗봇 패널 위치 조정 (탭바 위에) */
-            #chatbotPanel {
-                bottom: calc(80px + env(safe-area-inset-bottom, 0px)) !important;
-                height: calc(70vh - env(safe-area-inset-bottom, 0px)) !important;
-            }
 
             /* 네이티브 느낌: 상단바 반투명 블러 + 축소 */
             .topbar {

@@ -75,7 +75,6 @@ app.use(require('./routes/notices'));
 app.use(require('./routes/contacts'));
 app.use(require('./routes/settings'));
 app.use(require('./routes/files'));
-app.use(require('./routes/chat'));
 app.use(require('./routes/backup'));
 app.use(require('./routes/suggestions'));
 
