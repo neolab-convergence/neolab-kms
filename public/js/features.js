@@ -159,7 +159,7 @@ async function loadContacts() {
         const colors = ['#ff6720', '#53565A', '#10b981', '#f59e0b', '#ef4444', '#ff8547', '#757980'];
         const color = colors[parseInt(contact.id) % colors.length];
         const mobileCell = contact.mobile
-            ? `<a href="tel:${(contact.mobile || '').replace(/[^0-9+]/g, '')}" style="color:var(--primary); text-decoration:none;">${contact.mobile}</a>`
+            ? `<a href="tel:${(contact.mobile || '').replace(/[^0-9+]/g, '')}" style="color:inherit; text-decoration:none;">${contact.mobile}</a>`
             : '<span style="color:var(--text-light);">-</span>';
         tbody.innerHTML += `
             <tr data-dept="${contact.dept}">
