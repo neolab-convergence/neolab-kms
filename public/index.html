@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=113">
+    <link rel="stylesheet" href="css/style.css?v=114">
     <!-- CSS is loaded from css/style.css -->
 </head>
 <body>
@@ -651,6 +651,22 @@
                 <div class="admin-tab-content" id="contactsTab">
                     <h2>👥 연락처 관리</h2>
 
+                    <!-- Excel 일괄 업로드 패널 -->
+                    <div style="background:rgba(255,103,32,0.04); border:1px solid var(--border-color); border-radius:10px; padding:14px 16px; margin-bottom:16px;">
+                        <div style="font-weight:700; margin-bottom:8px; color:var(--text-primary); font-size:14px;">📥 Excel 일괄 등록/수정</div>
+                        <p style="font-size:12px; color:var(--text-secondary); margin:0 0 10px 0; line-height:1.6;">
+                            ① 샘플(또는 현재) Excel을 다운로드 → ② Excel에서 편집 → ③ 업로드하면 <b>전체 연락처가 교체</b>됩니다.<br>
+                            컬럼: <code>이름·직급·부서·내선번호·휴대폰·이메일·상태</code> (이름 필수, 상태는 재직중/휴직중/파견중)
+                        </p>
+                        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+                            <button type="button" class="admin-btn admin-btn-primary" onclick="downloadContactTemplate()" style="font-size:13px; padding:8px 14px;">📋 샘플 다운로드</button>
+                            <button type="button" class="admin-btn admin-btn-primary" onclick="downloadContactsAsExcel()" style="font-size:13px; padding:8px 14px;">📤 현재 연락처 Excel 다운로드</button>
+                            <input type="file" id="contactExcelFileInput" accept=".xlsx,.xls,.csv" style="padding:6px; border:1px solid var(--border-color); border-radius:6px; font-size:13px; flex:1; min-width:200px;">
+                            <button type="button" class="admin-btn admin-btn-success" onclick="uploadContactsExcel()" style="font-size:13px; padding:8px 14px;">📥 업로드 및 적용</button>
+                        </div>
+                        <div id="contactExcelPreview" style="display:none; margin-top:12px; max-height:240px; overflow:auto; border:1px solid var(--border-color); border-radius:8px; background:var(--card-bg);"></div>
+                    </div>
+
                     <!-- 검색 및 추가 버튼 -->
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
                         <input type="text" id="contactSearchInput" placeholder="이름, 부서, 직급 검색..." oninput="filterAdminContacts()" style="padding:10px 14px; width:100%; max-width:300px; border-radius:8px; border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-primary); font-size:14px;">
@@ -1110,13 +1126,13 @@
     </script>
 
 <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
-<script src="js/core.js?v=113"></script>
-<script src="js/navigation.js?v=113"></script>
-<script src="js/search.js?v=113"></script>
-<script src="js/viewer.js?v=113"></script>
-<script src="js/board.js?v=113"></script>
-<script src="js/features.js?v=113"></script>
-<script src="js/app.js?v=113"></script>
-<script src="js/admin.js?v=113"></script>
+<script src="js/core.js?v=114"></script>
+<script src="js/navigation.js?v=114"></script>
+<script src="js/search.js?v=114"></script>
+<script src="js/viewer.js?v=114"></script>
+<script src="js/board.js?v=114"></script>
+<script src="js/features.js?v=114"></script>
+<script src="js/app.js?v=114"></script>
+<script src="js/admin.js?v=114"></script>
 </body>
 </html>

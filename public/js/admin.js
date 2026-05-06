@@ -2061,6 +2061,139 @@ window.deleteNotice = async function(id) { if(!confirm('삭제하시겠습니까
 /* ── 인사정보 관리 (수정/검색 기능 추가) ── */
 var editContactId = null;
 
+// ── 연락처 Excel 다운로드/업로드 ──
+function _statusKoToCode(s) {
+    var v = String(s || '').trim();
+    if (v === '재직중' || v === '재직' || v.toLowerCase() === 'active') return 'active';
+    if (v === '휴직중' || v === '휴직' || v.toLowerCase() === 'leave') return 'leave';
+    if (v === '파견중' || v === '파견' || v.toLowerCase() === 'dispatch') return 'dispatch';
+    return 'active';
+}
+function _statusCodeToKo(code) {
+    if (code === 'leave') return '휴직중';
+    if (code === 'dispatch') return '파견중';
+    return '재직중';
+}
+
+window.downloadContactTemplate = function() {
+    if (typeof XLSX === 'undefined') return alert('Excel 라이브러리 로딩 중입니다. 잠시 후 다시 시도해주세요.');
+    var headers = ['이름', '직급', '부서', '내선번호', '휴대폰', '이메일', '상태'];
+    var sample = [
+        ['홍길동', '대표이사', 'CEO', '02-2284-9200', '010-1234-5678', 'hong@neolab.net', '재직중'],
+        ['김철수', '본부장', '경영지원본부', '02-2284-9201', '010-2345-6789', 'kim@neolab.net', '재직중'],
+        ['이영희', '팀장', '경영지원본부/인사총무팀', '02-2284-9202', '010-3456-7890', 'lee@neolab.net', '재직중'],
+        ['박민수', '책임', '경영지원본부/인사총무팀', '02-2284-9203', '010-4567-8901', 'park@neolab.net', '휴직중'],
+        ['최지원', '선임', '기술연구소', '02-2284-9204', '010-5678-9012', 'choi@neolab.net', '파견중'],
+    ];
+    var ws = XLSX.utils.aoa_to_sheet([headers].concat(sample));
+    ws['!cols'] = [{wch:10},{wch:10},{wch:24},{wch:14},{wch:14},{wch:22},{wch:8}];
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, '연락처');
+    XLSX.writeFile(wb, '연락처_샘플.xlsx');
+};
+
+window.downloadContactsAsExcel = async function() {
+    if (typeof XLSX === 'undefined') return alert('Excel 라이브러리 로딩 중입니다.');
+    try {
+        var contacts = allAdminContacts && allAdminContacts.length
+            ? allAdminContacts
+            : await api.get('/api/contacts');
+        if (!contacts.length) {
+            if (!confirm('현재 등록된 연락처가 없습니다. 빈 시트(헤더만)로 다운로드할까요?')) return;
+        }
+        var headers = ['이름', '직급', '부서', '내선번호', '휴대폰', '이메일', '상태'];
+        var rows = contacts.map(function(c) {
+            return [
+                c.name || '', c.position || '', c.dept || '',
+                c.phone || '', c.mobile || '', c.email || '',
+                _statusCodeToKo(c.status)
+            ];
+        });
+        var ws = XLSX.utils.aoa_to_sheet([headers].concat(rows));
+        ws['!cols'] = [{wch:10},{wch:10},{wch:24},{wch:14},{wch:14},{wch:22},{wch:8}];
+        var wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, '연락처');
+        var dateStr = new Date().toISOString().split('T')[0];
+        XLSX.writeFile(wb, '연락처_' + dateStr + '.xlsx');
+    } catch(err) {
+        alert('다운로드 실패: ' + err.message);
+    }
+};
+
+window.uploadContactsExcel = async function() {
+    if (typeof XLSX === 'undefined') return alert('Excel 라이브러리 로딩 중입니다.');
+    var fileInput = document.getElementById('contactExcelFileInput');
+    if (!fileInput || !fileInput.files.length) return alert('Excel/CSV 파일을 선택해주세요.');
+
+    var file = fileInput.files[0];
+    var reader = new FileReader();
+    reader.onload = async function(e) {
+        try {
+            var wb = XLSX.read(e.target.result, { type: 'array' });
+            var ws = wb.Sheets[wb.SheetNames[0]];
+            if (!ws) return alert('시트를 읽을 수 없습니다.');
+            var rawData = XLSX.utils.sheet_to_json(ws, { defval: '' });
+            if (!rawData.length) return alert('데이터 행이 없습니다. 첫 번째 행이 헤더(이름/직급/부서...)인지 확인하세요.');
+
+            // 헤더 매핑 (한글/영문 모두 허용)
+            function pick(row, keys) {
+                for (var i = 0; i < keys.length; i++) {
+                    if (row[keys[i]] !== undefined && String(row[keys[i]]).trim() !== '') return String(row[keys[i]]).trim();
+                }
+                return '';
+            }
+            var items = rawData.map(function(row) {
+                return {
+                    name: pick(row, ['이름', 'name', 'Name']),
+                    position: pick(row, ['직급', '직책', 'position', 'Position']),
+                    dept: pick(row, ['부서', 'dept', 'Department', '소속']),
+                    phone: pick(row, ['내선번호', '내선', '전화번호', '전화', 'phone', 'Phone']),
+                    mobile: pick(row, ['휴대폰', '휴대전화', '핸드폰', 'mobile', 'Mobile', 'cell']),
+                    email: pick(row, ['이메일', 'email', 'Email', 'e-mail']),
+                    status: _statusKoToCode(pick(row, ['상태', 'status', 'Status']))
+                };
+            }).filter(function(it) { return it.name; });
+
+            if (!items.length) return alert('이름이 채워진 행이 없습니다.');
+
+            // 미리보기 (최대 10행)
+            var preview = items.slice(0, 10);
+            var html = '<div style="padding:10px 12px; font-weight:600; color:var(--text-primary); border-bottom:1px solid var(--border-color);">미리보기 (총 ' + items.length + '건' + (items.length > 10 ? ' 중 10건 표시' : '') + ')</div>';
+            html += '<table style="width:100%; border-collapse:collapse; font-size:12px;">';
+            html += '<thead><tr style="background:var(--main-bg);">' +
+                ['이름','직급','부서','내선번호','휴대폰','이메일','상태'].map(function(h){return '<th style="padding:6px 8px; border:1px solid var(--border-color); text-align:left;">'+h+'</th>';}).join('') +
+                '</tr></thead><tbody>';
+            preview.forEach(function(it) {
+                html += '<tr>';
+                ['name','position','dept','phone','mobile','email','status'].forEach(function(k) {
+                    var v = k === 'status' ? _statusCodeToKo(it[k]) : (it[k] || '');
+                    html += '<td style="padding:5px 8px; border:1px solid var(--border-color);">' + (v || '') + '</td>';
+                });
+                html += '</tr>';
+            });
+            html += '</tbody></table>';
+            var previewEl = document.getElementById('contactExcelPreview');
+            previewEl.innerHTML = html;
+            previewEl.style.display = 'block';
+
+            if (!confirm('총 ' + items.length + '건을 업로드합니다.\n\n⚠️ 기존 연락처는 모두 삭제되고 이 데이터로 교체됩니다.\n\n계속할까요?')) {
+                return;
+            }
+
+            var result = await api.post('/api/contacts/bulk', { items: items, mode: 'replace' });
+            invalidateAll();
+            await loadAdminContacts();
+            await loadContacts();
+            await updateDashboardStats();
+            fileInput.value = '';
+            alert('✅ 연락처 ' + result.count + '건이 업로드되었습니다.');
+        } catch(err) {
+            alert('업로드 실패: ' + err.message);
+        }
+    };
+    reader.readAsArrayBuffer(file);
+};
+
 async function loadAdminContacts() {
     try {
         allAdminContacts = await api.get('/api/contacts');
