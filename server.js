@@ -18,9 +18,22 @@ const PORT = process.env.PORT || 3000;
 // nginx 리버스 프록시만 신뢰 (호스트 헤더 위조 방지)
 app.set('trust proxy', 'loopback');
 
+// API 응답에 ETag/조건부 캐시 비활성화 (수정 후 즉시 반영 보장)
+app.set('etag', false);
+
 // ─── 미들웨어 ───
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// 모든 /api/* 응답에 캐시 금지 헤더 (브라우저/프록시 캐시 방지)
+app.use((req, res, next) => {
+    if (req.path.startsWith('/api/')) {
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+    }
+    next();
+});
 
 // 세션 저장소
 const sessionsDir = path.join(__dirname, 'sessions');

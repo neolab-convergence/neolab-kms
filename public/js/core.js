@@ -17,7 +17,9 @@ function hideLoading() {
 async function _fetch(path, opts) {
     showLoading();
     try {
-        var res = await fetch(path, opts);
+        // API 응답을 브라우저가 ETag로 캐시하지 않도록 강제
+        var fetchOpts = Object.assign({ cache: 'no-store' }, opts || {});
+        var res = await fetch(path, fetchOpts);
         if (res.status === 401) { window.location.href = '/login.html'; throw new Error('Unauthorized'); }
         if (res.status === 503) { var msg = '현재 시스템 점검 중입니다. 잠시 후 다시 이용해주세요.'; alert(msg); throw new Error('503: ' + msg); }
         if (!res.ok) {

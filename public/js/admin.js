@@ -2180,15 +2180,26 @@ window.uploadContactsExcel = async function() {
                 return;
             }
 
-            var result = await api.post('/api/contacts/bulk', { items: items, mode: 'replace' });
-            invalidateAll();
-            await loadAdminContacts();
-            await loadContacts();
-            await updateDashboardStats();
-            fileInput.value = '';
-            alert('✅ 연락처 ' + result.count + '건이 업로드되었습니다.');
+            try {
+                var result = await api.post('/api/contacts/bulk', { items: items, mode: 'replace' });
+                invalidateAll();
+                await loadAdminContacts();
+                await loadContacts();
+                await updateDashboardStats();
+                fileInput.value = '';
+                alert('✅ 연락처 ' + result.count + '건이 업로드되었습니다.');
+            } catch(postErr) {
+                var msg = postErr.message || '';
+                if (/401/.test(msg) || /로그인/.test(msg)) {
+                    if (confirm('세션이 만료되어 업로드가 실패했습니다.\n\n로그인 페이지로 이동할까요?\n(다시 로그인 후 업로드를 재시도하세요. 선택하신 파일은 그대로 남아있습니다.)')) {
+                        window.location.href = '/login.html';
+                    }
+                } else {
+                    alert('업로드 실패: ' + msg + '\n\n파일을 다시 확인하거나 새로고침 후 재시도해주세요.');
+                }
+            }
         } catch(err) {
-            alert('업로드 실패: ' + err.message);
+            alert('파일 분석 실패: ' + err.message + '\n\nExcel 파일이 올바른 형식인지 확인해주세요.');
         }
     };
     reader.readAsArrayBuffer(file);
@@ -2311,7 +2322,16 @@ window.submitContactModal = async function() {
         await loadContacts();
         await updateDashboardStats();
         alert(editContactModalId ? '수정되었습니다.' : '추가되었습니다.');
-    } catch(e) { alert('오류: ' + e.message); }
+    } catch(e) {
+        var msg = e.message || '';
+        if (/401/.test(msg) || /로그인/.test(msg)) {
+            if (confirm('세션이 만료되어 저장이 실패했습니다.\n\n로그인 페이지로 이동할까요?')) {
+                window.location.href = '/login.html';
+            }
+        } else {
+            alert('오류: ' + msg);
+        }
+    }
 };
 
 window.editContact = async function(id) {
