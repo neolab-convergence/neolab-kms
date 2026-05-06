@@ -176,10 +176,10 @@ async function openProductDetail(post, catName) {
     var viewToggle = document.getElementById('viewToggle');
     var inlineViewer = document.getElementById('inlineViewer');
 
-    // 기존 콘텐츠 숨기기
-    if (gridContainer) gridContainer.style.display = 'none';
-    if (galleryContainer) galleryContainer.style.display = 'none';
-    if (filterArea) filterArea.parentElement.style.display = 'none';
+    // 기존 콘텐츠 숨기기 (모바일 CSS의 display:flex !important를 깨기 위해 setProperty 사용)
+    if (gridContainer) gridContainer.style.setProperty('display', 'none', 'important');
+    if (galleryContainer) galleryContainer.style.setProperty('display', 'none', 'important');
+    if (filterArea) filterArea.parentElement.style.setProperty('display', 'none', 'important');
     if (viewToggle) viewToggle.style.display = 'none';
     if (inlineViewer) inlineViewer.style.display = 'none';
 
@@ -280,7 +280,10 @@ window.closeProductDetail = function() {
 
     detailView.style.display = 'none';
 
-    // 기존 콘텐츠 복원
+    // 기존 콘텐츠 복원 — openProductDetail에서 'important'로 막아둔 inline 스타일 제거
+    if (gridContainer) gridContainer.style.removeProperty('display');
+    if (galleryContainer) galleryContainer.style.removeProperty('display');
+    if (filterArea) filterArea.parentElement.style.removeProperty('display');
     if (filterArea) filterArea.parentElement.style.display = 'flex';
     if (viewToggle) viewToggle.style.display = 'flex';
     if (currentViewMode === 'gallery') {
@@ -422,10 +425,11 @@ async function renderGalleryView(boardId, categoryId) {
 
 // 게시판으로 이동 후 문서 열기
 window.goToBoardAndOpen = async function(boardId, postId) {
-    const menuItem = document.querySelector('.menu-item[data-page="' + boardId + '"]');
-    if (menuItem) {
-        menuItem.click();
-        setTimeout(function() { openPost(postId); }, 500);
+    // 사이드바 메뉴 click()을 쓰면 이미 expanded된 메뉴는 토글로 collapse 되어
+    // 보드 페이지로 이동하지 않음. navigateTo를 직접 호출하여 항상 보드를 활성화.
+    if (typeof navigateTo === 'function' && boardId) {
+        navigateTo(boardId);
+        setTimeout(function() { openPost(postId); }, 300);
     } else {
         openPost(postId);
     }
