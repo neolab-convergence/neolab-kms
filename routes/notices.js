@@ -18,7 +18,7 @@ router.post('/api/notices', requireAdmin, async (req, res) => {
             title: req.body.title || '',
             type: req.body.type || 'info',
             content: req.body.content || '',
-            date: new Date().toISOString().split('T')[0]
+            date: new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' })
         };
         await appendRow('notices', notice);
         invalidateCache('notices');
@@ -32,7 +32,7 @@ router.put('/api/notices/:id', requireAdmin, async (req, res) => {
         const data = await getSheetData('notices');
         const row = data.find(r => r.id === req.params.id);
         if (!row) return res.status(404).json({ error: '공지를 찾을 수 없습니다.' });
-        const updated = { ...row, ...req.body, date: new Date().toISOString().split('T')[0] };
+        const updated = { ...row, ...req.body, date: new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' }) };
         await updateRow('notices', row._rowIndex, updated);
         invalidateCache('notices');
         res.json({ success: true });

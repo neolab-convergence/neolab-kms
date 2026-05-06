@@ -66,7 +66,7 @@ router.post('/api/admin/verify', async (req, res) => {
                     name: req.user.name || '',
                     passwordHash: hashed,
                     addedBy: 'system',
-                    addedDate: new Date().toISOString().split('T')[0]
+                    addedDate: new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' })
                 });
             }
             invalidateCache('admins');
@@ -120,7 +120,7 @@ router.post('/api/admin/change-password', async (req, res) => {
             name: req.user.name || '',
             passwordHash: hashed,
             addedBy: 'system',
-            addedDate: new Date().toISOString().split('T')[0]
+            addedDate: new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' })
         });
     }
     invalidateCache('admins');

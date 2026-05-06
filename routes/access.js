@@ -10,7 +10,8 @@ const todayLogged = new Map(); // key: "date|email"
 router.get('/api/me', async (req, res, next) => {
     if (!req.isAuthenticated || !req.isAuthenticated()) return next();
 
-    const today = new Date().toISOString().split('T')[0];
+    // 한국 시간(KST) 기준 날짜 — UTC 사용 시 KST 자정~오전 9시 접속이 전날로 잘못 기록되던 버그 수정
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' });
     const email = req.user.email;
     const cacheKey = today + '|' + email;
 

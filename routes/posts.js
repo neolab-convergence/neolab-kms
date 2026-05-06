@@ -81,7 +81,7 @@ router.post('/api/posts', requireAdmin, async (req, res) => {
             url: req.body.url || '',
             fileName: req.body.fileName || '',
             views: '0',
-            date: new Date().toISOString().split('T')[0],
+            date: new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' }),
             order: req.body.order || '',
             thumbnail: req.body.thumbnail || '',
             bgColor: req.body.bgColor || '',
@@ -154,7 +154,7 @@ router.put('/api/posts/:id', requireAdmin, async (req, res) => {
         }
         // _rowIndex는 업데이트 대상에서 제외 (시트에 쓰이면 안 됨)
         const { _rowIndex, ...rowClean } = row;
-        const updated = { ...rowClean, ...req.body, date: new Date().toISOString().split('T')[0] };
+        const updated = { ...rowClean, ...req.body, date: new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' }) };
         const newFiles = [req.body.thumbnail || '', req.body.detailImage || '', req.body.fileName || ''].join('|');
         const oldFiles = [row.thumbnail || '', row.detailImage || '', row.fileName || ''].join('|');
         filesChanged = newFiles !== oldFiles;

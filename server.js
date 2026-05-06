@@ -184,7 +184,7 @@ function scheduleAutoBackup() {
                 const data = await getSheetData(sheetName);
                 backup[sheetName] = data.map(({ _rowIndex, ...r }) => r);
             }
-            const dateStr = new Date().toISOString().split('T')[0];
+            const dateStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' });
             const filePath = path.join(backupPath, 'auto_backup_' + dateStr + '.json');
             fs.writeFileSync(filePath, JSON.stringify(backup, null, 2));
             writeLog('BACKUP', '자동 백업 완료: ' + filePath);
@@ -210,7 +210,7 @@ function scheduleAutoBackup() {
         const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0);
         const ms = next - now;
         setTimeout(() => { runBackup(); setInterval(runBackup, 24 * 60 * 60 * 1000); }, ms);
-        writeLog('INFO', '자동 백업 예약: ' + next.toISOString().split('T')[0] + ' 00:00');
+        writeLog('INFO', '자동 백업 예약: ' + next.toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' }) + ' 00:00 (KST)');
     }
 
     scheduleNext();

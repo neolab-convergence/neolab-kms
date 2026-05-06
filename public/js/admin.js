@@ -2192,7 +2192,7 @@ window.downloadContactsAsExcel = async function() {
         ws['!cols'] = [{wch:10},{wch:10},{wch:24},{wch:14},{wch:14},{wch:22},{wch:8}];
         var wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, '연락처');
-        var dateStr = new Date().toISOString().split('T')[0];
+        var dateStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' });
         XLSX.writeFile(wb, '연락처_' + dateStr + '.xlsx');
     } catch(err) {
         alert('다운로드 실패: ' + err.message);
@@ -2914,7 +2914,7 @@ window.loadAccessStats = async function() {
         var totalHits = 0;
         stats.forEach(function(d) { totalVisits += d.uniqueUsers; totalHits += d.totalHits; });
         var avgVisits = stats.length > 0 ? (totalVisits / stats.length).toFixed(1) : 0;
-        var todayStr = new Date().toISOString().split('T')[0];
+        var todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' });
         var todayData = stats.find(function(d) { return d.date === todayStr; });
 
         document.getElementById('accessStatsSummary').innerHTML =

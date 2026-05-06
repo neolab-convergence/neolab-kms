@@ -12,7 +12,7 @@ router.post('/api/suggestions', requireAuth, async (req, res) => {
         const suggestion = {
             id: String(Date.now()),
             content: content.trim(),
-            date: new Date().toISOString().split('T')[0]
+            date: new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' })
         };
         await appendRow('suggestions', suggestion);
         invalidateCache('suggestions');

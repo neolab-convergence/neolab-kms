@@ -41,7 +41,7 @@ router.post('/api/admins', requireSuperAdmin, async (req, res) => {
             email: email.toLowerCase(),
             name: name || '',
             addedBy: req.user.email,
-            addedDate: new Date().toISOString().split('T')[0]
+            addedDate: new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' })
         });
         invalidateCache('admins');
         writeLog('ADMIN', `관리자 추가: ${email}`, `by=${req.user.email}`);
