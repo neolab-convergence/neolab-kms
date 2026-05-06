@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=112">
+    <link rel="stylesheet" href="css/style.css?v=113">
     <!-- CSS is loaded from css/style.css -->
 </head>
 <body>
@@ -244,7 +244,7 @@
                         <div class="table-container">
                             <table id="contactTable">
                                 <thead>
-                                    <tr><th data-sort="name">이름 ▲▼</th><th data-sort="position">직급 ▲▼</th><th data-sort="dept">부서 ▲▼</th><th>내선번호</th><th>이메일</th><th>상태</th></tr>
+                                    <tr><th data-sort="name">이름 ▲▼</th><th data-sort="position">직급 ▲▼</th><th data-sort="dept">부서 ▲▼</th><th>내선번호</th><th>휴대폰</th><th>이메일</th><th>상태</th></tr>
                                 </thead>
                                 <tbody id="contactTableBody"></tbody>
                             </table>
@@ -668,7 +668,8 @@
                                     <th>이름</th>
                                     <th>직급</th>
                                     <th>부서</th>
-                                    <th>전화번호</th>
+                                    <th>내선번호</th>
+                                    <th>휴대폰</th>
                                     <th>이메일</th>
                                     <th>상태</th>
                                     <th style="width:100px;">관리</th>
@@ -682,6 +683,7 @@
                     <div style="display:none;">
                         <input type="text" id="contactName"><input type="text" id="contactPosition">
                         <input type="text" id="contactDept"><input type="text" id="contactPhone">
+                        <input type="text" id="contactMobile">
                         <input type="email" id="contactEmail">
                         <select id="contactStatus"><option value="active">재직중</option><option value="dispatch">파견중</option><option value="leave">휴직중</option></select>
                         <button id="addContactBtn">추가</button>
@@ -1017,10 +1019,13 @@
             </div>
             <div class="write-form-row">
                 <div class="write-form-group"><label>부서</label><input type="text" id="cmDept" placeholder="경영지원본부/인사총무팀"></div>
-                <div class="write-form-group"><label>전화번호</label><input type="text" id="cmPhone" placeholder="02-2284-9999"></div>
+                <div class="write-form-group"><label>내선번호</label><input type="text" id="cmPhone" placeholder="02-2284-9999"></div>
             </div>
             <div class="write-form-row">
+                <div class="write-form-group"><label>휴대폰</label><input type="text" id="cmMobile" placeholder="010-1234-5678"></div>
                 <div class="write-form-group"><label>이메일</label><input type="email" id="cmEmail" placeholder="hong@neolab.net"></div>
+            </div>
+            <div class="write-form-row">
                 <div class="write-form-group"><label>상태</label>
                     <select id="cmStatus" style="width:100%; padding:10px 14px; border:1px solid var(--border-color); border-radius:8px; font-size:14px;">
                         <option value="active">🟢 재직중</option>
@@ -1105,13 +1110,13 @@
     </script>
 
 <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
-<script src="js/core.js?v=112"></script>
-<script src="js/navigation.js?v=112"></script>
-<script src="js/search.js?v=112"></script>
-<script src="js/viewer.js?v=112"></script>
-<script src="js/board.js?v=112"></script>
-<script src="js/features.js?v=112"></script>
-<script src="js/app.js?v=112"></script>
-<script src="js/admin.js?v=112"></script>
+<script src="js/core.js?v=113"></script>
+<script src="js/navigation.js?v=113"></script>
+<script src="js/search.js?v=113"></script>
+<script src="js/viewer.js?v=113"></script>
+<script src="js/board.js?v=113"></script>
+<script src="js/features.js?v=113"></script>
+<script src="js/app.js?v=113"></script>
+<script src="js/admin.js?v=113"></script>
 </body>
 </html>

@@ -42,6 +42,7 @@ router.post('/api/contacts', requireAdmin, async (req, res) => {
             position: req.body.position || '',
             dept: req.body.dept || '',
             phone: req.body.phone || '',
+            mobile: req.body.mobile || '',
             email: req.body.email || '',
             status: req.body.status || 'active'
         };

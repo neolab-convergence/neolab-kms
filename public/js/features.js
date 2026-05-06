@@ -150,7 +150,7 @@ async function loadContacts() {
     if (!tbody) return;
     tbody.innerHTML = '';
     if (contacts.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 40px; color: #999;">등록된 연락처가 없습니다</td></tr>`; return;
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 40px; color: #999;">등록된 연락처가 없습니다</td></tr>`; return;
     }
     contacts.forEach(contact => {
         let badgeClass = 'active';
@@ -158,10 +158,13 @@ async function loadContacts() {
         if (contact.status === 'leave' || (contact.status || '').includes('휴직')) badgeClass = 'leave';
         const colors = ['#ff6720', '#53565A', '#10b981', '#f59e0b', '#ef4444', '#ff8547', '#757980'];
         const color = colors[parseInt(contact.id) % colors.length];
+        const mobileCell = contact.mobile
+            ? `<a href="tel:${(contact.mobile || '').replace(/[^0-9+]/g, '')}" style="color:var(--primary); text-decoration:none;">${contact.mobile}</a>`
+            : '<span style="color:var(--text-light);">-</span>';
         tbody.innerHTML += `
             <tr data-dept="${contact.dept}">
                 <td><div style="display: flex; align-items: center; gap: 12px;"><div class="avatar" style="background: ${color};">${(contact.name || '?').substring(0, 1)}</div><span>${contact.name}</span></div></td>
-                <td>${contact.position}</td><td>${contact.dept}</td><td>${contact.phone}</td><td>${contact.email}</td>
+                <td>${contact.position}</td><td>${contact.dept}</td><td>${contact.phone}</td><td>${mobileCell}</td><td>${contact.email}</td>
                 <td><span class="status-badge ${badgeClass}">${contact.status === 'active' ? '재직중' : contact.status === 'leave' ? '휴직중' : contact.status === 'dispatch' ? '파견중' : contact.status}</span></td>
             </tr>
         `;

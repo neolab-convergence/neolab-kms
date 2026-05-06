@@ -2093,7 +2093,7 @@ window.filterAdminContacts = function() {
     };
 
     if (filtered.length === 0) {
-        contactsListEl.innerHTML = '<tr><td colspan="8" style="text-align:center; padding:40px; color:var(--text-light);">등록된 연락처가 없습니다.</td></tr>';
+        contactsListEl.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:40px; color:var(--text-light);">등록된 연락처가 없습니다.</td></tr>';
         return;
     }
 
@@ -2107,6 +2107,7 @@ window.filterAdminContacts = function() {
             <td>${c.position || ''}</td>
             <td>${c.dept || ''}</td>
             <td style="font-size:13px;">${c.phone || ''}</td>
+            <td style="font-size:13px;">${c.mobile || ''}</td>
             <td style="font-size:13px;">${c.email || ''}</td>
             <td>${statusText(c.status)}</td>
             <td>
@@ -2132,6 +2133,7 @@ window.openContactModal = function(id) {
         document.getElementById('cmPosition').value = c.position || '';
         document.getElementById('cmDept').value = c.dept || '';
         document.getElementById('cmPhone').value = c.phone || '';
+        document.getElementById('cmMobile').value = c.mobile || '';
         document.getElementById('cmEmail').value = c.email || '';
         document.getElementById('cmStatus').value = c.status || 'active';
     } else {
@@ -2140,6 +2142,7 @@ window.openContactModal = function(id) {
         document.getElementById('cmPosition').value = '';
         document.getElementById('cmDept').value = '';
         document.getElementById('cmPhone').value = '';
+        document.getElementById('cmMobile').value = '';
         document.getElementById('cmEmail').value = '';
         document.getElementById('cmStatus').value = 'active';
     }
@@ -2158,6 +2161,7 @@ window.submitContactModal = async function() {
         position: document.getElementById('cmPosition').value.trim(),
         dept: document.getElementById('cmDept').value.trim(),
         phone: document.getElementById('cmPhone').value.trim(),
+        mobile: document.getElementById('cmMobile').value.trim(),
         email: document.getElementById('cmEmail').value.trim(),
         status: document.getElementById('cmStatus').value
     };
@@ -2209,7 +2213,7 @@ window.cancelEditContact = function() {
 
 var addContactBtnEl = document.getElementById('addContactBtn');
 if (addContactBtnEl) addContactBtnEl.addEventListener('click', async function() {
-    const data = { name: document.getElementById('contactName').value, position: document.getElementById('contactPosition').value, dept: document.getElementById('contactDept').value, status: document.getElementById('contactStatus').value, phone: document.getElementById('contactPhone').value, email: document.getElementById('contactEmail').value };
+    const data = { name: document.getElementById('contactName').value, position: document.getElementById('contactPosition').value, dept: document.getElementById('contactDept').value, status: document.getElementById('contactStatus').value, phone: document.getElementById('contactPhone').value, mobile: (document.getElementById('contactMobile') || {}).value || '', email: document.getElementById('contactEmail').value };
     if (!data.name) return alert('이름을 입력하세요.');
     try {
         if (editContactId) {
