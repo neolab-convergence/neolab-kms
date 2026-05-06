@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=121">
+    <link rel="stylesheet" href="css/style.css?v=122">
     <!-- CSS is loaded from css/style.css -->
 </head>
 <body>
@@ -741,7 +741,13 @@
                 
                 <div class="admin-tab-content" id="suggestionsAdminTab">
                     <h2>💡 개선요청 관리</h2>
-                    <p style="color:var(--text-secondary); margin-bottom:16px; font-size:14px;">직원들이 익명으로 제출한 개선요청 목록입니다. 작성자 정보는 저장되지 않습니다.</p>
+                    <p style="color:var(--text-secondary); margin-bottom:16px; font-size:14px;">직원들이 익명으로 제출한 개선요청 목록입니다. 작성자 정보는 저장되지 않으며, 완료 처리한 건은 히스토리로 보존됩니다.</p>
+                    <!-- 필터 탭 -->
+                    <div id="suggestionFilterTabs" style="display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap;">
+                        <button type="button" class="sug-filter-btn active" data-filter="all" onclick="setSuggestionFilter('all')" style="padding:8px 16px; border:1px solid var(--border-color); background:var(--primary); color:#fff; border-radius:20px; cursor:pointer; font-size:13px; font-weight:600;">전체 <span id="sugCountAll" style="opacity:0.85;">(0)</span></button>
+                        <button type="button" class="sug-filter-btn" data-filter="pending" onclick="setSuggestionFilter('pending')" style="padding:8px 16px; border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-primary); border-radius:20px; cursor:pointer; font-size:13px;">📋 진행 <span id="sugCountPending" style="color:var(--text-light);">(0)</span></button>
+                        <button type="button" class="sug-filter-btn" data-filter="completed" onclick="setSuggestionFilter('completed')" style="padding:8px 16px; border:1px solid var(--border-color); background:var(--card-bg); color:var(--text-primary); border-radius:20px; cursor:pointer; font-size:13px;">✅ 완료 <span id="sugCountCompleted" style="color:var(--text-light);">(0)</span></button>
+                    </div>
                     <div id="adminSuggestionCount" style="font-size:14px; color:var(--text-secondary); margin-bottom:12px;">총 0건</div>
                     <div id="adminSuggestionsList"></div>
                 </div>
@@ -1126,13 +1132,13 @@
     </script>
 
 <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
-<script src="js/core.js?v=121"></script>
-<script src="js/navigation.js?v=121"></script>
-<script src="js/search.js?v=121"></script>
-<script src="js/viewer.js?v=121"></script>
-<script src="js/board.js?v=121"></script>
-<script src="js/features.js?v=121"></script>
-<script src="js/app.js?v=121"></script>
-<script src="js/admin.js?v=121"></script>
+<script src="js/core.js?v=122"></script>
+<script src="js/navigation.js?v=122"></script>
+<script src="js/search.js?v=122"></script>
+<script src="js/viewer.js?v=122"></script>
+<script src="js/board.js?v=122"></script>
+<script src="js/features.js?v=122"></script>
+<script src="js/app.js?v=122"></script>
+<script src="js/admin.js?v=122"></script>
 </body>
 </html>

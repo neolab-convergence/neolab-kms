@@ -2577,37 +2577,142 @@ document.getElementById('resetBtn').addEventListener('click', async function() {
 function showAdminSuccess(id, msg) { const e = document.getElementById(id); if (e) { e.textContent = msg; e.classList.add('show'); setTimeout(() => e.classList.remove('show'), 3000); } }
 
 /* ── 개선요청 관리 (관리자 전용) ── */
+var _allSuggestions = [];
+var _suggestionFilter = 'all'; // all | pending | completed
+
+function _escSuggestion(s) {
+    return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function _renderSuggestionList() {
+    const listEl = document.getElementById('adminSuggestionsList');
+    if (!listEl) return;
+
+    let suggestions = _allSuggestions.slice();
+    // 필터 적용
+    if (_suggestionFilter === 'pending') suggestions = suggestions.filter(s => (s.status || 'pending') !== 'completed');
+    else if (_suggestionFilter === 'completed') suggestions = suggestions.filter(s => s.status === 'completed');
+
+    // 최신순
+    suggestions.sort((a, b) => String(b.id).localeCompare(String(a.id)));
+
+    const totalEl = document.getElementById('adminSuggestionCount');
+    if (totalEl) {
+        const filterLabel = _suggestionFilter === 'pending' ? '진행' : _suggestionFilter === 'completed' ? '완료' : '전체';
+        totalEl.textContent = filterLabel + ' ' + suggestions.length + '건';
+    }
+
+    if (suggestions.length === 0) {
+        const emptyMsg = _suggestionFilter === 'completed' ? '완료된 건이 아직 없습니다.' : _suggestionFilter === 'pending' ? '처리할 개선요청이 없습니다.' : '접수된 개선요청이 없습니다.';
+        listEl.innerHTML = '<div style="text-align:center; padding:60px 20px; color:var(--text-light);"><div style="font-size:48px; margin-bottom:12px;">📭</div><p>' + emptyMsg + '</p></div>';
+        return;
+    }
+
+    listEl.innerHTML = suggestions.map(s => {
+        const status = s.status || 'pending';
+        const isDone = status === 'completed';
+        const badge = isDone
+            ? '<span style="background:rgba(16,185,129,0.12); color:#10b981; font-size:11px; font-weight:700; padding:3px 10px; border-radius:10px;">✅ 완료</span>'
+            : '<span style="background:rgba(255,103,32,0.1); color:var(--primary); font-size:11px; font-weight:700; padding:3px 10px; border-radius:10px;">📋 진행</span>';
+
+        const content = (s.content || '').replace(/</g, '&lt;').replace(/\n/g, '<br>');
+        const note = s.adminNote ? _escSuggestion(s.adminNote).replace(/\n/g, '<br>') : '';
+        const completedInfo = isDone
+            ? '<div style="margin-top:8px; padding:8px 12px; background:rgba(16,185,129,0.06); border-left:3px solid #10b981; border-radius:6px; font-size:12px; color:var(--text-secondary);">'
+                + '<div>✅ 완료: ' + (s.completedDate || '-') + (s.completedBy ? ' · 처리자 <b>' + _escSuggestion(s.completedBy) + '</b>' : '') + '</div>'
+                + (note ? '<div style="margin-top:6px; color:var(--text-primary);"><b>처리 메모:</b> ' + note + '</div>' : '')
+                + '</div>'
+            : (note ? '<div style="margin-top:8px; padding:8px 12px; background:rgba(255,103,32,0.04); border-left:3px solid var(--primary); border-radius:6px; font-size:12px; color:var(--text-primary);"><b>메모:</b> ' + note + '</div>' : '');
+
+        const actionBtns = isDone
+            ? '<button type="button" onclick="reopenSuggestion(\'' + s.id + '\')" style="background:none; border:1px solid var(--primary); color:var(--primary); padding:5px 12px; border-radius:5px; cursor:pointer; font-size:12px;">↩ 다시 열기</button>'
+              + ' <button type="button" onclick="editSuggestionNote(\'' + s.id + '\')" style="background:none; border:1px solid var(--border-color); color:var(--text-secondary); padding:5px 12px; border-radius:5px; cursor:pointer; font-size:12px;">📝 메모 수정</button>'
+            : '<button type="button" onclick="completeSuggestion(\'' + s.id + '\')" style="background:#10b981; border:1px solid #10b981; color:#fff; padding:5px 12px; border-radius:5px; cursor:pointer; font-size:12px; font-weight:600;">✅ 완료 처리</button>'
+              + ' <button type="button" onclick="editSuggestionNote(\'' + s.id + '\')" style="background:none; border:1px solid var(--border-color); color:var(--text-secondary); padding:5px 12px; border-radius:5px; cursor:pointer; font-size:12px;">📝 메모</button>';
+
+        return '<div class="suggestion-card" style="margin-bottom:14px;">'
+            + '<div class="suggestion-card-header" style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">'
+                + '<div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">'
+                    + badge
+                    + '<span style="font-size:12px; color:var(--text-light);">📅 ' + (s.date || '-') + ' · ID: ' + _escSuggestion(s.id) + '</span>'
+                + '</div>'
+                + '<div style="display:flex; gap:6px; flex-wrap:wrap;">'
+                    + actionBtns
+                    + ' <button type="button" onclick="deleteSuggestion(\'' + s.id + '\')" style="background:none; border:1px solid #ef4444; color:#ef4444; padding:5px 10px; border-radius:5px; cursor:pointer; font-size:12px;">✕ 삭제</button>'
+                + '</div>'
+            + '</div>'
+            + '<div class="suggestion-card-body" style="margin-top:10px;">' + content + '</div>'
+            + completedInfo
+            + '</div>';
+    }).join('');
+}
+
+function _updateSuggestionCounts() {
+    const all = _allSuggestions.length;
+    const pending = _allSuggestions.filter(s => (s.status || 'pending') !== 'completed').length;
+    const completed = _allSuggestions.filter(s => s.status === 'completed').length;
+    const setTxt = (id, n) => { const el = document.getElementById(id); if (el) el.textContent = '(' + n + ')'; };
+    setTxt('sugCountAll', all);
+    setTxt('sugCountPending', pending);
+    setTxt('sugCountCompleted', completed);
+}
+
+window.setSuggestionFilter = function(filter) {
+    _suggestionFilter = filter;
+    document.querySelectorAll('.sug-filter-btn').forEach(b => {
+        const active = b.getAttribute('data-filter') === filter;
+        b.style.background = active ? 'var(--primary)' : 'var(--card-bg)';
+        b.style.color = active ? '#fff' : 'var(--text-primary)';
+        b.style.fontWeight = active ? '600' : '400';
+        if (active) b.classList.add('active'); else b.classList.remove('active');
+        // 카운트 옵션의 색상도 조정
+        const span = b.querySelector('span');
+        if (span) span.style.color = active ? 'rgba(255,255,255,0.9)' : 'var(--text-light)';
+    });
+    _renderSuggestionList();
+};
+
 async function loadAdminSuggestions() {
     try {
-        const suggestions = await api.get('/api/suggestions');
-        const countEl = document.getElementById('adminSuggestionCount');
-        if (countEl) countEl.textContent = '총 ' + suggestions.length + '건';
-
-        const listEl = document.getElementById('adminSuggestionsList');
-        if (!listEl) return;
-
-        if (suggestions.length === 0) {
-            listEl.innerHTML = '<div style="text-align:center; padding:60px 20px; color:var(--text-light);"><div style="font-size:48px; margin-bottom:12px;">📭</div><p>접수된 개선요청이 없습니다.</p></div>';
-            return;
-        }
-
-        // 최신순 정렬
-        suggestions.sort((a, b) => b.id.localeCompare(a.id));
-
-        listEl.innerHTML = suggestions.map(s => `
-            <div class="suggestion-card">
-                <div class="suggestion-card-header">
-                    <span style="font-size:12px; color:var(--text-light);">📅 ${s.date} · ID: ${s.id}</span>
-                    <button type="button" onclick="deleteSuggestion('${s.id}')" style="background:none; border:1px solid #ef4444; color:#ef4444; padding:4px 10px; border-radius:4px; cursor:pointer; font-size:12px;">삭제</button>
-                </div>
-                <div class="suggestion-card-body">${(s.content || '').replace(/</g, '&lt;').replace(/\n/g, '<br>')}</div>
-            </div>
-        `).join('');
+        _allSuggestions = await api.get('/api/suggestions');
+        _updateSuggestionCounts();
+        _renderSuggestionList();
     } catch(e) { console.error('개선요청 로드 실패:', e); }
 }
 
+window.completeSuggestion = async function(id) {
+    const note = prompt('처리 메모(선택사항):\n\n어떻게 처리되었는지 간단히 남겨주세요. 빈 칸으로 두어도 됩니다.', '');
+    if (note === null) return; // 취소
+    try {
+        await api.put('/api/suggestions/' + id, { status: 'completed', adminNote: note });
+        invalidateAll();
+        await loadAdminSuggestions();
+    } catch(e) { alert('완료 처리 실패: ' + e.message); }
+};
+
+window.reopenSuggestion = async function(id) {
+    if (!confirm('이 건을 다시 진행 상태로 되돌릴까요?')) return;
+    try {
+        await api.put('/api/suggestions/' + id, { status: 'pending' });
+        invalidateAll();
+        await loadAdminSuggestions();
+    } catch(e) { alert('다시 열기 실패: ' + e.message); }
+};
+
+window.editSuggestionNote = async function(id) {
+    const cur = _allSuggestions.find(s => String(s.id) === String(id));
+    if (!cur) return;
+    const newNote = prompt('처리 메모를 입력하세요:', cur.adminNote || '');
+    if (newNote === null) return;
+    try {
+        await api.put('/api/suggestions/' + id, { status: cur.status || 'pending', adminNote: newNote });
+        invalidateAll();
+        await loadAdminSuggestions();
+    } catch(e) { alert('메모 저장 실패: ' + e.message); }
+};
+
 window.deleteSuggestion = async function(id) {
-    if (!confirm('이 개선요청을 삭제하시겠습니까?')) return;
+    if (!confirm('이 개선요청을 영구 삭제하시겠습니까?\n(완료 처리만 원하면 "완료 처리" 버튼을 눌러주세요. 삭제는 되돌릴 수 없습니다.)')) return;
     try {
         await api.del('/api/suggestions/' + id);
         invalidateAll();
