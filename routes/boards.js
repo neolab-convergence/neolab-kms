@@ -22,28 +22,7 @@ router.post('/api/boards', requireAdmin, async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-router.put('/api/boards/:id', requireAdmin, async (req, res) => {
-    try {
-        const data = await getSheetData('boards');
-        const row = data.find(r => r.id === req.params.id);
-        if (!row) return res.status(404).json({ error: '게시판을 찾을 수 없습니다.' });
-        const updated = { ...row, ...req.body };
-        await updateRow('boards', row._rowIndex, updated);
-        invalidateCache('boards');
-        res.json({ success: true });
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-router.delete('/api/boards/:id', requireAdmin, async (req, res) => {
-    try {
-        await deleteRow('boards', req.params.id);
-        invalidateCache('boards');
-        writeLog('ADMIN', `게시판 삭제: ${req.params.id}`, `by=${req.user.email}`);
-        res.json({ success: true });
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-// 순서 변경 공통 API
+// 순서 변경 공통 API — :id 패턴보다 먼저 등록해야 'reorder'가 :id로 잘못 잡히지 않음
 router.put('/api/:sheetName/reorder', requireAdmin, async (req, res) => {
     try {
         const { sheetName } = req.params;
@@ -63,6 +42,27 @@ router.put('/api/:sheetName/reorder', requireAdmin, async (req, res) => {
         if (updates.length > 0) await Promise.all(updates);
         invalidateCache(sheetName);
         writeLog('ADMIN', `순서 변경: ${sheetName}`, `${updates.length}건 by=${req.user.email}`);
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.put('/api/boards/:id', requireAdmin, async (req, res) => {
+    try {
+        const data = await getSheetData('boards');
+        const row = data.find(r => r.id === req.params.id);
+        if (!row) return res.status(404).json({ error: '게시판을 찾을 수 없습니다.' });
+        const updated = { ...row, ...req.body };
+        await updateRow('boards', row._rowIndex, updated);
+        invalidateCache('boards');
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+router.delete('/api/boards/:id', requireAdmin, async (req, res) => {
+    try {
+        await deleteRow('boards', req.params.id);
+        invalidateCache('boards');
+        writeLog('ADMIN', `게시판 삭제: ${req.params.id}`, `by=${req.user.email}`);
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
