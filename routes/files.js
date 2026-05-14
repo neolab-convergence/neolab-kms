@@ -54,11 +54,29 @@ router.post('/api/upload', requireAdmin, upload.single('file'), async (req, res)
     });
 });
 
+// 파일 없음 응답: iframe/브라우저는 HTML, fetch/JSON 호출자는 JSON
+function sendFileNotFound(req, res) {
+    const wantsHtml = (req.headers.accept || '').includes('text/html');
+    if (wantsHtml) {
+        res.status(404).type('html').send(
+            '<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><title>파일 없음</title>' +
+            '<style>body{margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh;' +
+            'font-family:-apple-system,BlinkMacSystemFont,"Noto Sans KR",sans-serif;background:#f8f9fa;color:#374151;}' +
+            '.box{text-align:center;padding:40px;}h1{font-size:18px;margin:12px 0 4px;color:#111827;}' +
+            'p{font-size:14px;color:#6b7280;margin:0;}.ic{font-size:48px;}</style></head>' +
+            '<body><div class="box"><div class="ic">📄</div><h1>파일을 찾을 수 없습니다</h1>' +
+            '<p>업로드된 파일이 삭제되었거나 이동되었습니다. 관리자에게 문의해 주세요.</p></div></body></html>'
+        );
+    } else {
+        res.status(404).json({ error: '파일을 찾을 수 없습니다.' });
+    }
+}
+
 // 인증된 파일 접근 (UUID 파일명은 영구 캐시 가능)
 router.get('/api/files/:filename', requireAuth, (req, res) => {
     const filename = path.basename(req.params.filename);
     const filePath = path.join(uploadsDir, filename);
-    if (!fs.existsSync(filePath)) return res.status(404).json({ error: '파일을 찾을 수 없습니다.' });
+    if (!fs.existsSync(filePath)) return sendFileNotFound(req, res);
 
     const ext = path.extname(filename).toLowerCase();
     res.setHeader('Content-Type', mimeTypes[ext] || 'application/octet-stream');
@@ -101,7 +119,7 @@ router.get('/api/public-files/:token/:filename', (req, res) => {
     }
 
     const filePath = path.join(uploadsDir, path.basename(req.params.filename));
-    if (!fs.existsSync(filePath)) return res.status(404).json({ error: '파일을 찾을 수 없습니다.' });
+    if (!fs.existsSync(filePath)) return sendFileNotFound(req, res);
 
     const ext = path.extname(req.params.filename).toLowerCase();
     res.setHeader('Content-Type', mimeTypes[ext] || 'application/octet-stream');
