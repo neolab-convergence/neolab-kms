@@ -537,7 +537,12 @@ window.handleWriteDropzoneSelect = function(input) {
     handleWriteDrop(fakeEvent);
 };
 
+var _writeSubmitting = false;
 window.submitWriteForm = async function() {
+    // 중복 등록 방지: 인플라이트 가드 + 저장 버튼 비활성화
+    if (_writeSubmitting) return;
+    const submitBtn = document.getElementById('writeSubmitBtn');
+
     const boardId = document.getElementById('writeBoard').value;
     const categoryId = document.getElementById('writeCat').value;
     const title = document.getElementById('writeTitle').value.trim();
@@ -548,6 +553,9 @@ window.submitWriteForm = async function() {
 
     if (!title) return alert('제목을 입력해주세요.');
     if (!boardId) return alert('게시판을 선택해주세요.');
+
+    _writeSubmitting = true;
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.style.opacity = '0.6'; submitBtn.style.cursor = 'not-allowed'; submitBtn.textContent = '저장 중...'; }
 
     // 진행바 표시
     var progressEl = document.getElementById('writeProgress');
@@ -659,13 +667,13 @@ window.submitWriteForm = async function() {
     }
 
     updateProgress();
-    // 🔄 최종 저장 (재시도 내장): Google Sheets 일시 오류에 강건하게
+    // 🔄 최종 저장: PUT은 멱등이라 재시도 OK, POST는 중복 INSERT 위험으로 재시도 X
     try {
         if (adminEditPostId) {
             await _saveWithRetry(function() { return api.put('/api/posts/' + adminEditPostId, postData); });
             window._writeEditOriginal = null;
         } else {
-            await _saveWithRetry(function() { return api.post('/api/posts', postData); });
+            await api.post('/api/posts', postData);
         }
     } catch (err) {
         // 진행바 숨기기
@@ -679,7 +687,10 @@ window.submitWriteForm = async function() {
         } catch(e) {}
         if (msg.length > 200) msg = msg.substring(0, 200) + '...';
         alert('저장에 실패했습니다.\n\n원인: ' + msg + '\n\n잠시 후 다시 시도해 주세요. 문제가 반복되면 관리자에게 문의하세요.');
-        return; // 모달 유지, 사용자가 재시도 가능
+        return; // 모달 유지, 사용자가 재시도 가능 (finally가 가드 해제)
+    } finally {
+        _writeSubmitting = false;
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.style.opacity = ''; submitBtn.style.cursor = ''; submitBtn.textContent = '저장'; }
     }
 
     // 진행바 완료 표시 후 숨김
@@ -688,7 +699,7 @@ window.submitWriteForm = async function() {
 
     invalidateAll();
     closeWriteModal();
-    loadAdminPostTable();
+    await loadAdminPostTable();   // 새로고침 끝난 뒤 alert
     alert(adminEditPostId ? '수정되었습니다.' : '등록되었습니다.');
 };
 
@@ -1953,7 +1964,11 @@ if (postPdfFileEl) postPdfFileEl.addEventListener('change', async function(e) {
 });
 
 var addPostBtnEl = document.getElementById('addPostBtn');
+var _addPostSubmitting = false;
 if (addPostBtnEl) addPostBtnEl.addEventListener('click', async function() {
+    if (_addPostSubmitting) return;  // 중복 클릭 가드
+    var addBtn = this;
+
     const boardId = document.getElementById('postBoardSel').value;
     const categoryId = document.getElementById('postCatSel').value;
     const type = document.getElementById('postType').value;
@@ -1965,6 +1980,10 @@ if (addPostBtnEl) addPostBtnEl.addEventListener('click', async function() {
     const fileName = document.getElementById('postFileName').value;
 
     if (!title) return alert('제목을 입력하세요.');
+
+    _addPostSubmitting = true;
+    var _origAddBtnText = addBtn.textContent;
+    addBtn.disabled = true; addBtn.style.opacity = '0.6'; addBtn.style.cursor = 'not-allowed'; addBtn.textContent = '저장 중...';
 
     var postData = { boardId: boardId, categoryId: categoryId, type: type, title: title, icon: icon, subInfo: subInfo,
         content: type === 'text' ? content : '',
@@ -2026,14 +2045,14 @@ if (addPostBtnEl) addPostBtnEl.addEventListener('click', async function() {
         postData.detailImageLinks = postLinks.join('|');
     }
 
-    // 1) 실제 저장 — 재시도 내장, 네트워크 일시 오류에 강건하게
+    // 1) 실제 저장 — PUT은 멱등이라 재시도, POST는 중복 INSERT 위험으로 재시도 X
     try {
         if (editPostId) {
             await _saveWithRetry(function() { return api.put('/api/posts/' + editPostId, postData); });
-            editPostId = null; window._editPostOriginal = null; this.textContent = '게시물 등록'; this.classList.replace('admin-btn-primary', 'admin-btn-success');
+            editPostId = null; window._editPostOriginal = null; addBtn.classList.replace('admin-btn-primary', 'admin-btn-success'); _origAddBtnText = '게시물 등록';
             document.getElementById('editPostIndicator').style.display = 'none';
         } else {
-            await _saveWithRetry(function() { return api.post('/api/posts', postData); });
+            await api.post('/api/posts', postData);
         }
     } catch(err) {
         console.error('[게시물 저장 실패]', err);
@@ -2047,10 +2066,12 @@ if (addPostBtnEl) addPostBtnEl.addEventListener('click', async function() {
             msg = '서버 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.\n(' + msg.substring(0, 100) + ')';
         }
         alert('저장 실패: ' + msg);
-        return;
+        return;  // finally가 가드 해제
+    } finally {
+        _addPostSubmitting = false;
+        addBtn.disabled = false; addBtn.style.opacity = ''; addBtn.style.cursor = ''; addBtn.textContent = _origAddBtnText;
     }
-    // 2) 폼 리셋 + 화면 갱신 — 여기서 난 오류는 저장과 무관, 콘솔에만 기록
-    alert('게시물이 저장되었습니다!');
+    // 2) 폼 리셋 + 화면 갱신 — 새로고침 끝난 뒤 alert
     try {
         document.getElementById('postTitle').value = ''; document.getElementById('postContent').value = ''; document.getElementById('postUrl').value = '';
         document.getElementById('postFileName').value = ''; document.getElementById('postPdfFileName').textContent = '';
@@ -2066,6 +2087,7 @@ if (addPostBtnEl) addPostBtnEl.addEventListener('click', async function() {
         if (typeof updateDashboardStats === 'function') await updateDashboardStats();
         if (typeof loadDashboardWidgets === 'function') await loadDashboardWidgets();
     } catch(e) { console.warn('저장 후 화면 갱신 경고:', e); }
+    alert('게시물이 저장되었습니다!');
 });
 
 // editPost는 openWriteModal로 통합 (라인 162에서 정의됨)

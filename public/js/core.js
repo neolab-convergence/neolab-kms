@@ -49,8 +49,9 @@ const api = {
 };
 
 // 인메모리 캐시 (API 호출 최소화)
+// 서버가 SQLite로 전환되어 호출 비용이 거의 0 → 짧게 잡아 변경사항이 빠르게 반영되도록
 const dataCache = {};
-async function cachedGet(path, ttl = 15000) {
+async function cachedGet(path, ttl = 3000) {
     const now = Date.now();
     if (dataCache[path] && (now - dataCache[path].time < ttl)) return dataCache[path].data;
     const data = await api.get(path);
