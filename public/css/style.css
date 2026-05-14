@@ -878,7 +878,7 @@
         /* ═══ 조직도 자동 트리 (절대 위치 + SVG 연결선) ═══ */
         .orgc-node {
             box-sizing: border-box;
-            padding: 8px 12px;
+            padding: 8px 8px;
             border-radius: 10px;
             box-shadow: 0 1px 3px rgba(15,23,42,0.08);
             font-size: 14px;
@@ -892,14 +892,14 @@
             color: white;
             border: 1.5px solid #e55c1c;
         }
-        .orgc-dept-name { font-weight: 700; font-size: 14px; letter-spacing: -0.3px; color: white; }
-        .orgc-dept-title { font-weight: 500; font-size: 11px; color: rgba(255,255,255,0.9); margin-top: 2px; }
+        .orgc-dept-name { font-weight: 700; font-size: 14px; letter-spacing: -0.3px; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .orgc-dept-title { font-weight: 500; font-size: 11px; color: rgba(255,255,255,0.9); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .orgc-person {
             background: white;
             border: 1.5px solid #d1d5db;
         }
-        .orgc-p-name { font-weight: 700; font-size: 13px; color: #0f172a; letter-spacing: -0.3px; }
-        .orgc-p-title { font-size: 11px; color: #64748b; margin-top: 2px; letter-spacing: -0.3px; }
+        .orgc-p-name { font-weight: 700; font-size: 13px; color: #0f172a; letter-spacing: -0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .orgc-p-title { font-size: 11px; color: #64748b; margin-top: 2px; letter-spacing: -0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
         /* ═══════════════════════════════════════════════
            📱 iOS 네이티브 스타일 재설계 (≤768px)
