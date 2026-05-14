@@ -181,7 +181,7 @@ var _orgNodes = []; // 현재 로드된 노드 데이터
 var _orgIsAdmin = false;
 var _orgDragNode = null, _orgDragOffX = 0, _orgDragOffY = 0;
 var _orgSaveTimer = null;
-var NODE_W = 170, NODE_H = 54;
+var NODE_W = 128, NODE_H = 46;
 
 function escapeHtml(str) {
     if (!str) return '';
@@ -448,10 +448,10 @@ function _orgCalcCanvasSize(data) {
 // ── 공용 자동 트리 렌더러 (사용자/관리자 모드 동일 화면) ──
 // JS로 좌표 계산 → 절대 위치 노드 + SVG 버스 연결선
 function _orgRenderCssTree(container, data, editable) {
-    var NODE_W = 180;
-    var NODE_H = 64;
-    var GAP_X = 24;
-    var GAP_Y = 54;
+    var NODE_W = 150;
+    var NODE_H = 60;
+    var GAP_X = 20;
+    var GAP_Y = 50;
     var PAD = 30;
 
     // 1) 트리 빌드 + 정렬

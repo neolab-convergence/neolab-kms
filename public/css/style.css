@@ -878,7 +878,6 @@
         /* ═══ 조직도 자동 트리 (절대 위치 + SVG 연결선) ═══ */
         .orgc-node {
             box-sizing: border-box;
-            padding: 8px 8px;
             border-radius: 10px;
             box-shadow: 0 1px 3px rgba(15,23,42,0.08);
             font-size: 14px;
@@ -886,6 +885,7 @@
             text-align: center;
             overflow: hidden;
             z-index: 1;
+            /* padding은 위쪽 .orgc-dept/.orgc-person 정의(4px 6px) 사용 — 가용 텍스트 폭 확보 */
         }
         .orgc-dept {
             background: linear-gradient(135deg, #ff6720, #ff884d);
